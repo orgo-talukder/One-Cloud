@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TelegramService } from '@/lib/telegram/service';
 
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -13,8 +15,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!sessionToken) {
+      return NextResponse.json(
+        { success: false, error: 'Telegram session token is required to delete.' },
+        { status: 401 }
+      );
+    }
+
     const deleted = await TelegramService.deleteFromSavedMessages({
-      sessionToken: sessionToken || '',
+      sessionToken,
       messageId: Number(messageId),
     });
 

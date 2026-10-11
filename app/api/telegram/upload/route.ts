@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TelegramService } from '@/lib/telegram/service';
 
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -12,11 +14,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No file uploaded.' }, { status: 400 });
     }
 
+    if (!sessionToken) {
+      return NextResponse.json(
+        { success: false, error: 'Telegram is not connected. Please connect your Telegram account first.' },
+        { status: 401 }
+      );
+    }
+
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload to user's Telegram Saved Messages
+    // Upload to user's real Telegram Saved Messages
     const uploaded = await TelegramService.uploadToSavedMessages({
       sessionToken,
       fileName: file.name,
@@ -43,13 +52,13 @@ export async function POST(req: NextRequest) {
         telegramMessageId: uploaded.messageId,
         uploadedAt: uploaded.uploadedAt,
         updatedAt: uploaded.uploadedAt,
-        isSandbox: uploaded.isSandbox,
       },
     });
   } catch (err: unknown) {
     console.error('Upload route error:', err);
+    const msg = err instanceof Error ? err.message : 'Failed to process file upload to Telegram.';
     return NextResponse.json(
-      { success: false, error: 'Failed to process file upload to Telegram.' },
+      { success: false, error: msg },
       { status: 500 }
     );
   }

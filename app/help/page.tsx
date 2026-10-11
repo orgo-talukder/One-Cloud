@@ -35,9 +35,7 @@ export default function HelpPage() {
               <br />
               3. Click <strong>API Development Tools</strong> and create a client application.
               <br />
-              4. Copy the <code>api_id</code> and <code>api_hash</code> into One Cloud&apos;s Connect dialog.
-              <br />
-              <em>Note: You can also use our Sandbox Demo Mode instantly without any credentials!</em>
+              4. Copy the <code>api_id</code> and <code>api_hash</code> into One Cloud&apos;s Connect dialog along with your phone number.
             </p>
           </div>
 

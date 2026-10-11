@@ -5,34 +5,35 @@ export type TelegramConnectionStatus =
   | 'reauth_required'
   | 'error';
 
-export interface TelegramSessionData {
-  userId: string;
+export interface TelegramSessionPayload {
+  apiId: number;
+  apiHash: string;
+  sessionString: string;
   telegramUserId: string;
-  telegramUsername?: string;
+  telegramUsername: string;
   phone: string;
-  isSandbox: boolean;
   connectedAt: string;
-  sessionStringEncrypted: string;
 }
 
 export interface TelegramAuthRequest {
-  action: 'send_code' | 'verify_code' | 'disconnect' | 'status';
+  action: 'send_code' | 'verify_code' | 'disconnect';
   phone?: string;
-  apiId?: string;
+  apiId?: string | number;
   apiHash?: string;
   code?: string;
   password?: string;
   phoneCodeHash?: string;
-  isSandbox?: boolean;
+  pendingSession?: string;
 }
 
 export interface TelegramAuthResponse {
   success: boolean;
-  status: TelegramConnectionStatus;
   phoneCodeHash?: string;
+  pendingSession?: string;
   telegramUserId?: string;
   telegramUsername?: string;
-  isSandbox?: boolean;
+  sessionToken?: string;
+  requires2FA?: boolean;
   message?: string;
   error?: string;
 }
@@ -44,5 +45,4 @@ export interface TelegramUploadedFile {
   fileName: string;
   mimeType: string;
   uploadedAt: string;
-  isSandbox?: boolean;
 }

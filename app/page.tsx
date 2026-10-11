@@ -48,10 +48,10 @@ export default function LandingPage() {
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/app"
+              href={user ? '/app' : '/login'}
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shadow-md transition-all active:scale-[0.98]"
             >
-              <span>Launch Your Drive</span>
+              <span>{user ? 'Go to Your Drive' : 'Get Started with One Cloud'}</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
 
@@ -361,10 +361,10 @@ export default function LandingPage() {
 
           <div className="mt-8">
             <Link
-              href="/app"
+              href={user ? '/app' : '/login'}
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm shadow-lg transition-all active:scale-[0.98]"
             >
-              <span>Get Started with One Cloud</span>
+              <span>{user ? 'Open Your Drive' : 'Get Started with One Cloud'}</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

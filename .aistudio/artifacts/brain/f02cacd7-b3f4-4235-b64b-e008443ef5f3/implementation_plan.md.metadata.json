@@ -1,0 +1,6 @@
+{
+  "summary":  "Firebase Google Authentication এর auth/unauthorized-domain ত্রুটি স্থায়ীভাবে সমাধান করার বিস্তারিত বাস্তবায়ন পরিকল্পনা। এতে রয়েছে ডায়নামিক এনভায়রনমেন্ট ভ্যারিয়েবল সাপোর্ট (process.env.NEXT_PUBLIC_FIREBASE_*), Vercel ডিপ্লয়মেন্টে ব্যক্তিগত Firebase প্রজেক্ট (one-cloud-6df65) কানেক্ট করার সমাধান, এবং অথেনটিকেশন এরর হ্যান্ডলিং উন্নত করার রোডম্যাপ।",
+  "updatedAt":  "2026-10-11T20:38:22.282638Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

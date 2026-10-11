@@ -28,7 +28,6 @@ export function AppSidebar() {
     storageSummary,
     telegramConnected,
     telegramUsername,
-    isSandboxTelegram,
     uploadFiles,
   } = useDrive();
 
@@ -192,11 +191,7 @@ export function AppSidebar() {
             <span className="flex items-center gap-1.5 truncate">
               <Send className="h-3.5 w-3.5 text-sky-500 shrink-0" />
               <span className="truncate">
-                {telegramConnected
-                  ? isSandboxTelegram
-                    ? 'Sandbox Demo Active'
-                    : `@${telegramUsername}`
-                  : 'Connect Telegram'}
+                {telegramConnected ? `@${telegramUsername}` : 'Connect Telegram'}
               </span>
             </span>
             <span className="text-[10px] font-semibold text-sky-600 shrink-0 ml-2">

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TelegramService } from '@/lib/telegram/service';
 
+export const runtime = 'nodejs';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ fileId: string }> }
@@ -18,6 +20,13 @@ export async function GET(
       );
     }
 
+    if (!sessionToken) {
+      return NextResponse.json(
+        { success: false, error: 'Telegram session token is required to download.' },
+        { status: 401 }
+      );
+    }
+
     const result = await TelegramService.downloadFromSavedMessages({
       sessionToken,
       messageId,
@@ -25,7 +34,7 @@ export async function GET(
 
     if (!result) {
       return NextResponse.json(
-        { success: false, error: 'File not found in Telegram Saved Messages.' },
+        { success: false, error: `File not found in Telegram Saved Messages (ID: ${fileId}).` },
         { status: 404 }
       );
     }
@@ -42,8 +51,9 @@ export async function GET(
     });
   } catch (err: unknown) {
     console.error('Download route error:', err);
+    const msg = err instanceof Error ? err.message : 'Failed to download file from Telegram.';
     return NextResponse.json(
-      { success: false, error: 'Failed to download file from Telegram.' },
+      { success: false, error: msg },
       { status: 500 }
     );
   }

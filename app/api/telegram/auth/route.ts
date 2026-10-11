@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TelegramService } from '@/lib/telegram/service';
 
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, phone, code, password, phoneCodeHash, apiId, apiHash, isSandbox } = body;
+    const { action, phone, code, password, phoneCodeHash, apiId, apiHash, pendingSession } = body;
 
     if (action === 'send_code') {
       const result = await TelegramService.sendAuthCode({
         phone,
         apiId,
         apiHash,
-        isSandbox,
       });
 
       if (!result.success) {
@@ -21,10 +22,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         phoneCodeHash: result.phoneCodeHash,
-        isSandbox: result.isSandbox,
-        message: result.isSandbox
-          ? 'Sandbox mode enabled! You can enter any 5-digit code (e.g. 12345) to complete connection.'
-          : 'Telegram verification code has been dispatched.',
+        pendingSession: result.pendingSession,
+        message: result.message || 'Telegram verification code has been dispatched.',
       });
     }
 
@@ -34,16 +33,24 @@ export async function POST(req: NextRequest) {
         code,
         password,
         phoneCodeHash,
-        isSandbox,
+        apiId,
+        apiHash,
+        pendingSession,
       });
 
       if (!result.success) {
-        return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            requires2FA: result.requires2FA,
+            error: result.error,
+          },
+          { status: 400 }
+        );
       }
 
       return NextResponse.json({
         success: true,
-        isSandbox: result.isSandbox,
         telegramUserId: result.telegramUserId,
         telegramUsername: result.telegramUsername,
         sessionToken: result.sessionToken,

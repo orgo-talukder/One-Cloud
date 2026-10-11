@@ -82,7 +82,15 @@ export default function LoginPage() {
                 router.push('/app');
               } catch (err: unknown) {
                 const msg = err instanceof Error ? err.message : 'Google authentication canceled or failed.';
-                setError(msg.replace('Firebase: ', ''));
+                if (msg.includes('auth/unauthorized-domain')) {
+                  setError(
+                    'This domain is not authorized in Firebase. Please add this domain to Authorized Domains in your Firebase Console (Authentication > Settings > Authorized domains) or configure your NEXT_PUBLIC_FIREBASE_* environment variables on Vercel.'
+                  );
+                } else if (msg.includes('auth/popup-closed-by-user')) {
+                  setError('Google sign-in popup was closed before completing authentication.');
+                } else {
+                  setError(msg.replace('Firebase: ', ''));
+                }
               } finally {
                 setLoading(false);
               }

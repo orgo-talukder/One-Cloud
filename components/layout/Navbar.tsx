@@ -57,10 +57,10 @@ export function Navbar() {
                 Sign In
               </Link>
               <Link
-                href="/app"
+                href="/login"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-500 transition-colors whitespace-nowrap shrink-0"
               >
-                <span>Open Drive</span>
+                <span>Get Started</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

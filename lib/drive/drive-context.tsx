@@ -47,7 +47,6 @@ interface DriveContextType {
   // Telegram connection
   telegramConnected: boolean;
   telegramUsername: string;
-  isSandboxTelegram: boolean;
   sessionToken: string;
   telegramSyncing: boolean;
 
@@ -72,7 +71,7 @@ interface DriveContextType {
   permanentlyDeleteFolder: (folderId: string) => Promise<void>;
   emptyTrash: () => Promise<void>;
   uploadFiles: (files: FileList | File[]) => Promise<void>;
-  connectTelegramSuccess: (token: string, username: string, isSandbox: boolean) => void;
+  connectTelegramSuccess: (token: string, username: string) => void;
   disconnectTelegram: () => void;
   syncTelegram: () => Promise<void>;
 }
@@ -92,31 +91,35 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const [telegramSyncing, setTelegramSyncing] = useState(false);
 
-  // Consolidated Telegram session with lazy initializer to avoid effect setState
-  const [tgSession, setTgSession] = useState<{
-    connected: boolean;
-    username: string;
-    isSandbox: boolean;
-    token: string;
-  }>(() => {
+  // Saved Telegram sessions mapped by User UID
+  const [savedSessions, setSavedSessions] = useState<
+    Record<string, { connected: boolean; username: string; token: string }>
+  >(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('onecloud_active_tg');
-        if (saved) return JSON.parse(saved);
+        const initial: Record<string, { connected: boolean; username: string; token: string }> = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('onecloud_tg_')) {
+            const uid = key.replace('onecloud_tg_', '');
+            const raw = localStorage.getItem(key);
+            if (raw) initial[uid] = JSON.parse(raw);
+          }
+        }
+        return initial;
       } catch {}
     }
-    return {
-      connected: false,
-      username: '',
-      isSandbox: true,
-      token: '',
-    };
+    return {};
   });
 
-  const telegramConnected = tgSession.connected;
-  const telegramUsername = tgSession.username;
-  const isSandboxTelegram = tgSession.isSandbox;
-  const sessionToken = tgSession.token;
+  const currentSession = useMemo(() => {
+    if (!user) return { connected: false, username: '', token: '' };
+    return savedSessions[user.uid] || { connected: false, username: '', token: '' };
+  }, [user, savedSessions]);
+
+  const telegramConnected = currentSession.connected;
+  const telegramUsername = currentSession.username;
+  const sessionToken = currentSession.token;
 
   // Upload tasks queue
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>([]);
@@ -424,7 +427,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
   const permanentlyDeleteFile = async (fileId: string) => {
     const file = activeFiles.find((f) => f.id === fileId);
-    if (file) {
+    if (file && sessionToken) {
       try {
         await fetch('/api/telegram/delete', {
           method: 'POST',
@@ -481,10 +484,15 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Upload file pipeline into Telegram Saved Messages + Cloud Firestore
+  // Upload file pipeline into real Telegram Saved Messages + Cloud Firestore
   const uploadFiles = async (fileList: FileList | File[]) => {
     const items = Array.from(fileList);
     if (items.length === 0) return;
+
+    if (!sessionToken) {
+      alert('Telegram is not connected. Please connect your Telegram account first to upload files.');
+      return;
+    }
 
     const newTasks: UploadTask[] = items.map((file) => ({
       id: 'task_' + Math.random().toString(36).substring(2, 9),
@@ -499,7 +507,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
     for (const task of newTasks) {
       setUploadTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, status: 'uploading', progress: 20 } : t))
+        prev.map((t) => (t.id === task.id ? { ...t, status: 'uploading', progress: 15 } : t))
       );
 
       try {
@@ -511,7 +519,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         }
 
         setUploadTasks((prev) =>
-          prev.map((t) => (t.id === task.id ? { ...t, progress: 65 } : t))
+          prev.map((t) => (t.id === task.id ? { ...t, progress: 45 } : t))
         );
 
         const res = await fetch('/api/telegram/upload', {
@@ -570,29 +578,48 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const connectTelegramSuccess = (token: string, username: string, isSandbox: boolean) => {
+  const connectTelegramSuccess = (token: string, username: string) => {
+    if (!user) return;
     const data = {
       connected: true,
-      username: username || 'ConnectedUser',
-      isSandbox,
+      username: username || 'TelegramUser',
       token,
     };
-    setTgSession(data);
+    setSavedSessions((prev) => ({ ...prev, [user.uid]: data }));
     if (typeof window !== 'undefined') {
-      localStorage.setItem('onecloud_active_tg', JSON.stringify(data));
+      localStorage.setItem(`onecloud_tg_${user.uid}`, JSON.stringify(data));
+      // Also update user profile in Firestore
+      setDoc(
+        doc(db, 'users', user.uid),
+        {
+          telegramConnected: true,
+          telegramUsername: username,
+          telegramConnectedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
     }
   };
 
   const disconnectTelegram = () => {
-    const data = {
+    if (!user) return;
+    const empty = {
       connected: false,
       username: '',
-      isSandbox: true,
       token: '',
     };
-    setTgSession(data);
+    setSavedSessions((prev) => ({ ...prev, [user.uid]: empty }));
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('onecloud_active_tg');
+      localStorage.removeItem(`onecloud_tg_${user.uid}`);
+      setDoc(
+        doc(db, 'users', user.uid),
+        {
+          telegramConnected: false,
+          telegramUsername: '',
+          telegramDisconnectedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
     }
   };
 
@@ -624,7 +651,6 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         storageSummary,
         telegramConnected,
         telegramUsername,
-        isSandboxTelegram,
         sessionToken,
         telegramSyncing,
         uploadTasks,
