@@ -12,6 +12,7 @@ interface PendingQrSession {
   apiId: number;
   apiHash: string;
   createdAt: number;
+  needs2FA?: boolean;
 }
 
 const globalForQr = globalThis as unknown as {
@@ -314,13 +315,29 @@ export class TelegramService {
   /**
    * Checks if user has scanned the QR code with their Telegram mobile app
    */
-  static async checkQrCodeLogin(qrId: string): Promise<TelegramAuthResponse> {
+  /**
+   * Checks if user has scanned the QR code with their Telegram mobile app
+   */
+  static async checkQrCodeLogin(qrId: string, password?: string): Promise<TelegramAuthResponse> {
     if (!qrId || !qrStore.has(qrId)) {
       return { success: false, error: 'QR login session has expired. Please refresh the QR code.' };
     }
 
     const sessionEntry = qrStore.get(qrId)!;
     const { client, apiId, apiHash } = sessionEntry;
+
+    // If session was already marked as needing 2FA password and password is provided
+    if (sessionEntry.needs2FA) {
+      if (password) {
+        return await this.verifyQr2FAPassword(sessionEntry, qrId, password);
+      }
+      return {
+        success: true,
+        authorized: false,
+        requires2FA: true,
+        message: 'Two-Step Verification (Cloud Password) required.',
+      };
+    }
 
     try {
       const result = await client.invoke(
@@ -331,6 +348,7 @@ export class TelegramService {
         })
       );
 
+      // Scenario 1: Directly authenticated on current DC
       if (result instanceof Api.auth.LoginTokenSuccess) {
         let authorizedUser: Api.User | null = null;
         if (result.authorization instanceof Api.auth.Authorization && result.authorization.user) {
@@ -368,20 +386,83 @@ export class TelegramService {
           telegramUserId,
           telegramUsername,
           sessionToken,
-          message: 'Successfully authenticated via QR Code!',
+          message: 'Successfully authenticated via Telegram QR Code!',
         };
       }
 
+      // Scenario 2: User scanned on mobile, Telegram requests Data Center Migration (DC Switch)
       if (result instanceof Api.auth.LoginTokenMigrateTo) {
-        // Need to migrate DC - keep waiting or let client handle
-        return {
-          success: true,
-          authorized: false,
-          message: 'Waiting for mobile confirmation...',
-        };
+        try {
+          // Reconnect to user's assigned Data Center (e.g. DC 5 for Asia/Singapore)
+          await (client as unknown as { _switchDC: (dc: number) => Promise<unknown> })._switchDC(result.dcId);
+
+          // Import login token on the migrated DC to finalize authentication
+          const migratedResult = await client.invoke(
+            new Api.auth.ImportLoginToken({
+              token: result.token,
+            })
+          );
+
+          if (migratedResult instanceof Api.auth.LoginTokenSuccess) {
+            let authorizedUser: Api.User | null = null;
+            if (migratedResult.authorization instanceof Api.auth.Authorization && migratedResult.authorization.user) {
+              authorizedUser = migratedResult.authorization.user as Api.User;
+            }
+
+            if (!authorizedUser) {
+              const me = await client.getMe();
+              if (me instanceof Api.User) {
+                authorizedUser = me;
+              }
+            }
+
+            const finalSessionString = ((client.session as unknown as StringSession).save() || '') as string;
+            await client.disconnect().catch(() => {});
+            qrStore.delete(qrId);
+
+            const telegramUserId = authorizedUser ? String(authorizedUser.id) : 'tg_user';
+            const telegramUsername = authorizedUser?.username || authorizedUser?.firstName || 'TelegramUser';
+
+            const sessionData: TelegramSessionPayload = {
+              apiId,
+              apiHash,
+              sessionString: finalSessionString,
+              telegramUserId,
+              telegramUsername,
+              connectedAt: new Date().toISOString(),
+            };
+
+            const sessionToken = encryptSession(JSON.stringify(sessionData));
+
+            return {
+              success: true,
+              authorized: true,
+              telegramUserId,
+              telegramUsername,
+              sessionToken,
+              message: 'Successfully authenticated via Telegram QR Code!',
+            };
+          }
+        } catch (migErr: unknown) {
+          const migErrMsg = migErr instanceof Error ? migErr.message : String(migErr);
+          if (migErrMsg.includes('SESSION_PASSWORD_NEEDED')) {
+            sessionEntry.needs2FA = true;
+            if (password) {
+              return await this.verifyQr2FAPassword(sessionEntry, qrId, password);
+            }
+            return {
+              success: true,
+              authorized: false,
+              requires2FA: true,
+              message: 'Mobile scanned successfully! Two-Step Verification (Cloud Password) required.',
+            };
+          }
+          console.error('Error during Telegram QR DC Migration:', migErr);
+          return { success: false, error: this.parseTelegramError(migErr) };
+        }
       }
 
-      // Still waiting for scan
+      // Scenario 3: Still waiting for scan on mobile
       return {
         success: true,
         authorized: false,
@@ -390,13 +471,81 @@ export class TelegramService {
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       if (errorMsg.includes('SESSION_PASSWORD_NEEDED')) {
+        sessionEntry.needs2FA = true;
+        if (password) {
+          return await this.verifyQr2FAPassword(sessionEntry, qrId, password);
+        }
         return {
-          success: false,
+          success: true,
+          authorized: false,
           requires2FA: true,
-          error: 'Your Telegram account has 2-Step Verification enabled. Please use Phone Login with 2FA password.',
+          message: 'Mobile scanned successfully! Two-Step Verification (Cloud Password) required.',
         };
       }
       return { success: false, error: this.parseTelegramError(err) };
+    }
+  }
+
+  /**
+   * Helper to verify 2FA Cloud Password after QR scan
+   */
+  private static async verifyQr2FAPassword(
+    sessionEntry: PendingQrSession,
+    qrId: string,
+    password: string
+  ): Promise<TelegramAuthResponse> {
+    const { client, apiId, apiHash } = sessionEntry;
+    try {
+      const passwordSrpResult = await client.invoke(new Api.account.GetPassword());
+      const passwordSrpCheck = await computeCheck(passwordSrpResult, password);
+      const res = await client.invoke(
+        new Api.auth.CheckPassword({
+          password: passwordSrpCheck,
+        })
+      );
+
+      let authorizedUser: Api.User | null = null;
+      if (res instanceof Api.auth.Authorization && res.user instanceof Api.User) {
+        authorizedUser = res.user;
+      } else {
+        const me = await client.getMe();
+        if (me instanceof Api.User) {
+          authorizedUser = me;
+        }
+      }
+
+      const finalSessionString = ((client.session as unknown as StringSession).save() || '') as string;
+      await client.disconnect().catch(() => {});
+      qrStore.delete(qrId);
+
+      const telegramUserId = authorizedUser ? String(authorizedUser.id) : 'tg_user';
+      const telegramUsername = authorizedUser?.username || authorizedUser?.firstName || 'TelegramUser';
+
+      const sessionData: TelegramSessionPayload = {
+        apiId,
+        apiHash,
+        sessionString: finalSessionString,
+        telegramUserId,
+        telegramUsername,
+        connectedAt: new Date().toISOString(),
+      };
+
+      const sessionToken = encryptSession(JSON.stringify(sessionData));
+
+      return {
+        success: true,
+        authorized: true,
+        telegramUserId,
+        telegramUsername,
+        sessionToken,
+        message: 'Successfully authenticated via Telegram QR Code and 2-Step Verification!',
+      };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        requires2FA: true,
+        error: this.parseTelegramError(err) || 'Incorrect 2-Step Verification password.',
+      };
     }
   }
 

@@ -73,8 +73,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'qr_status') {
-      const { qrId } = body;
-      const result = await TelegramService.checkQrCodeLogin(qrId);
+      const { qrId, password } = body;
+      const result = await TelegramService.checkQrCodeLogin(qrId, password);
       if (!result.success) {
         return NextResponse.json(
           {
@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         authorized: result.authorized,
+        requires2FA: result.requires2FA,
         telegramUserId: result.telegramUserId,
         telegramUsername: result.telegramUsername,
         sessionToken: result.sessionToken,

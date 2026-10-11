@@ -55,6 +55,12 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrExpired, setQrExpired] = useState(false);
+  const [qrStatusText, setQrStatusText] = useState('Waiting for scan on Telegram mobile app...');
+  const [qrScanned, setQrScanned] = useState(false);
+  const [qrRequires2FA, setQrRequires2FA] = useState(false);
+  const [qrPassword, setQrPassword] = useState('');
+  const [qrPasswordLoading, setQrPasswordLoading] = useState(false);
+  const [qrShowPassword, setQrShowPassword] = useState(false);
   const qrPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Common UI states
@@ -76,6 +82,10 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
     stopQrPolling();
     setQrLoading(true);
     setQrExpired(false);
+    setQrScanned(false);
+    setQrRequires2FA(false);
+    setQrPassword('');
+    setQrStatusText('Generating Telegram QR code...');
     setError(null);
 
     try {
@@ -89,6 +99,7 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
       if (data.success && data.qrId && data.qrCodeDataUrl) {
         setQrId(data.qrId);
         setQrCodeDataUrl(data.qrCodeDataUrl);
+        setQrStatusText('Waiting for scan on Telegram mobile app...');
       } else {
         setError(data.error || 'Failed to generate Telegram QR code. Try Phone Login.');
       }
@@ -101,7 +112,7 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
 
   // Start polling when qrId is available
   useEffect(() => {
-    if (activeTab !== 'qr' || !qrId || qrExpired) {
+    if (activeTab !== 'qr' || !qrId || qrExpired || qrRequires2FA) {
       stopQrPolling();
       return;
     }
@@ -117,18 +128,30 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
 
         if (data.success && data.authorized && data.sessionToken) {
           stopQrPolling();
+          setQrScanned(true);
+          setQrStatusText('Connected! Setting up your cloud drive...');
+          setSuccessMessage('Telegram drive connected successfully!');
           connectTelegramSuccess(
             data.sessionToken,
             data.telegramUsername || 'TelegramUser'
           );
-          setSuccessMessage('Telegram connected successfully via QR code!');
           setTimeout(() => {
             onClose();
           }, 1200);
+        } else if (data.requires2FA) {
+          stopQrPolling();
+          setQrScanned(true);
+          setQrRequires2FA(true);
+          setQrStatusText('Scanned! Enter your 2-Step Verification password.');
+        } else if (data.message && data.message.includes('Waiting for mobile confirmation')) {
+          setQrScanned(true);
+          setQrStatusText('Scanned on phone! Establishing encrypted drive session...');
         } else if (!data.success) {
           if (data.error && data.error.includes('expired')) {
             setQrExpired(true);
             stopQrPolling();
+          } else if (data.error) {
+            setError(data.error);
           }
         }
       } catch {
@@ -136,12 +159,50 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
       }
     };
 
-    qrPollingRef.current = setInterval(pollStatus, 2500);
+    qrPollingRef.current = setInterval(pollStatus, 2000);
 
     return () => {
       stopQrPolling();
     };
-  }, [activeTab, qrId, qrExpired, stopQrPolling, connectTelegramSuccess, onClose]);
+  }, [activeTab, qrId, qrExpired, qrRequires2FA, stopQrPolling, connectTelegramSuccess, onClose]);
+
+  const handleQrSubmit2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!qrPassword.trim()) {
+      setError('Please enter your 2-Step Verification password.');
+      return;
+    }
+    setQrPasswordLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/telegram/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'qr_status',
+          qrId,
+          password: qrPassword.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.authorized && data.sessionToken) {
+        setSuccessMessage('Telegram drive connected successfully!');
+        connectTelegramSuccess(
+          data.sessionToken,
+          data.telegramUsername || 'TelegramUser'
+        );
+        setTimeout(() => {
+          onClose();
+        }, 1200);
+      } else {
+        setError(data.error || 'Incorrect 2-Step Verification password. Please try again.');
+      }
+    } catch {
+      setError('Network error while verifying 2FA password.');
+    } finally {
+      setQrPasswordLoading(false);
+    }
+  };
 
 
   // Clean up timer on unmount
@@ -589,9 +650,9 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
             {/* TAB 2: QR CODE LOGIN */}
             {activeTab === 'qr' && (
               <div className="flex flex-col items-center py-2 space-y-4 text-center">
-                <div className="relative p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-center min-h-[250px] min-w-[250px]">
+                <div className="relative p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-center min-h-[250px] min-w-[250px] w-full max-w-[280px]">
                   {qrLoading ? (
-                    <div className="flex flex-col items-center gap-2 text-slate-500">
+                    <div className="flex flex-col items-center gap-2 text-slate-500 py-8">
                       <RefreshCw className="h-7 w-7 text-sky-600 animate-spin" />
                       <span className="text-xs font-medium">Generating Telegram QR code...</span>
                     </div>
@@ -610,20 +671,29 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
                       </button>
                     </div>
                   ) : qrCodeDataUrl ? (
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center w-full">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={qrCodeDataUrl}
                         alt="Telegram QR Login"
-                        className="w-56 h-56 rounded-lg object-contain"
+                        className={`w-52 h-52 rounded-lg object-contain transition-opacity ${
+                          qrScanned ? 'opacity-40' : 'opacity-100'
+                        }`}
                       />
-                      <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-500 font-medium">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
-                        </span>
-                        <span>Waiting for scan on Telegram mobile app...</span>
-                      </div>
+                      {qrScanned && !qrRequires2FA ? (
+                        <div className="mt-3 flex items-center justify-center gap-2 p-2 bg-sky-50 border border-sky-200 rounded-xl text-sky-800 text-xs font-medium w-full">
+                          <RefreshCw className="h-3.5 w-3.5 text-sky-600 animate-spin" />
+                          <span>{qrStatusText}</span>
+                        </div>
+                      ) : (
+                        <div className="mt-2.5 flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+                          </span>
+                          <span>{qrStatusText}</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <button
@@ -635,6 +705,53 @@ export function ConnectTelegramModal({ onClose }: ConnectTelegramModalProps) {
                     </button>
                   )}
                 </div>
+
+                {/* 2FA Password Prompt if user account requires it */}
+                {qrRequires2FA && (
+                  <form onSubmit={handleQrSubmit2FA} className="w-full text-left p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-3">
+                    <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs">
+                      <Lock className="h-4 w-4 text-amber-600" />
+                      <span>2-Step Verification Password Required</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-normal">
+                      Your mobile device confirmed the link! Enter your Telegram 2FA cloud password below to complete linking.
+                    </p>
+                    <div className="relative">
+                      <input
+                        type={qrShowPassword ? 'text' : 'password'}
+                        required
+                        value={qrPassword}
+                        onChange={(e) => setQrPassword(e.target.value)}
+                        placeholder="Enter your Telegram 2FA password"
+                        className="w-full pl-3.5 pr-10 py-2.5 text-xs border border-amber-300 rounded-xl bg-white text-slate-900 focus:outline-none focus:border-amber-500 font-medium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setQrShowPassword(!qrShowPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                      >
+                        {qrShowPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={qrPasswordLoading}
+                      className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-colors disabled:opacity-50"
+                    >
+                      {qrPasswordLoading ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          <span>Verifying Password...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Complete Connection</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
 
                 {/* 3 Step Instruction Guide */}
                 <div className="w-full text-left bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs text-slate-700">
