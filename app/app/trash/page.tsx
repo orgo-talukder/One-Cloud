@@ -36,9 +36,9 @@ export default function TrashPage() {
   } | null>(null);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 transition-colors">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-100">
             <Trash2 className="h-4 w-4" />

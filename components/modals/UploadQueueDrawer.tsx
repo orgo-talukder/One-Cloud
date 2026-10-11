@@ -24,7 +24,7 @@ export function UploadQueueDrawer() {
   ).length;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-80 sm:w-96 rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden text-slate-800 transition-all">
+    <div className="fixed bottom-4 right-4 z-40 w-80 sm:w-96 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-slate-800 dark:text-slate-100 transition-all">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
         <div className="flex items-center gap-2">

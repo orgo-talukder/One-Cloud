@@ -40,7 +40,7 @@ export default function DriveAppLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <AppSidebar />

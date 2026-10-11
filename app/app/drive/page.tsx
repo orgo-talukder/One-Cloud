@@ -58,7 +58,7 @@ export default function MyDrivePage() {
   }, [files, currentFolderId, searchQuery, fileTypeFilter, sortOption]);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 transition-colors">
       <Toolbar />
       <div className="flex-1 overflow-y-auto">
         <FileList
