@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile, connection status, and aggregate storage metrics",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid"]
+    },
+    "Folder": {
+      "title": "Folder",
+      "description": "Folder hierarchy metadata for personal drive organization",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 255 },
+        "parentFolderId": { "type": "string" },
+        "isStarred": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["active", "trashed"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "status"]
+    },
+    "File": {
+      "title": "File",
+      "description": "File metadata record pointing to Telegram Saved Messages document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 255 },
+        "mimeType": { "type": "string" },
+        "extension": { "type": "string" },
+        "fileSizeBytes": { "type": "number" },
+        "parentFolderId": { "type": "string" },
+        "isStarred": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["active", "trashed", "deleted"] },
+        "telegramChatId": { "type": "string" },
+        "telegramMessageId": { "type": "number" },
+        "uploadedAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "fileSizeBytes", "status", "telegramMessageId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and storage summary document"
+    },
+    "/users/{userId}/folders/{folderId}": {
+      "schema": "Folder",
+      "description": "Folder records for nested file organization"
+    },
+    "/users/{userId}/files/{fileId}": {
+      "schema": "File",
+      "description": "File metadata records pointing to Telegram Saved Messages"
+    }
+  }
+}

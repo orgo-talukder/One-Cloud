@@ -1,0 +1,6 @@
+{
+  "name": "One Cloud",
+  "description": "A personal cloud drive powered by your Telegram account. Store, organize, and access your files from the web.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

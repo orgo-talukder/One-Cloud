@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // User document and private subcollections
+    match /users/{userId} {
+      allow get, update: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow delete: if isOwner(userId);
+
+      // Files subcollection
+      match /files/{fileId} {
+        allow read, write: if isOwner(userId) && isValidId(fileId);
+      }
+
+      // Folders subcollection
+      match /folders/{folderId} {
+        allow read, write: if isOwner(userId) && isValidId(folderId);
+      }
+
+      // Upload tasks
+      match /uploadTasks/{taskId} {
+        allow read, write: if isOwner(userId) && isValidId(taskId);
+      }
+
+      // Activity logs
+      match /activity/{activityId} {
+        allow read, create: if isOwner(userId) && isValidId(activityId);
+      }
+    }
+  }
+}
