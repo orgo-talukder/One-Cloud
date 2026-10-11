@@ -45,4 +45,4 @@ export interface DriveStorageSummary {
 
 export type ViewMode = 'grid' | 'list';
 export type SortOption = 'name_asc' | 'date_desc' | 'size_desc' | 'size_asc';
-export type FileTypeFilter = 'all' | 'image' | 'video' | 'audio' | 'pdf' | 'document' | 'archive';
+export type FileTypeFilter = 'all' | 'image' | 'video' | 'audio' | 'pdf' | 'document' | 'archive' | 'other';
