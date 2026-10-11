@@ -11,19 +11,18 @@ export interface TelegramSessionPayload {
   sessionString: string;
   telegramUserId: string;
   telegramUsername: string;
-  phone: string;
+  phone?: string;
   connectedAt: string;
 }
 
 export interface TelegramAuthRequest {
-  action: 'send_code' | 'verify_code' | 'disconnect';
+  action: 'send_code' | 'verify_code' | 'qr_init' | 'qr_check' | 'disconnect';
   phone?: string;
-  apiId?: string | number;
-  apiHash?: string;
   code?: string;
   password?: string;
   phoneCodeHash?: string;
   pendingSession?: string;
+  qrId?: string;
 }
 
 export interface TelegramAuthResponse {
@@ -34,6 +33,9 @@ export interface TelegramAuthResponse {
   telegramUsername?: string;
   sessionToken?: string;
   requires2FA?: boolean;
+  qrId?: string;
+  qrCodeDataUrl?: string;
+  authorized?: boolean;
   message?: string;
   error?: string;
 }

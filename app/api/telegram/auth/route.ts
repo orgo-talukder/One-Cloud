@@ -58,6 +58,44 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (action === 'qr_init') {
+      const result = await TelegramService.initQrCodeLogin();
+      if (!result.success) {
+        return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        qrId: result.qrId,
+        qrCodeDataUrl: result.qrCodeDataUrl,
+        message: result.message,
+      });
+    }
+
+    if (action === 'qr_status') {
+      const { qrId } = body;
+      const result = await TelegramService.checkQrCodeLogin(qrId);
+      if (!result.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            requires2FA: result.requires2FA,
+            error: result.error,
+          },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        authorized: result.authorized,
+        telegramUserId: result.telegramUserId,
+        telegramUsername: result.telegramUsername,
+        sessionToken: result.sessionToken,
+        message: result.message,
+      });
+    }
+
     if (action === 'disconnect') {
       return NextResponse.json({
         success: true,

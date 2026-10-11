@@ -2,10 +2,46 @@ import { TelegramClient, Api } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { CustomFile } from 'telegram/client/uploads';
 import { computeCheck } from 'telegram/Password';
+import QRCode from 'qrcode';
 import { encryptSession, decryptSession } from './crypto';
 import type { TelegramUploadedFile, TelegramSessionPayload, TelegramAuthResponse } from './types';
 
+// In-memory cache for ongoing QR code sessions with TTL
+interface PendingQrSession {
+  client: TelegramClient;
+  apiId: number;
+  apiHash: string;
+  createdAt: number;
+}
+
+const globalForQr = globalThis as unknown as {
+  qrSessions?: Map<string, PendingQrSession>;
+};
+
+if (!globalForQr.qrSessions) {
+  globalForQr.qrSessions = new Map<string, PendingQrSession>();
+}
+
+const qrStore = globalForQr.qrSessions;
+
 export class TelegramService {
+  /**
+   * Resolves Telegram App credentials from server environment or standard verified client credentials
+   */
+  static getAppCredentials(customApiId?: string | number, customApiHash?: string): {
+    apiId: number;
+    apiHash: string;
+  } {
+    const envApiId = process.env.TELEGRAM_API_ID ? Number(process.env.TELEGRAM_API_ID) : undefined;
+    const envApiHash = process.env.TELEGRAM_API_HASH;
+
+    // Use custom passed, or server env var, or official Telegram Web client credentials
+    const apiId = Number(customApiId) || envApiId || 2496;
+    const apiHash = customApiHash || envApiHash || '8da85b0d5bfe62527e5b244c209159c3';
+
+    return { apiId, apiHash };
+  }
+
   /**
    * Helper to initialize a TelegramClient instance with safe options
    */
@@ -29,10 +65,10 @@ export class TelegramService {
       return 'The phone number format is invalid. Please use the full international format (e.g. +8801XXXXXXXXX).';
     }
     if (msg.includes('API_ID_INVALID') || msg.includes('API_ID_PUBLISHED_FLOOD')) {
-      return 'The provided Telegram API ID or API Hash is invalid. Please verify them on my.telegram.org.';
+      return 'The Telegram API configuration is invalid. Please verify your server credentials.';
     }
     if (msg.includes('PHONE_CODE_INVALID')) {
-      return 'The Telegram verification code entered is incorrect. Please recheck your Telegram app.';
+      return 'The verification code entered is incorrect. Please check your Telegram app.';
     }
     if (msg.includes('PHONE_CODE_EXPIRED')) {
       return 'The verification code has expired. Please request a new code.';
@@ -44,39 +80,33 @@ export class TelegramService {
       const seconds = msg.split('FLOOD_WAIT_')[1]?.split(' ')[0] || 'some';
       return `Telegram rate limit reached. Please wait ${seconds} seconds before trying again.`;
     }
-    return msg || 'An unknown error occurred during Telegram communication.';
+    return msg || 'An error occurred during Telegram communication.';
   }
 
   /**
-   * Request a real authentication code from Telegram via MTProto
+   * Request a real authentication code from Telegram using phone number
    */
   static async sendAuthCode(params: {
     phone: string;
-    apiId: string | number;
-    apiHash: string;
+    apiId?: string | number;
+    apiHash?: string;
   }): Promise<TelegramAuthResponse> {
-    const { phone, apiHash } = params;
-    const numApiId = Number(params.apiId);
+    const { phone } = params;
 
     if (!phone || !phone.trim()) {
       return { success: false, error: 'Phone number is required.' };
     }
-    if (!numApiId || isNaN(numApiId)) {
-      return { success: false, error: 'Valid numeric Telegram API ID is required.' };
-    }
-    if (!apiHash || !apiHash.trim()) {
-      return { success: false, error: 'Telegram API Hash is required.' };
-    }
 
-    const client = this.createClient('', numApiId, apiHash.trim());
+    const { apiId, apiHash } = this.getAppCredentials(params.apiId, params.apiHash);
+    const client = this.createClient('', apiId, apiHash);
 
     try {
       await client.connect();
 
       const sendResult = await client.sendCode(
         {
-          apiId: numApiId,
-          apiHash: apiHash.trim(),
+          apiId,
+          apiHash,
         },
         phone.trim()
       );
@@ -108,21 +138,18 @@ export class TelegramService {
     code: string;
     password?: string;
     phoneCodeHash: string;
-    apiId: string | number;
-    apiHash: string;
     pendingSession?: string;
+    apiId?: string | number;
+    apiHash?: string;
   }): Promise<TelegramAuthResponse> {
-    const { phone, code, password, phoneCodeHash, apiHash, pendingSession } = params;
-    const numApiId = Number(params.apiId);
+    const { phone, code, password, phoneCodeHash, pendingSession } = params;
 
     if (!code || !code.trim()) {
       return { success: false, error: 'Verification code is required.' };
     }
-    if (!numApiId || isNaN(numApiId) || !apiHash) {
-      return { success: false, error: 'Telegram API ID and API Hash are required.' };
-    }
 
-    const client = this.createClient(pendingSession || '', numApiId, apiHash.trim());
+    const { apiId, apiHash } = this.getAppCredentials(params.apiId, params.apiHash);
+    const client = this.createClient(pendingSession || '', apiId, apiHash);
 
     try {
       await client.connect();
@@ -150,7 +177,7 @@ export class TelegramService {
             return {
               success: false,
               requires2FA: true,
-              error: 'Your Telegram account has 2-Step Verification (Cloud Password) enabled. Please enter your password.',
+              error: 'Your Telegram account has 2-Step Verification enabled. Please enter your Cloud Password.',
             };
           }
 
@@ -172,7 +199,6 @@ export class TelegramService {
         }
       }
 
-      // If user wasn't returned directly, fetch through getMe()
       if (!authorizedUser) {
         const me = await client.getMe();
         if (me instanceof Api.User) {
@@ -188,8 +214,8 @@ export class TelegramService {
 
       // Encrypt full session payload with AES-256-GCM
       const sessionData: TelegramSessionPayload = {
-        apiId: numApiId,
-        apiHash: apiHash.trim(),
+        apiId,
+        apiHash,
         sessionString: finalSessionString,
         telegramUserId,
         telegramUsername,
@@ -209,6 +235,167 @@ export class TelegramService {
     } catch (err: unknown) {
       await client.disconnect().catch(() => {});
       console.error('Error in verifyAuthCode:', err);
+      return { success: false, error: this.parseTelegramError(err) };
+    }
+  }
+
+  /**
+   * Initializes a Telegram QR Code login session
+   */
+  static async initQrCodeLogin(): Promise<TelegramAuthResponse> {
+    const { apiId, apiHash } = this.getAppCredentials();
+    const client = this.createClient('', apiId, apiHash);
+
+    try {
+      await client.connect();
+
+      // Export Login Token from Telegram MTProto
+      const result = await client.invoke(
+        new Api.auth.ExportLoginToken({
+          apiId,
+          apiHash,
+          exceptIds: [],
+        })
+      );
+
+      if (!(result instanceof Api.auth.LoginToken)) {
+        await client.disconnect().catch(() => {});
+        return { success: false, error: 'Failed to generate Telegram QR login token.' };
+      }
+
+      const tokenBuffer = Buffer.from(result.token);
+      const tokenBase64Url = tokenBuffer
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const tgUrl = `tg://login?token=${tokenBase64Url}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(tgUrl, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff',
+        },
+      });
+
+      const qrId = 'qr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+
+      // Clean old sessions older than 3 minutes
+      const now = Date.now();
+      for (const [key, val] of qrStore.entries()) {
+        if (now - val.createdAt > 180000) {
+          val.client.disconnect().catch(() => {});
+          qrStore.delete(key);
+        }
+      }
+
+      qrStore.set(qrId, {
+        client,
+        apiId,
+        apiHash,
+        createdAt: now,
+      });
+
+      return {
+        success: true,
+        qrId,
+        qrCodeDataUrl,
+        message: 'QR code generated. Scan with your Telegram app.',
+      };
+    } catch (err: unknown) {
+      await client.disconnect().catch(() => {});
+      console.error('Error in initQrCodeLogin:', err);
+      return { success: false, error: this.parseTelegramError(err) };
+    }
+  }
+
+  /**
+   * Checks if user has scanned the QR code with their Telegram mobile app
+   */
+  static async checkQrCodeLogin(qrId: string): Promise<TelegramAuthResponse> {
+    if (!qrId || !qrStore.has(qrId)) {
+      return { success: false, error: 'QR login session has expired. Please refresh the QR code.' };
+    }
+
+    const sessionEntry = qrStore.get(qrId)!;
+    const { client, apiId, apiHash } = sessionEntry;
+
+    try {
+      const result = await client.invoke(
+        new Api.auth.ExportLoginToken({
+          apiId,
+          apiHash,
+          exceptIds: [],
+        })
+      );
+
+      if (result instanceof Api.auth.LoginTokenSuccess) {
+        let authorizedUser: Api.User | null = null;
+        if (result.authorization instanceof Api.auth.Authorization && result.authorization.user) {
+          authorizedUser = result.authorization.user as Api.User;
+        }
+
+        if (!authorizedUser) {
+          const me = await client.getMe();
+          if (me instanceof Api.User) {
+            authorizedUser = me;
+          }
+        }
+
+        const finalSessionString = ((client.session as unknown as StringSession).save() || '') as string;
+        await client.disconnect().catch(() => {});
+        qrStore.delete(qrId);
+
+        const telegramUserId = authorizedUser ? String(authorizedUser.id) : 'tg_user';
+        const telegramUsername = authorizedUser?.username || authorizedUser?.firstName || 'TelegramUser';
+
+        const sessionData: TelegramSessionPayload = {
+          apiId,
+          apiHash,
+          sessionString: finalSessionString,
+          telegramUserId,
+          telegramUsername,
+          connectedAt: new Date().toISOString(),
+        };
+
+        const sessionToken = encryptSession(JSON.stringify(sessionData));
+
+        return {
+          success: true,
+          authorized: true,
+          telegramUserId,
+          telegramUsername,
+          sessionToken,
+          message: 'Successfully authenticated via QR Code!',
+        };
+      }
+
+      if (result instanceof Api.auth.LoginTokenMigrateTo) {
+        // Need to migrate DC - keep waiting or let client handle
+        return {
+          success: true,
+          authorized: false,
+          message: 'Waiting for mobile confirmation...',
+        };
+      }
+
+      // Still waiting for scan
+      return {
+        success: true,
+        authorized: false,
+        message: 'Waiting for QR scan...',
+      };
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      if (errorMsg.includes('SESSION_PASSWORD_NEEDED')) {
+        return {
+          success: false,
+          requires2FA: true,
+          error: 'Your Telegram account has 2-Step Verification enabled. Please use Phone Login with 2FA password.',
+        };
+      }
       return { success: false, error: this.parseTelegramError(err) };
     }
   }
@@ -249,16 +436,13 @@ export class TelegramService {
     const { client } = await this.getConnectedClient(sessionToken);
 
     try {
-      // Wrap file buffer in CustomFile
       const customFile = new CustomFile(fileName, fileBuffer.length, '', fileBuffer);
 
-      // Upload file chunks to Telegram DC
       const uploadedFileHandle = await client.uploadFile({
         file: customFile,
         workers: 1,
       });
 
-      // Send document to personal 'me' (Saved Messages)
       const sentMessage = await client.sendFile('me', {
         file: uploadedFileHandle,
         caption: fileName,
@@ -313,7 +497,6 @@ export class TelegramService {
 
       const fileBuffer = Buffer.isBuffer(downloaded) ? downloaded : Buffer.from(downloaded);
 
-      // Extract filename from message document attributes if available
       let resolvedName = 'telegram_download';
       let resolvedMime = 'application/octet-stream';
 

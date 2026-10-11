@@ -1,99 +1,103 @@
-# Firebase Google Auth (auth/unauthorized-domain) ফিক্স ও ডায়নামিক এনভায়রনমেন্ট ভ্যারিয়েবল সাপোর্ট প্ল্যান
+# One Cloud — সহজ ও নিরবচ্ছিন্ন টেলিগ্রাম লগইন (Phone Number & QR Code Login)
 
-Google Authentication ব্যবহারের সময় `Error (auth/unauthorized-domain)` ত্রুটি নিরসন এবং Vercel বা অন্য কোনো কাস্টম হোস্টিংয়ে ব্যবহারকারীর নিজস্ব Firebase প্রজেক্ট (`one-cloud-6df65`) নির্বিঘ্নে ব্যবহারের জন্য ক্লায়েন্ট কনফিগারেশনকে গতিশীল (dynamic environment variables-driven) করার বাস্তবায়ন পরিকল্পনা।
+ব্যবহারকারীদের জন্য টেলিগ্রাম ড্রাইভ সংযোগকে শতভাগ সহজ, স্বজ্ঞাত ও ঝামেলামুক্ত করার বাস্তবায়ন পরিকল্পনা। সাধারণ ব্যবহারকারীকে কোনো প্রকার টেকনিক্যাল ইনপুট (`API ID`, `API Hash` বা `my.telegram.org`) দেখতে হবে না; তারা কেবল **"ফোন নম্বর + ওটিপি"** অথবা **"টেলিগ্রাম কিউআর কোড স্ক্যান"** ব্যবহার করে গুগল ড্রাইভ বা টেলিগ্রাম ওয়েবের মতোই ১ ক্লিকে তাদের ক্লাউড ড্রাইভ যুক্ত করতে পারবেন।
 
 > [!IMPORTANT] ব্যবহারকারীর রিভিউ ও নিশ্চিতকৃত সিদ্ধান্ত (Confirmed Decision):
-> - **পদ্ধতি নির্বাচন:** কোডবেস সরাসরি হার্ডকোডেড না করে ডায়নামিক এনভায়রনমেন্ট ভ্যারিয়েবল (`process.env.NEXT_PUBLIC_FIREBASE_*`) সাপোর্ট যুক্ত করা হবে, যাতে Vercel-এ সেট করা ব্যবহারকারীর নিজস্ব Firebase প্রজেক্ট (`one-cloud-6df65`) অগ্রাধিকার পায় এবং লোকাল/AI Studio পরিবেশে ডিফল্ট ফাইলে নিরাপদ ফলব্যাক থাকে।
-> - **অনুমোদন ব্যতিরেকে কোডিং না করার নিয়ম:** ব্যবহারকারী এই পরিকল্পনাটি দেখে 'Proceed' বাটনে ক্লিক করে অনুমোদন (Approved) দিলেই কেবল কোডিং শুরু করা হবে।
+> 1. **ইউজার ইন্টারফেস থেকে API ID ও API Hash সম্পূর্ণ অপসারণ:** কানেক্ট মডালে সাধারণ ব্যবহারকারীর জন্য কোনো জটিল টেকনিক্যাল ফিল্ড থাকবে না। সার্ভার স্বয়ংক্রিয়ভাবে ব্যাকগ্রাউন্ডে বিল্ট-ইন ক্রেডেনশিয়াল (`process.env.TELEGRAM_API_ID` ও `TELEGRAM_API_HASH`) ব্যবহার করবে।
+> 2. **উভয় সহজ মেথডের সমর্থন:**
+>    - **মেথড ১ (ফোন নম্বর):** ইউজার শুধু নিজের ফোন নম্বর লিখবেন (`+8801...`), টেলিগ্রাম অ্যাপে ওটিপি কোড যাবে এবং কোডটি দিলেই কানেক্ট হয়ে যাবে।
+>    - **মেথড ২ (টেলিগ্রাম কিউআর কোড স্ক্যান):** স্ক্রিনে টেলিগ্রাম কিউআর কোড প্রদর্শিত হবে; ইউজার তার মোবাইলের টেলিগ্রাম অ্যাপ থেকে *Settings > Devices > Link Desktop Device* দিয়ে স্ক্যান করলেই তাৎক্ষণিক কানেক্ট হয়ে যাবে।
+> 3. **অনুমোদন ব্যতিরেকে কোডিং না করার নিয়ম:** ব্যবহারকারী এই পরিকল্পনাটি দেখে 'Proceed' বাটনে ক্লিক করে অনুমোদন (Approved) দিলেই কেবল কোডিং শুরু করা হবে।
 
 ---
 
-## ১. সমস্যার উৎস ও কারণ বিশ্লেষণ (Root Cause Analysis)
+## ১. ইউজার এক্সপেরিয়েন্স রূপান্তর (UX Transformation)
 
-1. **প্রজেক্টের অমিল (Project Mismatch):**
-   - Vercel-এ চলমান অ্যাপ্লিকেশনটি (`one-cloud-zeta.vercel.app`) কোডের ভেতরে হার্ডকোডেড থাকা AI Studio প্রজেক্টের সাথে যুক্ত ছিল (`enhanced-chassis-wsmzh`)।
-   - কিন্তু ব্যবহারকারী Firebase Console-এ `one-cloud-zeta.vercel.app` ডোমেনটি Authorized Domains-এ যুক্ত করেছিলেন তার সম্পূর্ণ আলাদা নিজস্ব প্রজেক্ট **`one-cloud-6df65`**-এ।
-   - ফলে রিকোয়েস্ট যাচ্ছিল `enhanced-chassis-wsmzh`-এর কাছে, যেখানে Vercel ডোমেনটি অনুমোদিত ছিল না। তাই Firebase `auth/unauthorized-domain` এরর প্রদর্শন করছিল।
+### পূর্বের জটিল ফ্লো (❌ Bad UX):
+`my.telegram.org` এ যাও ➔ Developer App বানাও ➔ `api_id` কপি করো ➔ `api_hash` কপি করো ➔ ইনপুটে পেস্ট করো ➔ ফোন নম্বর দাও ➔ ওটিপি দাও। *(সাধারণ ব্যবহারকারীর জন্য অত্যন্ত বিরক্তিকর ও অনুপযোগী)*
 
-2. **এনভায়রনমেন্ট ভ্যারিয়েবল অবহেলা (Environment Variables Ignored):**
-   - `/lib/firebase/client.ts` ফাইলে কোনো `process.env.NEXT_PUBLIC_FIREBASE_*` চেক ছিল না; এটি কেবল সরাসরি `firebase-applet-config.json` ইমপোর্ট করছিল। ফলে Vercel ড্যাশবোর্ডে ভ্যারিয়েবল যুক্ত করা হলেও কোড তা রিড করছিল না।
-
-3. **ইউজার ফ্রেন্ডলি এরর বার্তার অভাব:**
-   - ব্রাউজারে র কোড `Error (auth/unauthorized-domain)` সরাসরি প্রদর্শন করছিল, যা সাধারণ ব্যবহারকারীর কাছে বোধগম্য নয়।
+### নতুন সহজ ফ্লো (✅ Pure Consumer UX):
+```
+                      ┌─────────────────────────────────┐
+                      │    Connect Telegram Cloud       │
+                      ├────────────────┬────────────────┤
+                      │ [📱 Phone OTP] │ [📷 QR Code]   │
+                      └────────┬───────┴────────┬───────┘
+                               │                │
+            ┌──────────────────┴──┐          ┌──┴──────────────────┐
+            ▼                     ▼          ▼                     ▼
+      ফোন নম্বর লিখুন           ওটিপি দিন    কিউআর কোড স্ক্যান করুন     স্বয়ংক্রিয়
+      (যেমন: +88017...)       (5-digit)    (Telegram App > Devices)    লগইন সফল!
+```
 
 ---
 
-## ২. আর্কিটেকচার ও কনফিগারেশন ফ্লো (Configuration Flow Diagram)
+## ২. কারিগরি আর্কিটেকচার (Technical Architecture)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                       FIREBASE CLIENT INITIALIZATION                        │
+│                             BROWSER MODAL UI                                │
+├──────────────────────────────────────┬──────────────────────────────────────┤
+│ Tab 1: Phone Login                   │ Tab 2: QR Code Login                 │
+│ • User enters phone number only      │ • Displays dynamic Telegram QR code  │
+│ • Submits to /api/telegram/auth      │ • Polls / checks login token state   │
+│ • Enters 5-digit code (+ optional 2FA)│ • Auto-connects on mobile app scan  │
+└──────────────────┬───────────────────┴──────────────────┬───────────────────┘
+                   │                                      │
+                   ▼                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          NEXT.JS SERVER API ROUTES                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ Check process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID                           │
-│                                                                             │
-│ ├── [YES: Vercel / Custom Env Set] ───────────────────────────────────────┐ │
-│ │   Use process.env.NEXT_PUBLIC_FIREBASE_* (Your 'one-cloud-6df65' Project)│ │
-│ │   • apiKey: NEXT_PUBLIC_FIREBASE_API_KEY                                 │ │
-│ │   • authDomain: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN                         │ │
-│ │   • projectId: NEXT_PUBLIC_FIREBASE_PROJECT_ID                           │ │
-│ │   • storageBucket: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET                   │ │
-│ │   • messagingSenderId: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID          │ │
-│ │   • appId: NEXT_PUBLIC_FIREBASE_APP_ID                                   │ │
-│ │                                                                          │ │
-│ └── [NO: Local Dev / AI Studio Default] ──────────────────────────────────┐│ │
-│     Fallback to firebase-applet-config.json                                ││ │
-│     (Safe fallback ensures app never crashes without env vars)             ││ │
-└───────────────────────────────────────────────────────────────────────────┴─┴─┘
-                                      │
-                                      ▼
-                        Initialize Firebase App & Auth
-                                      │
-                                      ▼
-      Google Sign-In Popup matches Authorized Domain on active project!
+│  /api/telegram/auth                                                         │
+│  • Reads TELEGRAM_API_ID & TELEGRAM_API_HASH from server environment        │
+│  • Includes verified official app defaults for out-of-the-box execution     │
+│  • Action 'send_code': Uses phone number directly via server credentials    │
+│  • Action 'verify_code': Completes user authentication and session save     │
+│  • Action 'qr_export' & 'qr_check': Generates and monitors MTProto QR token │
+└──────────────────┬──────────────────────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      TELEGRAM MTPROTO CLOUD STORAGE                         │
+│ • AES-256 Encrypted Session Token stored in user's profile                  │
+│ • Direct chunked binary file storage in personal Saved Messages             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ৩. প্রধান পরিবর্তনসমূহ (Key Changes to Implement)
+## ৩. প্রধান পরিবর্তনসমূহ (Key Components to Update)
 
-### ১. `/lib/firebase/client.ts` পুনঃলিখন:
-- কনফিগারেশন অবজেক্টটিকে ডায়নামিক করা:
-  ```ts
-  const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || defaultFileConfig.apiKey,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || defaultFileConfig.authDomain,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || defaultFileConfig.projectId,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || defaultFileConfig.storageBucket,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || defaultFileConfig.messagingSenderId,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || defaultFileConfig.appId,
-  };
-  ```
-- Firestore ডাটাবেস ইনিশিয়ালাইজেশনকে সুরক্ষিত রাখা (যদি কাস্টম ডাটাবেস আইডি ভ্যারিয়েবল দেওয়া থাকে তা গ্রহণ করবে, নতুবা ডিফল্ট ডাটাবেস ব্যবহার করবে)।
+### ১. কানেক্ট মডাল পুনঃডিজাইন (`/components/modals/ConnectTelegramModal.tsx`):
+- `API ID` এবং `API Hash` ইনপুট ফিল্ড ও `my.telegram.org` গাইড সম্পূর্ণ মুছে ফেলা।
+- দুটি পরিচ্ছন্ন ট্যাব:
+  1. **Phone Number (ওটিপি লগইন):** শুধু ফোন নম্বর ইনপুট এবং পরবর্তী ধাপে ওটিপি কোড ইনপুট।
+  2. **QR Code Scan (স্ক্যান লগইন):** বাস্তব কিউআর কোড কন্টেইনার এবং কীভাবে স্ক্যান করতে হবে তার ১ লাইনের ভিজ্যুয়াল গাইড (*Telegram Settings > Devices > Link Desktop Device*)।
+- কোনো টেকনিক্যাল জটিলতা থাকবে না।
 
-### ২. `/app/login/page.tsx` ও `/app/signup/page.tsx`-এ স্পষ্ট এরর হ্যান্ডলিং:
-- যদি Firebase থেকে `auth/unauthorized-domain` এরর আসে, তখন ইউজারকে স্পষ্ট নির্দেশনামূলক বার্তা দেখানো:
-  - *"This domain is not authorized for Google Sign-In in Firebase. Please add this domain to Authorized Domains in your Firebase Console under Authentication > Settings > Authorized domains."*
-- যাতে ডেভেলপার বা ব্যবহারকারী সাথে সাথে বুঝতে পারেন কোনো ডোমেন মিসিং আছে কিনা।
+### ২. টেলিগ্রাম সার্ভিস আপডেট (`/lib/telegram/service.ts`):
+- `TELEGRAM_API_ID` এবং `TELEGRAM_API_HASH` সার্ভার সাইডে স্বয়ংক্রিয়ভাবে হ্যান্ডেল করা:
+  - সার্ভারের এনভায়রনমেন্ট ভ্যারিয়েবল থাকলে তা ব্যবহার করবে, অন্যথায় বিল্ট-ইন সুরক্ষিত অফিসিয়াল টেলিগ্রাম ক্লায়েন্ট ক্রেডেনশিয়াল ফলব্যাক ব্যবহার করবে।
+- কিউআর কোড ভিত্তিক অথেনটিকেশনের জন্য মেথড যুক্ত করা:
+  - `exportQrCodeToken()`: টেলিগ্রাম থেকে রিয়েল লগইন টোকেন তৈরি করে ব্রাউজারের জন্য কিউআর কোড ডাটা প্রদান।
+  - `checkQrCodeLogin()`: ইউজার মোবাইলে স্ক্যান করলেই সাথে সাথে সেশন টোকেন তৈরি করে লগইন সম্পন্ন করা।
 
-### ৩. `.env.example` আপডেট:
-- Vercel-এ সেট করার জন্য সমস্ত প্রয়োজনীয় ভ্যারিয়েবলের স্পষ্ট ফরম্যাট ও গাইড যুক্ত করা।
+### ৩. API রাউট আপডেট (`/app/api/telegram/auth/route.ts`):
+- ফোন নম্বর দিয়ে কোড রিকোয়েস্ট করার ক্ষেত্রে ক্লায়েন্ট থেকে কোনো `apiId`/`apiHash` চাওয়ার প্রয়োজন হবে না; সার্ভার নিজেই তা যুক্ত করবে।
+- `qr_init` এবং `qr_status` অ্যাকশন হ্যান্ডলার যুক্ত করা।
 
----
-
-## ৪. ব্যবহারকারীর জন্য Vercel সেটআপ নির্দেশিকা (Action for You on Vercel)
-
-কোড পরিবর্তনের পর আপনার Vercel ড্যাশবোর্ডে নিচের ভ্যারিয়েবলগুলো যোগ করে রিডিপ্লয় (Redeploy) করতে হবে:
-1. `NEXT_PUBLIC_FIREBASE_API_KEY` = আপনার `one-cloud-6df65` প্রজেক্টের Web API Key
-2. `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` = `one-cloud-6df65.firebaseapp.com`
-3. `NEXT_PUBLIC_FIREBASE_PROJECT_ID` = `one-cloud-6df65`
-4. `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` = `one-cloud-6df65.firebasestorage.app`
-5. `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` = আপনার প্রজেক্টের Sender ID
-6. `NEXT_PUBLIC_FIREBASE_APP_ID` = আপনার Web App ID
+### ৪. কিউআর কোড ডিসপ্লে লাইব্রেরি:
+- কিউআর কোড ব্রাউজারে পরিষ্কারভাবে রেন্ডার করার জন্য হালকা ও নির্ভরযোগ্য SVG/Canvas কিউআর কোড ডিসপ্লে নিশ্চিত করা।
 
 ---
 
-## ৫. ধাপভিত্তিক বাস্তবায়ন রোডম্যাপ (Implementation Roadmap)
+## ৪. যাচাই ও গুণমান নিশ্চিতকরণ (Verification Plan)
 
-1. **ক্লায়েন্ট কনফিগারেশন আপডেট:** `/lib/firebase/client.ts` আপডেট করে ডায়নামিক এনভায়রনমেন্ট ভ্যারিয়েবল সাপোর্ট দেওয়া।
-2. **লগইন ও সাইনআপ পেজের এরর হ্যান্ডলার আপডেট:** `auth/unauthorized-domain` এর জন্য পরিষ্কার বার্তা প্রদান।
-3. **কম্পাইলেশন ও বিল্ড ভেরিফিকেশন:** `compile_applet` ও `lint_applet` চালিয়ে বিল্ড সফল নিশ্চিত করা।
+1. **ফোন নম্বর ফ্লো যাচাই:**
+   - মডালে শুধু ফোন নম্বর লিখে 'Request Code' চাপলে টেলিগ্রাম অ্যাপে ওটিপি যাবে।
+   - ওটিপি দিলে সেশন সফলভাবে তৈরি হবে এবং ড্রাইভ কানেক্ট হবে।
+2. **কিউআর কোড ফ্লো যাচাই:**
+   - কিউআর কোড ট্যাবে গেলে কিউআর কোড জেনারেট হবে।
+   - টেলিগ্রাম মোবাইল অ্যাপের Devices মেনু দিয়ে স্ক্যান করলে তৎক্ষণাৎ ড্রাইভ আনলক ও কানেক্ট হবে।
+3. **কম্পাইলেশন ও বিল্ড:**
+   - `compile_applet` এবং `lint_applet` চালিয়ে বিল্ড সফল নিশ্চিত করা।
