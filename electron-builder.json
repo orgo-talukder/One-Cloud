@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.onecloud.app",
+  "productName": "One Cloud",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "electron/**/*",
+    "package.json"
+  ],
+  "linux": {
+    "target": [
+      "deb",
+      "AppImage"
+    ],
+    "category": "Network;FileTransfer;Utility;",
+    "synopsis": "Ultra-Fast Encrypted Telegram Cloud Storage",
+    "description": "High-speed encrypted cloud drive with 16x parallel MTProto file transfers.",
+    "maintainer": "One Cloud Team <support@onecloud.app>",
+    "executableName": "one-cloud"
+  },
+  "deb": {
+    "priority": "optional",
+    "depends": [
+      "libnotify4",
+      "libsecret-1-0",
+      "libnss3",
+      "libatk-bridge2.0-0"
+    ]
+  }
+}

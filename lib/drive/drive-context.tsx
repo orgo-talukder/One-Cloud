@@ -560,6 +560,85 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     activeXhrsRef.current.set(task.id, new Set());
 
     const uploadStartTime = performance.now();
+
+    // 🖥️ Check if running inside Linux Desktop App (Direct 16x local MTProto Engine, no Vercel limit)
+    if (typeof window !== 'undefined' && window.electronBridge?.isDesktop) {
+      try {
+        setUploadTasks((prev) =>
+          prev.map((t) =>
+            t.id === task.id ? { ...t, status: 'uploading', progress: 5, error: undefined } : t
+          )
+        );
+
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i += 32768) {
+          binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 32768)));
+        }
+        const fileBufferBase64 = btoa(binary);
+
+        const unsubscribe = window.electronBridge.onProgress((data) => {
+          if (data.taskId === task.id) {
+            const now = performance.now();
+            const elapsed = Math.max(0.2, (now - uploadStartTime) / 1000);
+            const speed = Math.round(data.uploadedBytes / elapsed);
+            const remaining = Math.max(0, file.size - data.uploadedBytes);
+            const eta = speed > 0 ? Math.ceil(remaining / speed) : null;
+            setUploadTasks((prev) =>
+              prev.map((t) =>
+                t.id === task.id
+                  ? {
+                      ...t,
+                      progress: data.progress,
+                      uploadedBytes: data.uploadedBytes,
+                      speedBytesPerSec: speed,
+                      etaSeconds: eta,
+                    }
+                  : t
+              )
+            );
+          }
+        });
+
+        const res = await window.electronBridge.uploadFile({
+          taskId: task.id,
+          sessionToken,
+          fileName: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          fileBufferBase64,
+          parentFolderId: targetFolderId,
+        });
+
+        unsubscribe();
+
+        if (res.success && res.file) {
+          await saveUploadedFileMetadata(res.file);
+          setUploadTasks((prev) =>
+            prev.map((t) =>
+              t.id === task.id
+                ? {
+                    ...t,
+                    status: 'completed',
+                    progress: 100,
+                    uploadedBytes: file.size,
+                    etaSeconds: 0,
+                  }
+                : t
+            )
+          );
+        }
+        return;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Desktop upload failed';
+        setUploadTasks((prev) =>
+          prev.map((t) => (t.id === task.id ? { ...t, status: 'failed', error: msg } : t))
+        );
+        return;
+      }
+    }
+
     let lastUiUpdateTime = 0;
 
     // Sliding window of (timestampMs, confirmedAndInFlightBytes) for real-time speed & ETA
@@ -1050,6 +1129,73 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
     const totalSize = Math.max(1, fileItem.fileSizeBytes || task.size || 1);
     const downloadStartTime = performance.now();
+
+    // 🖥️ Check if running inside Linux Desktop App (Direct 16x local MTProto Engine to ~/Downloads)
+    if (typeof window !== 'undefined' && window.electronBridge?.isDesktop) {
+      try {
+        setUploadTasks((prev) =>
+          prev.map((t) =>
+            t.id === task.id ? { ...t, status: 'uploading', progress: 5, error: undefined } : t
+          )
+        );
+
+        const unsubscribe = window.electronBridge.onProgress((data) => {
+          if (data.taskId === task.id) {
+            const now = performance.now();
+            const elapsed = Math.max(0.2, (now - downloadStartTime) / 1000);
+            const speed = Math.round(data.uploadedBytes / elapsed);
+            const remaining = Math.max(0, totalSize - data.uploadedBytes);
+            const eta = speed > 0 ? Math.ceil(remaining / speed) : null;
+            setUploadTasks((prev) =>
+              prev.map((t) =>
+                t.id === task.id
+                  ? {
+                      ...t,
+                      progress: data.progress,
+                      uploadedBytes: data.uploadedBytes,
+                      speedBytesPerSec: speed,
+                      etaSeconds: eta,
+                    }
+                  : t
+              )
+            );
+          }
+        });
+
+        const res = await window.electronBridge.downloadFile({
+          taskId: task.id,
+          sessionToken,
+          messageId: fileItem.telegramMessageId,
+          fileName: fileItem.name,
+        });
+
+        unsubscribe();
+
+        if (res.success) {
+          setUploadTasks((prev) =>
+            prev.map((t) =>
+              t.id === task.id
+                ? {
+                    ...t,
+                    status: 'completed',
+                    progress: 100,
+                    uploadedBytes: totalSize,
+                    etaSeconds: 0,
+                  }
+                : t
+            )
+          );
+        }
+        return;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Desktop download failed';
+        setUploadTasks((prev) =>
+          prev.map((t) => (t.id === task.id ? { ...t, status: 'failed', error: msg } : t))
+        );
+        return;
+      }
+    }
+
     let lastUiUpdateTime = 0;
 
     const speedSamples: { timeMs: number; bytes: number }[] = [
@@ -1366,6 +1512,9 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   const dismissUpload = (taskId: string) => {
     cancelledTasksRef.current.add(taskId);
     abortTaskXhrs(taskId);
+    if (typeof window !== 'undefined' && window.electronBridge?.isDesktop) {
+      window.electronBridge.cancelTransfer(taskId).catch(() => {});
+    }
     setUploadTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
@@ -1376,6 +1525,9 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   const cancelUpload = (taskId: string) => {
     cancelledTasksRef.current.add(taskId);
     abortTaskXhrs(taskId);
+    if (typeof window !== 'undefined' && window.electronBridge?.isDesktop) {
+      window.electronBridge.cancelTransfer(taskId).catch(() => {});
+    }
     setUploadTasks((prev) =>
       prev.map((t) =>
         t.id === taskId

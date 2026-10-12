@@ -1,0 +1,7 @@
+{
+  "_comment": "Rename or copy this file to 'electron/app-config.json' before running 'npm run build:linux'",
+  "appUrl": "https://your-one-cloud.vercel.app",
+  "telegramApiId": 2496,
+  "telegramApiHash": "8da85b0d5bfe62527e5b244c209159c3",
+  "sessionSecretKey": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

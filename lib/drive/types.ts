@@ -53,3 +53,41 @@ export interface DriveStorageSummary {
 export type ViewMode = 'grid' | 'list';
 export type SortOption = 'name_asc' | 'date_desc' | 'size_desc' | 'size_asc';
 export type FileTypeFilter = 'all' | 'image' | 'video' | 'audio' | 'pdf' | 'document' | 'archive' | 'other';
+
+export interface ElectronBridge {
+  isDesktop: boolean;
+  platform: string;
+  getDownloadsPath: () => Promise<string>;
+  uploadFile: (params: {
+    taskId: string;
+    sessionToken: string;
+    fileName: string;
+    mimeType: string;
+    fileBufferBase64?: string;
+    filePath?: string;
+    parentFolderId?: string | null;
+  }) => Promise<{ success: boolean; file: FileItem }>;
+  downloadFile: (params: {
+    taskId: string;
+    sessionToken: string;
+    messageId: number;
+    fileName: string;
+  }) => Promise<{ success: boolean; savedPath: string }>;
+  cancelTransfer: (taskId: string) => Promise<boolean>;
+  onProgress: (
+    callback: (data: {
+      taskId: string;
+      progress: number;
+      uploadedBytes: number;
+      totalBytes: number;
+    }) => void
+  ) => () => void;
+  saveCredentials: (creds: { apiId: string; apiHash: string }) => Promise<{ success: boolean; error?: string }>;
+  loadCredentials: () => Promise<{ apiId: string; apiHash: string }>;
+}
+
+declare global {
+  interface Window {
+    electronBridge?: ElectronBridge;
+  }
+}

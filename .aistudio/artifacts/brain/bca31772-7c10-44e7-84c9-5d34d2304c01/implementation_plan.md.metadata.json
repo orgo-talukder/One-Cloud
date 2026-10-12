@@ -1,6 +1,6 @@
 {
-  "summary":  "বাংলা ভাষায় আল্ট্রা-ফাস্ট আপলোড ও ডাউনলোড অপ্টিমাইজেশন প্ল্যান: Vercel Singapore (sin1) রিজিয়ন কনফিগারেশন, 4x Parallel Workers + 8x Sub-Part Burst আপলোড, এবং IDM-স্টাইল প্যারালাল চাঙ্কড ডাউনলোড ও রিয়েল-টাইম স্পিড/ETA ট্র্যাকার + HTTP ReadableStream স্ট্রিমিং।",
-  "updatedAt":  "2026-10-12T12:31:26.319031229Z",
-  "requestFeedback":  true,
-  "userFacing":  true
+  "summary": "One Cloud Linux Desktop (.deb) হাইব্রিড আর্কিটেকচার ইমপ্লিমেন্টেশন প্ল্যান: Electron ভিত্তিক নেটিভ লিনাক্স ইনস্টলার (.deb), ডিরেক্ট লোকাল MTProto 16x প্যারালাল ট্রান্সফার ইঞ্জিন (সার্ভার লিমিট ছাড়া আনলিমিটেড সাইজ), ওয়েব বনাম ডেস্কটপ অটো-ডিটেকশন, এবং লিনাক্স ~/Downloads ডিরেক্টরি সেভ ও নেটিভ নোটিফিকেশন।",
+  "updatedAt": "2026-10-12T13:57:40.560451775Z",
+  "requestFeedback": true,
+  "userFacing": true
 }
