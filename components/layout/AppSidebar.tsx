@@ -25,6 +25,7 @@ import { useAuth } from '@/lib/firebase/auth-context';
 import { formatBytes } from '@/lib/drive/storage-calc';
 import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { ConnectTelegramModal } from '@/components/modals/ConnectTelegramModal';
+import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 
 interface AppSidebarProps {
   onNavigate?: () => void;
@@ -176,6 +177,9 @@ export function AppSidebar({ onNavigate, onClose }: AppSidebarProps = {}) {
 
         {/* Bottom Section: Storage Box, Telegram Status & Profile Card */}
         <div className="p-3.5 flex flex-col gap-2.5 border-t border-border/40 mt-auto shrink-0">
+          {/* PWA Install Button */}
+          <PWAInstallButton variant="sidebar" />
+
           {/* Storage card */}
           <div className="p-3 bg-surface border border-border rounded-xl flex flex-col gap-2">
             <div className="flex items-center justify-between">

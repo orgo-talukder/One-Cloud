@@ -27,6 +27,7 @@ import { useAuth } from '@/lib/firebase/auth-context';
 import { useTheme } from '@/lib/theme-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { ConnectTelegramModal } from '@/components/modals/ConnectTelegramModal';
+import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -798,6 +799,19 @@ export default function SettingsPage() {
                 >
                   <span>Light (System)</span>
                 </button>
+              </div>
+            </div>
+
+            {/* PWA App Installation Row */}
+            <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-text-primary">Install Web App (PWA)</span>
+                <span className="text-xs text-text-muted">
+                  Install One Cloud as a standalone app on your home screen or desktop with offline support.
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <PWAInstallButton variant="button" />
               </div>
             </div>
 

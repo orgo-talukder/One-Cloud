@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Cloud, ArrowRight, HardDrive, Menu, X, ShieldCheck, HelpCircle, Info, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/auth-context';
+import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 
 export function Navbar() {
   const { user } = useAuth();
@@ -57,6 +58,7 @@ export function Navbar() {
 
         {/* Action Buttons & Mobile Hamburger Toggle */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <PWAInstallButton variant="badge" className="hidden sm:inline-flex" />
           {user ? (
             <Link
               href="/app"

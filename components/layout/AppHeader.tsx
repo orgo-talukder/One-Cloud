@@ -27,6 +27,7 @@ import { useAuth } from '@/lib/firebase/auth-context';
 import { useTheme } from '@/lib/theme-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
+import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
 import Link from 'next/link';
 
@@ -291,6 +292,9 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
               <span>All files synced</span>
             </div>
           )}
+
+          {/* In-app PWA Install Button */}
+          <PWAInstallButton variant="button" className="hidden md:inline-flex" />
 
           {/* Theme Switcher in Header (Light / Dark / System) */}
           <div className="relative">
