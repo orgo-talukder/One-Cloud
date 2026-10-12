@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
-  Cloud,
   ArrowRight,
   ArrowLeft,
   Lock,
@@ -87,8 +87,16 @@ export default function SignUpPage() {
       {/* Header */}
       <header className="w-full py-6 px-6 lg:px-12 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-lg bg-surface flex items-center justify-center text-primary">
-            <Cloud className="w-5 h-5 text-primary" />
+          <div className="relative w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
+            <Image
+              src="/website_logo.png"
+              alt="One Cloud"
+              width={36}
+              height={36}
+              priority
+              className="w-9 h-9 object-contain group-hover:scale-105 transition-transform"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-headline-sm text-headline-sm text-text-primary tracking-tight font-semibold">
@@ -114,8 +122,15 @@ export default function SignUpPage() {
           <div className="w-full max-w-[460px] bg-surface rounded-[14px] p-7 sm:p-8 flex flex-col shadow-xl relative border border-border">
             {/* Brand Header */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-surface-raised flex items-center justify-center text-primary-container border border-border">
-                <Cloud className="w-6 h-6 text-primary" />
+              <div className="relative w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
+                <Image
+                  src="/website_logo.png"
+                  alt="One Cloud"
+                  width={36}
+                  height={36}
+                  className="w-9 h-9 object-contain"
+                  referrerPolicy="no-referrer"
+                />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">

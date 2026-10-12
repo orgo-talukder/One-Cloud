@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import {
   Search,
   RefreshCw,
@@ -27,7 +28,6 @@ import { useAuth } from '@/lib/firebase/auth-context';
 import { useTheme } from '@/lib/theme-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
-import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
 import Link from 'next/link';
 
@@ -152,12 +152,25 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
           {onToggleMobileMenu && (
             <button
               onClick={onToggleMobileMenu}
-              className="md:hidden p-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface-hover"
+              className="md:hidden p-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface-hover shrink-0 cursor-pointer"
               aria-label="Toggle Navigation"
             >
               <Menu className="h-5 w-5" />
             </button>
           )}
+
+          {/* Mobile Brand Logo */}
+          <Link href="/app" className="flex items-center gap-2 md:hidden shrink-0 group">
+            <Image
+              src="/website_logo.png"
+              alt="One Cloud"
+              width={28}
+              height={28}
+              priority
+              className="w-7 h-7 object-contain group-hover:scale-105 transition-transform"
+              referrerPolicy="no-referrer"
+            />
+          </Link>
 
           {/* YouTube / Google Drive Style Live Auto-Suggest Search Bar */}
           <div ref={searchContainerRef} className="relative w-full flex items-center">
@@ -292,9 +305,6 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
               <span>All files synced</span>
             </div>
           )}
-
-          {/* In-app PWA Install Button */}
-          <PWAInstallButton variant="button" className="hidden md:inline-flex" />
 
           {/* Theme Switcher in Header (Light / Dark / System) */}
           <div className="relative">

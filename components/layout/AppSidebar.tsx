@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Cloud,
@@ -25,7 +26,6 @@ import { useAuth } from '@/lib/firebase/auth-context';
 import { formatBytes } from '@/lib/drive/storage-calc';
 import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { ConnectTelegramModal } from '@/components/modals/ConnectTelegramModal';
-import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 
 interface AppSidebarProps {
   onNavigate?: () => void;
@@ -72,9 +72,17 @@ export function AppSidebar({ onNavigate, onClose }: AppSidebarProps = {}) {
         <div className="flex flex-col">
           {/* Brand Header */}
           <div className="h-[68px] px-4 flex items-center justify-between border-b border-border/40 shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-primary border border-border/60 shrink-0">
-                <Cloud className="w-4 h-4 text-primary" />
+            <Link href="/app" className="flex items-center gap-3 min-w-0 group cursor-pointer">
+              <div className="relative w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+                <Image
+                  src="/website_logo.png"
+                  alt="One Cloud"
+                  width={32}
+                  height={32}
+                  priority
+                  className="w-8 h-8 object-contain group-hover:scale-105 transition-transform duration-200"
+                  referrerPolicy="no-referrer"
+                />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-semibold text-text-primary tracking-tight text-[15px] leading-tight truncate">
@@ -84,7 +92,7 @@ export function AppSidebar({ onNavigate, onClose }: AppSidebarProps = {}) {
                   Telegram Drive
                 </span>
               </div>
-            </div>
+            </Link>
             {onClose && (
               <button
                 type="button"
@@ -177,9 +185,6 @@ export function AppSidebar({ onNavigate, onClose }: AppSidebarProps = {}) {
 
         {/* Bottom Section: Storage Box, Telegram Status & Profile Card */}
         <div className="p-3.5 flex flex-col gap-2.5 border-t border-border/40 mt-auto shrink-0">
-          {/* PWA Install Button */}
-          <PWAInstallButton variant="sidebar" />
-
           {/* Storage card */}
           <div className="p-3 bg-surface border border-border rounded-xl flex flex-col gap-2">
             <div className="flex items-center justify-between">

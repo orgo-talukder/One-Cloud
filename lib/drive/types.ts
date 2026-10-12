@@ -84,6 +84,11 @@ export interface ElectronBridge {
   ) => () => void;
   saveCredentials: (creds: { apiId: string; apiHash: string }) => Promise<{ success: boolean; error?: string }>;
   loadCredentials: () => Promise<{ apiId: string; apiHash: string }>;
+  selectBackupDirectory?: () => Promise<{ canceled: boolean; selectedPath?: string }>;
+  startAutoBackup?: (options: { folderPath: string; frequency: string; fileTypes: string[] }) => Promise<{ success: boolean; error?: string; config?: any }>;
+  stopAutoBackup?: () => Promise<{ success: boolean; config?: any }>;
+  getAutoBackupStatus?: () => Promise<{ success: boolean; config?: any }>;
+  onAutoBackupEvent?: (callback: (data: { eventType: string; filename: string; folderPath: string; lastBackupTime: string; count: number }) => void) => () => void;
 }
 
 declare global {

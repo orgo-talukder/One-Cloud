@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
-  Cloud,
   ArrowRight,
   ArrowLeft,
   Lock,
@@ -77,8 +77,16 @@ export default function LoginPage() {
       {/* Header */}
       <header className="w-full py-6 px-6 lg:px-12 flex items-center justify-between border-b border-border/40">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-primary shadow-xs">
-            <Cloud className="w-5 h-5 text-primary" />
+          <div className="relative w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
+            <Image
+              src="/website_logo.png"
+              alt="One Cloud"
+              width={36}
+              height={36}
+              priority
+              className="w-9 h-9 object-contain group-hover:scale-105 transition-transform"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-text-primary tracking-tight text-sm leading-tight">
@@ -109,7 +117,14 @@ export default function LoginPage() {
               {/* Header inside card */}
               <div className="flex flex-col items-center text-center">
                 <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-primary border border-border-strong shadow-xs mb-4">
-                  <Cloud className="w-6 h-6 text-primary" />
+                  <Image
+                    src="/website_logo.png"
+                    alt="One Cloud"
+                    width={28}
+                    height={28}
+                    className="w-7 h-7 object-contain"
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
                 <div className="flex flex-col items-center">
                   <h1 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight">

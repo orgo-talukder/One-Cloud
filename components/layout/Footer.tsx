@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { Cloud, ShieldCheck, Lock } from 'lucide-react';
+import Image from 'next/image';
+import { ShieldCheck, Lock } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -8,9 +9,16 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-12 lg:px-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 text-base font-semibold text-text-primary">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface border border-border text-primary">
-                <Cloud className="h-4 w-4 text-primary" />
+            <Link href="/" className="flex items-center gap-2.5 text-base font-semibold text-text-primary group">
+              <div className="relative flex h-8 w-8 items-center justify-center shrink-0">
+                <Image
+                  src="/website_logo.png"
+                  alt="One Cloud"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain group-hover:scale-105 transition-transform"
+                  referrerPolicy="no-referrer"
+                />
               </div>
               <span>One Cloud</span>
             </Link>

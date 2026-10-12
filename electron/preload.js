@@ -26,4 +26,15 @@ contextBridge.exposeInMainWorld('electronBridge', {
   // Secure OS Keyring API Credentials
   saveCredentials: (creds) => ipcRenderer.invoke('desktop:save-credentials', creds),
   loadCredentials: () => ipcRenderer.invoke('desktop:load-credentials'),
+
+  // Desktop Auto-Backup (Google Photos / Drive background sync model)
+  selectBackupDirectory: () => ipcRenderer.invoke('desktop:select-backup-dir'),
+  startAutoBackup: (options) => ipcRenderer.invoke('desktop:start-auto-backup', options),
+  stopAutoBackup: () => ipcRenderer.invoke('desktop:stop-auto-backup'),
+  getAutoBackupStatus: () => ipcRenderer.invoke('desktop:get-auto-backup-status'),
+  onAutoBackupEvent: (callback) => {
+    const listener = (event, data) => callback(data);
+    ipcRenderer.on('desktop:auto-backup-event', listener);
+    return () => ipcRenderer.removeListener('desktop:auto-backup-event', listener);
+  },
 });

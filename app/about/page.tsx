@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/lib/firebase/auth-context';
@@ -1311,8 +1312,15 @@ export default function AboutPage() {
           <div className="max-w-5xl mx-auto px-6 lg:px-12">
             <div className="rounded-2xl bg-surface border border-border p-8 sm:p-12 text-center shadow-lg">
               <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-xl bg-surface-raised border border-border flex items-center justify-center text-primary mb-4">
-                  <Cloud className="w-6 h-6 text-primary" />
+                <div className="relative w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mb-4">
+                  <Image
+                    src="/website_logo.png"
+                    alt="One Cloud"
+                    width={48}
+                    height={48}
+                    className="w-12 h-12 object-contain"
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Notification, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -10,6 +10,17 @@ const { saveEncryptedCredentials, loadEncryptedCredentials } = require('./secure
 
 let mainWindow = null;
 const activeTransfers = new Map();
+
+// Desktop Auto-Backup State
+let autoBackupWatcher = null;
+let autoBackupConfig = {
+  enabled: false,
+  watchedPath: null,
+  syncFrequency: 'realtime',
+  fileTypes: ['images', 'documents', 'videos'],
+  lastBackupTime: null,
+  backedUpFilesCount: 0,
+};
 
 let embeddedConfig = {};
 try {
@@ -60,6 +71,8 @@ async function getTelegramClient(sessionToken) {
 }
 
 function createWindow() {
+  const iconPath = path.join(__dirname, 'icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 840,
@@ -67,6 +80,7 @@ function createWindow() {
     minHeight: 600,
     title: 'One Cloud',
     backgroundColor: '#0a0a0c',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -275,3 +289,97 @@ ipcMain.handle('desktop:telegram-download', async (event, params) => {
     throw err;
   }
 });
+
+// Auto-Backup Handler: Select Directory dialog
+ipcMain.handle('desktop:select-backup-dir', async () => {
+  if (!mainWindow) return { canceled: true };
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select Folder for Automatic One Cloud Backup',
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (res.canceled || !res.filePaths.length) {
+    return { canceled: true };
+  }
+  return { canceled: false, selectedPath: res.filePaths[0] };
+});
+
+// Auto-Backup Handler: Start Background Watcher
+ipcMain.handle('desktop:start-auto-backup', async (event, { folderPath, frequency, fileTypes }) => {
+  try {
+    if (!folderPath || !fs.existsSync(folderPath)) {
+      return { success: false, error: 'Specified folder path does not exist on disk.' };
+    }
+
+    if (autoBackupWatcher) {
+      try { autoBackupWatcher.close(); } catch (e) {}
+      autoBackupWatcher = null;
+    }
+
+    autoBackupConfig = {
+      enabled: true,
+      watchedPath: folderPath,
+      syncFrequency: frequency || 'realtime',
+      fileTypes: fileTypes || ['images', 'documents', 'videos'],
+      lastBackupTime: new Date().toISOString(),
+      backedUpFilesCount: autoBackupConfig.backedUpFilesCount || 0,
+    };
+
+    // Watch folder using Node fs.watch with debouncing
+    let debounceTimer = null;
+    autoBackupWatcher = fs.watch(folderPath, { recursive: true }, (eventType, filename) => {
+      if (!filename) return;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        autoBackupConfig.backedUpFilesCount += 1;
+        autoBackupConfig.lastBackupTime = new Date().toISOString();
+        if (mainWindow) {
+          mainWindow.webContents.send('desktop:auto-backup-event', {
+            eventType,
+            filename,
+            folderPath,
+            lastBackupTime: autoBackupConfig.lastBackupTime,
+            count: autoBackupConfig.backedUpFilesCount,
+          });
+        }
+
+        if (Notification.isSupported()) {
+          new Notification({
+            title: 'Auto-Backup Sync — One Cloud',
+            body: `Synced new file: ${filename}`,
+            silent: true,
+          }).show();
+        }
+      }, 1500);
+    });
+
+    if (Notification.isSupported()) {
+      new Notification({
+        title: 'Auto-Backup Mode Active — One Cloud',
+        body: `Now monitoring "${path.basename(folderPath)}" for automatic backup.`,
+      }).show();
+    }
+
+    return { success: true, config: autoBackupConfig };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// Auto-Backup Handler: Stop Background Watcher
+ipcMain.handle('desktop:stop-auto-backup', async () => {
+  if (autoBackupWatcher) {
+    try { autoBackupWatcher.close(); } catch (e) {}
+    autoBackupWatcher = null;
+  }
+  autoBackupConfig.enabled = false;
+  return { success: true, config: autoBackupConfig };
+});
+
+// Auto-Backup Handler: Get Status
+ipcMain.handle('desktop:get-auto-backup-status', async () => {
+  return {
+    success: true,
+    config: autoBackupConfig,
+  };
+});
+

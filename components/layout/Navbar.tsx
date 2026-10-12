@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Cloud, ArrowRight, HardDrive, Menu, X, ShieldCheck, HelpCircle, Info, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowRight, HardDrive, Menu, X, ShieldCheck, HelpCircle, Info, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/auth-context';
-import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 
 export function Navbar() {
   const { user } = useAuth();
@@ -15,8 +15,16 @@ export function Navbar() {
       <div className="h-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between gap-4">
         {/* Brand */}
         <Link href="/" className="flex items-center gap-3 group shrink-0">
-          <div className="w-9 h-9 rounded-lg bg-surface border border-border/80 flex items-center justify-center text-primary transition-colors group-hover:border-primary/50">
-            <Cloud className="w-5 h-5 text-primary" />
+          <div className="relative w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
+            <Image
+              src="/website_logo.png"
+              alt="One Cloud"
+              width={36}
+              height={36}
+              priority
+              className="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-200"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-text-primary tracking-tight text-[15px] leading-tight">
@@ -58,7 +66,6 @@ export function Navbar() {
 
         {/* Action Buttons & Mobile Hamburger Toggle */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <PWAInstallButton variant="badge" className="hidden sm:inline-flex" />
           {user ? (
             <Link
               href="/app"
