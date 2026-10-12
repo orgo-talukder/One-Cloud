@@ -57,6 +57,7 @@ export function FileList({
     selectedFileIds,
     toggleSelectFile,
     sessionToken,
+    downloadFile,
   } = useDrive();
 
   // Modal states
@@ -415,15 +416,17 @@ export function FileList({
                                 <Eye className="h-3.5 w-3.5 text-primary" />
                                 <span>Preview</span>
                               </button>
-                              <a
-                                href={downloadUrl}
-                                download={file.name}
-                                onClick={() => setActiveMenuId(null)}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  downloadFile(file);
+                                  setActiveMenuId(null);
+                                }}
                                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                               >
                                 <Download className="h-3.5 w-3.5 text-text-muted" />
                                 <span>Download</span>
-                              </a>
+                              </button>
                               <button
                                 onClick={() => {
                                   toggleStarFile(file.id);
@@ -647,15 +650,17 @@ export function FileList({
                                     <Eye className="h-3.5 w-3.5 text-primary" />
                                     <span>Preview</span>
                                   </button>
-                                  <a
-                                    href={downloadUrl}
-                                    download={file.name}
-                                    onClick={() => setActiveMenuId(null)}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      downloadFile(file);
+                                      setActiveMenuId(null);
+                                    }}
                                     className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                                   >
                                     <Download className="h-3.5 w-3.5 text-text-muted" />
                                     <span>Download</span>
-                                  </a>
+                                  </button>
                                   <button
                                     onClick={() => {
                                       toggleStarFile(file.id);

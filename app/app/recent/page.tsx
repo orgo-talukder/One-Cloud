@@ -33,7 +33,7 @@ import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/D
 import type { FileItem } from '@/lib/drive/types';
 
 export default function RecentPage() {
-  const { files, folders, searchQuery, toggleStarFile } = useDrive();
+  const { files, folders, searchQuery, toggleStarFile, downloadFile } = useDrive();
 
   const [localSearch, setLocalSearch] = useState('');
   const [selectedTimeFilter, setSelectedTimeFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
@@ -199,7 +199,7 @@ export default function RecentPage() {
 
   const handleDownload = (e: React.MouseEvent, file: FileItem) => {
     e.stopPropagation();
-    window.open(`/api/telegram/download/${file.id}`, '_blank');
+    downloadFile(file);
   };
 
   const handleClearHistory = () => {

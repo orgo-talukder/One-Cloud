@@ -50,6 +50,7 @@ export default function DashboardPage() {
     telegramConnected,
     telegramUsername,
     uploadFiles,
+    downloadFile,
     toggleStarFile,
     syncTelegram,
     telegramSyncing,
@@ -783,14 +784,14 @@ export default function DashboardPage() {
                         className="drive-menu-container relative col-span-1 flex items-center justify-end gap-1"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <a
-                          href={`/api/telegram/download/${file.id}`}
-                          download={file.name}
+                        <button
+                          type="button"
+                          onClick={() => downloadFile(file)}
                           aria-label="Download"
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
                         >
                           <Download className="w-4 h-4" />
-                        </a>
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

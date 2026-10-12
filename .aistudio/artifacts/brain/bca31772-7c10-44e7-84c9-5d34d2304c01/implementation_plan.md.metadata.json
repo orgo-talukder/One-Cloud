@@ -1,6 +1,6 @@
 {
-  "summary":  "One Cloud-এ আর্কিটেকচার ১ (Connection-Pooled MTProto + 3 Parallel 2MB Workers + 4x Sub-Part Concurrency) এবং ১০০% রিয়েল-টাইম নেটওয়ার্ক স্পিড (MB/s), আপলোডেড সাইজ (MB/MB) ও আসল ETA (সময় গণনা) বাস্তবায়নের বাংলা ইমপ্লিমেন্টেশন প্ল্যান।",
-  "updatedAt":  "2026-10-12T05:57:12.788080785Z",
+  "summary":  "বাংলা ভাষায় আল্ট্রা-ফাস্ট আপলোড ও ডাউনলোড অপ্টিমাইজেশন প্ল্যান: Vercel Singapore (sin1) রিজিয়ন কনফিগারেশন, 4x Parallel Workers + 8x Sub-Part Burst আপলোড, এবং IDM-স্টাইল প্যারালাল চাঙ্কড ডাউনলোড ও রিয়েল-টাইম স্পিড/ETA ট্র্যাকার + HTTP ReadableStream স্ট্রিমিং।",
+  "updatedAt":  "2026-10-12T12:31:26.319031229Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

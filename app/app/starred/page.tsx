@@ -42,6 +42,7 @@ export default function StarredPage() {
     toggleStarFile,
     toggleStarFolder,
     navigateToFolder,
+    downloadFile,
   } = useDrive();
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'folders' | 'files'>('all');
@@ -113,7 +114,7 @@ export default function StarredPage() {
 
   const handleDownload = (e: React.MouseEvent, file: FileItem) => {
     e.stopPropagation();
-    window.open(`/api/telegram/download/${file.id}`, '_blank');
+    downloadFile(file);
   };
 
   return (

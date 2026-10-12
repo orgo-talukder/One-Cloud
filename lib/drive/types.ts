@@ -29,7 +29,9 @@ export interface FolderItem {
 
 export interface UploadTask {
   id: string;
-  file: File;
+  kind?: 'upload' | 'download';
+  file?: File;
+  fileItem?: FileItem;
   name: string;
   size: number;
   progress: number;

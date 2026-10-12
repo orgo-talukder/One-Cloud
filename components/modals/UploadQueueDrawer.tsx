@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import {
   Upload,
+  Download,
   CheckCircle2,
   AlertCircle,
   X,
@@ -49,7 +50,7 @@ export function UploadQueueDrawer() {
 
   if (uploadTasks.length === 0) return null;
 
-  const activeUploadingTasks = uploadTasks.filter((t) => t.status === 'uploading');
+  const activeTasks = uploadTasks.filter((t) => t.status === 'uploading');
   const inProgressCount = uploadTasks.filter(
     (t) => t.status === 'uploading' || t.status === 'queued'
   ).length;
@@ -58,10 +59,19 @@ export function UploadQueueDrawer() {
     (t) => t.status === 'failed' || t.status === 'cancelled'
   ).length;
 
-  const totalLiveSpeed = activeUploadingTasks.reduce(
+  const totalLiveSpeed = activeTasks.reduce(
     (sum, t) => sum + (t.speedBytesPerSec || 0),
     0
   );
+
+  const hasDownloads = uploadTasks.some((t) => t.kind === 'download');
+  const hasUploads = uploadTasks.some((t) => t.kind !== 'download');
+  const transferLabel =
+    hasDownloads && hasUploads
+      ? 'Transferring'
+      : hasDownloads
+      ? 'Downloading'
+      : 'Uploading';
 
   return (
     <div
@@ -77,6 +87,8 @@ export function UploadQueueDrawer() {
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
               ) : failedCount > 0 && completedCount === 0 ? (
                 <AlertCircle className="h-4 w-4 text-danger" />
+              ) : hasDownloads && !hasUploads ? (
+                <Download className="h-4 w-4 text-tertiary" />
               ) : (
                 <Upload className="h-4 w-4 text-tertiary" />
               )}
@@ -85,10 +97,10 @@ export function UploadQueueDrawer() {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-text-primary truncate">
                   {inProgressCount > 0
-                    ? `Uploading ${inProgressCount} item${inProgressCount > 1 ? 's' : ''}...`
+                    ? `${transferLabel} ${inProgressCount} item${inProgressCount > 1 ? 's' : ''}...`
                     : failedCount > 0
-                    ? `${failedCount} upload${failedCount > 1 ? 's' : ''} need attention`
-                    : 'All uploads completed'}
+                    ? `${failedCount} transfer${failedCount > 1 ? 's' : ''} need attention`
+                    : 'All transfers completed'}
                 </span>
                 {inProgressCount > 0 && totalLiveSpeed > 0 && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-brand-subtle text-[10px] font-mono font-medium text-primary shrink-0">
@@ -129,10 +141,14 @@ export function UploadQueueDrawer() {
       {!collapsed && (
         <div className="max-h-80 overflow-y-auto divide-y divide-border/40 bg-surface">
           {uploadTasks.map((task) => {
-            const uploadedBytes =
+            const isDownload = task.kind === 'download';
+            const transferredBytes =
               task.status === 'completed'
                 ? task.size
-                : Math.min(task.size, task.uploadedBytes ?? Math.round((task.progress / 100) * task.size));
+                : Math.min(
+                    task.size,
+                    task.uploadedBytes ?? Math.round((task.progress / 100) * task.size)
+                  );
 
             return (
               <div
@@ -142,21 +158,30 @@ export function UploadQueueDrawer() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-7 h-7 rounded bg-brand-subtle flex items-center justify-center text-primary shrink-0">
-                      <FileText className="h-3.5 w-3.5" />
+                      {isDownload ? (
+                        <Download className="h-3.5 w-3.5" />
+                      ) : (
+                        <FileText className="h-3.5 w-3.5" />
+                      )}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span
-                        className="text-xs text-text-primary font-medium truncate"
-                        title={task.name}
-                      >
-                        {task.name}
-                      </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span
+                          className="text-xs text-text-primary font-medium truncate"
+                          title={task.name}
+                        >
+                          {task.name}
+                        </span>
+                        <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.2 rounded bg-surface-raised text-text-muted shrink-0">
+                          {isDownload ? 'DL' : 'UL'}
+                        </span>
+                      </div>
 
                       {/* Real-time transfer metrics row */}
                       {task.status === 'uploading' ? (
                         <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[10px] font-mono tabular-nums text-text-muted">
                           <span className="text-text-secondary">
-                            {formatBytes(uploadedBytes)} / {formatBytes(task.size)}
+                            {formatBytes(transferredBytes)} / {formatBytes(task.size)}
                           </span>
                           <span>•</span>
                           <span className="text-primary font-medium">
@@ -167,7 +192,9 @@ export function UploadQueueDrawer() {
                           <span>•</span>
                           <span className="text-text-secondary">
                             {task.phase === 'finalizing'
-                              ? 'Finalizing in Telegram...'
+                              ? isDownload
+                                ? 'Saving to device...'
+                                : 'Finalizing in Telegram...'
                               : formatEta(task.etaSeconds)}
                           </span>
                         </div>
@@ -194,7 +221,7 @@ export function UploadQueueDrawer() {
                       <div className="flex items-center gap-1.5">
                         <span
                           className="text-danger flex items-center gap-1 text-[11px] font-medium"
-                          title={task.error || 'Upload failed'}
+                          title={task.error || 'Transfer failed'}
                         >
                           <AlertCircle className="h-3.5 w-3.5" />
                           <span>{task.status === 'cancelled' ? 'Cancelled' : 'Error'}</span>
@@ -203,7 +230,7 @@ export function UploadQueueDrawer() {
                           type="button"
                           onClick={() => retryUpload(task.id)}
                           className="px-2 py-0.5 rounded-md bg-brand-subtle hover:bg-primary-container text-primary hover:text-text-primary border border-primary/30 text-[11px] font-medium flex items-center gap-1 transition-colors cursor-pointer"
-                          title="Retry upload"
+                          title="Retry transfer"
                         >
                           <RotateCcw className="h-3 w-3" />
                           <span>Retry</span>

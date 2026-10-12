@@ -62,6 +62,7 @@ export default function MyDrivePage() {
     telegramUsername,
     storageSummary,
     sessionToken,
+    downloadFile,
   } = useDrive();
 
   // Modals state
@@ -271,15 +272,17 @@ export default function MyDrivePage() {
           <span>Preview</span>
         </button>
 
-        <a
-          href={getDownloadUrl(file)}
-          download={file.name}
-          onClick={() => setActiveMenuId(null)}
+        <button
+          type="button"
+          onClick={() => {
+            downloadFile(file);
+            setActiveMenuId(null);
+          }}
           className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
         >
           <Download className="w-3.5 h-3.5 text-text-muted" />
           <span>Download</span>
-        </a>
+        </button>
 
         <button
           type="button"
@@ -956,14 +959,14 @@ export default function MyDrivePage() {
                         className="drive-menu-container relative col-span-12 md:col-span-2 flex items-center justify-end gap-1 text-text-muted mt-2 md:mt-0"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <a
-                          href={getDownloadUrl(file)}
-                          download={file.name}
+                        <button
+                          type="button"
+                          onClick={() => downloadFile(file)}
                           className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
                           title="Download"
                         >
                           <Download className="w-4 h-4" />
-                        </a>
+                        </button>
                         <button
                           type="button"
                           onClick={() => setPreviewFile(file)}
@@ -1035,8 +1038,8 @@ export default function MyDrivePage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (selectedFiles.length > 0) {
-                    window.location.href = getDownloadUrl(selectedFiles[0]);
+                  for (const f of selectedFiles) {
+                    downloadFile(f);
                   }
                 }}
                 className="h-8 px-3 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-primary text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"

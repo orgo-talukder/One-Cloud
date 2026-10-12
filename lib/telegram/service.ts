@@ -2,6 +2,7 @@ import { TelegramClient, Api } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { CustomFile } from 'telegram/client/uploads';
 import { returnBigInt } from 'telegram/Helpers';
+import { getFileInfo } from 'telegram/Utils';
 import { computeCheck } from 'telegram/Password';
 import QRCode from 'qrcode';
 import { encryptSession, decryptSession } from './crypto';
@@ -24,11 +25,23 @@ interface PooledTelegramClient {
   idleTimer?: ReturnType<typeof setTimeout>;
 }
 
+interface CachedFileLocation {
+  location: Api.TypeInputFileLocation;
+  dcId?: number;
+  fileName: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  media: Api.TypeMessageMedia;
+  cachedAt: number;
+}
+
 const CLIENT_IDLE_TTL_MS = 90_000; // Keep MTProto connection warm for 90s across parallel chunks
+const FILE_LOCATION_TTL_MS = 5 * 60_000; // Cache file location for 5 minutes across parallel download chunks
 
 const globalForQr = globalThis as unknown as {
   qrSessions?: Map<string, PendingQrSession>;
   tgClientPool?: Map<string, PooledTelegramClient>;
+  tgFileLocationCache?: Map<string, CachedFileLocation>;
 };
 
 if (!globalForQr.qrSessions) {
@@ -37,9 +50,13 @@ if (!globalForQr.qrSessions) {
 if (!globalForQr.tgClientPool) {
   globalForQr.tgClientPool = new Map<string, PooledTelegramClient>();
 }
+if (!globalForQr.tgFileLocationCache) {
+  globalForQr.tgFileLocationCache = new Map<string, CachedFileLocation>();
+}
 
 const qrStore = globalForQr.qrSessions;
 const clientPool = globalForQr.tgClientPool;
+const fileLocationCache = globalForQr.tgFileLocationCache;
 
 export class TelegramService {
   /**
@@ -760,14 +777,14 @@ export class TelegramService {
 
     const { client } = await this.getConnectedClient(sessionToken);
     const PART_SIZE = 512 * 1024; // 524,288 bytes (MTProto max part size)
-    const SUB_PART_CONCURRENCY = 4; // Send 4 × 512KB parts simultaneously
+    const SUB_PART_CONCURRENCY = 8; // 8x Sub-Part Burst: send all 8 × 512KB parts (4.2MB) simultaneously in 1 batch
     const isLarge = totalSize > 10 * 1024 * 1024;
     const fileIdBigInt = returnBigInt(telegramFileId);
 
     try {
       const numSubParts = Math.max(1, Math.ceil(chunkBuffer.length / PART_SIZE));
 
-      // Dispatch 512KB sub-parts in parallel batches of 4
+      // Dispatch 512KB sub-parts in parallel bursts of up to 8
       for (let batchStart = 0; batchStart < numSubParts; batchStart += SUB_PART_CONCURRENCY) {
         const batchEnd = Math.min(batchStart + SUB_PART_CONCURRENCY, numSubParts);
         const batchPromises: Promise<unknown>[] = [];
@@ -884,6 +901,219 @@ export class TelegramService {
   }
 
   /**
+   * Resolves and caches Telegram message media location & metadata so parallel download chunks
+   * don't repeat getMessages('me') calls on every chunk.
+   */
+  private static async resolveFileLocation(
+    client: TelegramClient,
+    session: TelegramSessionPayload,
+    messageId: number,
+    forceRefresh = false
+  ): Promise<CachedFileLocation | null> {
+    const cacheKey = `${session.apiId}:${session.sessionString.slice(-24)}:${messageId}`;
+    const existing = fileLocationCache.get(cacheKey);
+
+    if (!forceRefresh && existing && Date.now() - existing.cachedAt < FILE_LOCATION_TTL_MS) {
+      return existing;
+    }
+
+    const messages = await client.getMessages('me', {
+      ids: [messageId],
+    });
+
+    if (!messages || messages.length === 0 || !messages[0] || !messages[0].media) {
+      return null;
+    }
+
+    const message = messages[0];
+    const media = message.media!;
+    let resolvedName = 'telegram_download';
+    let resolvedMime = 'application/octet-stream';
+    let resolvedSize = 0;
+
+    if ('document' in media && media.document && media.document instanceof Api.Document) {
+      const doc = media.document;
+      resolvedMime = doc.mimeType || resolvedMime;
+      resolvedSize = Number(doc.size?.toString() || 0);
+      if (doc.attributes) {
+        for (const attr of doc.attributes) {
+          if (attr instanceof Api.DocumentAttributeFilename) {
+            resolvedName = attr.fileName;
+            break;
+          }
+        }
+      }
+    }
+
+    if (message.message && resolvedName === 'telegram_download') {
+      resolvedName = message.message.split('\n')[0].trim();
+    }
+
+    const info = getFileInfo(message);
+    if (!resolvedSize && info.size) {
+      resolvedSize = Number(info.size.toString());
+    }
+
+    const entry: CachedFileLocation = {
+      location: info.location,
+      dcId: info.dcId,
+      fileName: resolvedName,
+      mimeType: resolvedMime,
+      fileSizeBytes: resolvedSize,
+      media,
+      cachedAt: Date.now(),
+    };
+
+    fileLocationCache.set(cacheKey, entry);
+    return entry;
+  }
+
+  /**
+   * High-Speed Parallel Chunk Download: Downloads a specific byte range [offset, offset + limit)
+   * from Telegram Saved Messages by fetching 512KB MTProto parts concurrently with Promise.all.
+   */
+  static async downloadChunkFromSavedMessages(params: {
+    sessionToken: string;
+    messageId: number;
+    offset: number;
+    limit: number;
+  }): Promise<{
+    chunkBuffer: Buffer;
+    fileName: string;
+    mimeType: string;
+    totalSize: number;
+  } | null> {
+    const { sessionToken, messageId, offset, limit } = params;
+    const { client, session } = await this.getConnectedClient(sessionToken);
+
+    let fileMeta = await this.resolveFileLocation(client, session, messageId, false);
+    if (!fileMeta) {
+      return null;
+    }
+
+    const PART_SIZE = 512 * 1024; // 524,288 bytes (MTProto max GetFile limit)
+    const totalSize = fileMeta.fileSizeBytes;
+    const safeOffset = Math.max(0, offset - (offset % PART_SIZE));
+    const maxRemaining = totalSize > 0 ? Math.max(0, totalSize - safeOffset) : limit;
+    const targetBytes = Math.min(limit, maxRemaining || limit);
+
+    if (targetBytes <= 0) {
+      return {
+        chunkBuffer: Buffer.alloc(0),
+        fileName: fileMeta.fileName,
+        mimeType: fileMeta.mimeType,
+        totalSize,
+      };
+    }
+
+    const numParts = Math.max(1, Math.ceil(targetBytes / PART_SIZE));
+
+    const fetchPartBuffer = async (partIndex: number, retryRef = true): Promise<Buffer> => {
+      const partOffset = safeOffset + partIndex * PART_SIZE;
+      try {
+        const res = await this.invokeWithRetry<Api.upload.TypeFile>(client, () =>
+          new Api.upload.GetFile({
+            location: fileMeta!.location,
+            offset: returnBigInt(partOffset),
+            limit: PART_SIZE,
+          })
+        );
+
+        if (res && 'bytes' in res && res.bytes) {
+          return Buffer.isBuffer(res.bytes) ? res.bytes : Buffer.from(res.bytes);
+        }
+        return Buffer.alloc(0);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (
+          retryRef &&
+          (msg.includes('FILE_REFERENCE') || msg.includes('FILEREF_UPGRADE_NEEDED'))
+        ) {
+          const refreshed = await this.resolveFileLocation(client, session, messageId, true);
+          if (refreshed) {
+            fileMeta = refreshed;
+            return fetchPartBuffer(partIndex, false);
+          }
+        }
+        throw err;
+      }
+    };
+
+    try {
+      // Fetch all 512KB parts in this chunk concurrently (up to 8 × 512KB = 4MB in parallel)
+      const partPromises: Promise<Buffer>[] = [];
+      for (let i = 0; i < numParts; i++) {
+        partPromises.push(fetchPartBuffer(i));
+      }
+
+      const partBuffers = await Promise.all(partPromises);
+      const combined = Buffer.concat(partBuffers);
+      const chunkBuffer =
+        combined.length > targetBytes ? combined.subarray(0, targetBytes) : combined;
+
+      return {
+        chunkBuffer,
+        fileName: fileMeta.fileName,
+        mimeType: fileMeta.mimeType,
+        totalSize,
+      };
+    } catch (err: unknown) {
+      console.error('Parallel chunk download from Telegram failed:', err);
+      throw new Error(this.parseTelegramError(err));
+    }
+  }
+
+  /**
+   * Zero-Wait Web ReadableStream Download: Streams 512KB chunks directly from Telegram
+   * to the HTTP response without buffering the entire file in serverless RAM.
+   */
+  static async streamFromSavedMessages(params: {
+    sessionToken: string;
+    messageId: number;
+  }): Promise<{
+    stream: ReadableStream<Uint8Array>;
+    fileName: string;
+    mimeType: string;
+    fileSizeBytes: number;
+  } | null> {
+    const { sessionToken, messageId } = params;
+    const { client, session } = await this.getConnectedClient(sessionToken);
+
+    const fileMeta = await this.resolveFileLocation(client, session, messageId, false);
+    if (!fileMeta) {
+      return null;
+    }
+
+    const iter = client.iterDownload({
+      file: fileMeta.media,
+      requestSize: 512 * 1024,
+    })[Symbol.asyncIterator]();
+
+    const stream = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        try {
+          const { value, done } = await iter.next();
+          if (done || !value) {
+            controller.close();
+            return;
+          }
+          const chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
+          controller.enqueue(chunk);
+        } catch (err) {
+          controller.error(err);
+        }
+      },
+    });
+
+    return {
+      stream,
+      fileName: fileMeta.fileName,
+      mimeType: fileMeta.mimeType,
+      fileSizeBytes: fileMeta.fileSizeBytes,
+    };
+  }
+
+  /**
    * Download a file from real Telegram Saved Messages ('me')
    */
   static async downloadFromSavedMessages(params: {
@@ -891,50 +1121,25 @@ export class TelegramService {
     messageId: number;
   }): Promise<{ fileBuffer: Buffer; fileName: string; mimeType: string } | null> {
     const { sessionToken, messageId } = params;
-    const { client } = await this.getConnectedClient(sessionToken);
+    const { client, session } = await this.getConnectedClient(sessionToken);
 
     try {
-      const messages = await client.getMessages('me', {
-        ids: [messageId],
-      });
-
-      if (!messages || messages.length === 0 || !messages[0]) {
+      const fileMeta = await this.resolveFileLocation(client, session, messageId, false);
+      if (!fileMeta) {
         return null;
       }
 
-      const message = messages[0];
-      const downloaded = await client.downloadMedia(message);
-
+      const downloaded = await client.downloadMedia(fileMeta.media);
       if (!downloaded) {
         return null;
       }
 
       const fileBuffer = Buffer.isBuffer(downloaded) ? downloaded : Buffer.from(downloaded);
 
-      let resolvedName = 'telegram_download';
-      let resolvedMime = 'application/octet-stream';
-
-      if (message.media && 'document' in message.media && message.media.document) {
-        const doc = message.media.document as Api.Document;
-        resolvedMime = doc.mimeType || resolvedMime;
-        if (doc.attributes) {
-          for (const attr of doc.attributes) {
-            if (attr instanceof Api.DocumentAttributeFilename) {
-              resolvedName = attr.fileName;
-              break;
-            }
-          }
-        }
-      }
-
-      if (message.message && resolvedName === 'telegram_download') {
-        resolvedName = message.message.split('\n')[0].trim();
-      }
-
       return {
         fileBuffer,
-        fileName: resolvedName,
-        mimeType: resolvedMime,
+        fileName: fileMeta.fileName,
+        mimeType: fileMeta.mimeType,
       };
     } catch (err: unknown) {
       console.error('Download from Telegram failed:', err);

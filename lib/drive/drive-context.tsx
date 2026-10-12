@@ -73,6 +73,7 @@ interface DriveContextType {
   permanentlyDeleteFolder: (folderId: string) => Promise<void>;
   emptyTrash: () => Promise<void>;
   uploadFiles: (files: FileList | File[]) => Promise<void>;
+  downloadFile: (file: FileItem) => Promise<void>;
   connectTelegramSuccess: (token: string, username: string) => void;
   disconnectTelegram: () => void;
   syncTelegram: () => Promise<void>;
@@ -552,10 +553,12 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
   // Core high-speed parallel upload runner with real-time XHR byte tracking, speed (MB/s), and real ETA
   const executeTaskUpload = async (task: UploadTask, targetFolderId: string | null) => {
+    const file = task.file;
+    if (!file) return;
+
     cancelledTasksRef.current.delete(task.id);
     activeXhrsRef.current.set(task.id, new Set());
 
-    const file = task.file;
     const uploadStartTime = performance.now();
     let lastUiUpdateTime = 0;
 
@@ -747,7 +750,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     const PART_SIZE = 512 * 1024;
     const PARTS_PER_CHUNK = 8; // 8 × 512 KB = 4.19 MB (utilizes full ~4.5 MB serverless limit with 512KB MTProto alignment)
     const CHUNK_SIZE = PART_SIZE * PARTS_PER_CHUNK;
-    const PARALLEL_WORKERS = 3; // 3 concurrent workers (~12.6 MB in-flight simultaneously)
+    const PARALLEL_WORKERS = 4; // 4 concurrent workers (~16.8 MB in-flight simultaneously with 8x sub-part burst)
 
     try {
       // Fast Path for small files (<= 4 MB): single XHR upload with real-time progress
@@ -1018,6 +1021,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     const folderSnapshot = currentFolderId;
     const newTasks: UploadTask[] = items.map((file) => ({
       id: 'task_' + Math.random().toString(36).substring(2, 9),
+      kind: 'upload',
       file,
       name: file.name,
       size: file.size,
@@ -1034,6 +1038,305 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     for (const task of newTasks) {
       await executeTaskUpload(task, folderSnapshot);
     }
+  };
+
+  // IDM-Style 3x Parallel 4MB Chunked Download Engine with real-time XHR speed & ETA
+  const executeTaskDownload = async (task: UploadTask) => {
+    const fileItem = task.fileItem;
+    if (!fileItem) return;
+
+    cancelledTasksRef.current.delete(task.id);
+    activeXhrsRef.current.set(task.id, new Set());
+
+    const totalSize = Math.max(1, fileItem.fileSizeBytes || task.size || 1);
+    const downloadStartTime = performance.now();
+    let lastUiUpdateTime = 0;
+
+    const speedSamples: { timeMs: number; bytes: number }[] = [
+      { timeMs: downloadStartTime, bytes: 0 },
+    ];
+    const chunkProgressBytes = new Map<number, number>();
+
+    const updateDownloadTelemetry = (
+      force = false,
+      phase: 'uploading' | 'finalizing' = 'uploading'
+    ) => {
+      if (cancelledTasksRef.current.has(task.id)) return;
+      const now = performance.now();
+      if (!force && now - lastUiUpdateTime < 120) return;
+      lastUiUpdateTime = now;
+
+      let currentBytes = 0;
+      chunkProgressBytes.forEach((b) => {
+        currentBytes += b;
+      });
+      currentBytes = Math.min(totalSize, Math.max(0, Math.round(currentBytes)));
+
+      speedSamples.push({ timeMs: now, bytes: currentBytes });
+      while (speedSamples.length > 2 && now - speedSamples[0].timeMs > 5000) {
+        speedSamples.shift();
+      }
+
+      const totalElapsedSec = Math.max(0.15, (now - downloadStartTime) / 1000);
+      const overallSpeed = currentBytes / totalElapsedSec;
+
+      const oldestSample = speedSamples[0];
+      const windowElapsedSec = Math.max(0.15, (now - oldestSample.timeMs) / 1000);
+      const windowBytes = Math.max(0, currentBytes - oldestSample.bytes);
+      const windowSpeed = windowBytes / windowElapsedSec;
+
+      const measuredSpeed =
+        totalElapsedSec > 1.0 && windowSpeed > 0
+          ? Math.round(windowSpeed * 0.65 + overallSpeed * 0.35)
+          : Math.round(overallSpeed);
+
+      const remainingBytes = Math.max(0, totalSize - currentBytes);
+      const etaSeconds =
+        phase === 'finalizing'
+          ? 1
+          : measuredSpeed > 0
+          ? Math.max(1, Math.ceil(remainingBytes / measuredSpeed))
+          : null;
+
+      const rawPercent = totalSize > 0 ? Math.round((currentBytes / totalSize) * 97) : 50;
+      const progress =
+        phase === 'finalizing' ? 99 : Math.min(97, Math.max(1, rawPercent));
+
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: 'uploading',
+                progress,
+                uploadedBytes: phase === 'finalizing' ? totalSize : currentBytes,
+                speedBytesPerSec: measuredSpeed > 0 ? measuredSpeed : t.speedBytesPerSec,
+                etaSeconds,
+                phase,
+                error: undefined,
+              }
+            : t
+        )
+      );
+    };
+
+    setUploadTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              status: 'uploading',
+              progress: 1,
+              uploadedBytes: 0,
+              speedBytesPerSec: 0,
+              etaSeconds: null,
+              phase: 'uploading',
+              error: undefined,
+            }
+          : t
+      )
+    );
+
+    const DOWNLOAD_CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB (8 × 512KB MTProto parts, safe under Vercel 4.5MB limit)
+    const PARALLEL_DOWNLOAD_WORKERS = 3; // 3 parallel 4MB chunk workers (IDM-style)
+
+    const fetchDownloadChunkXhr = (
+      chunkIndex: number,
+      offset: number,
+      limit: number
+    ): Promise<ArrayBuffer> => {
+      return new Promise((resolve, reject) => {
+        if (cancelledTasksRef.current.has(task.id)) {
+          reject(new Error('Download cancelled'));
+          return;
+        }
+
+        const xhr = new XMLHttpRequest();
+        const taskXhrs = activeXhrsRef.current.get(task.id);
+        if (taskXhrs) taskXhrs.add(xhr);
+
+        const url = `/api/telegram/download/${encodeURIComponent(
+          fileItem.id
+        )}?messageId=${encodeURIComponent(
+          String(fileItem.telegramMessageId)
+        )}&offset=${offset}&limit=${limit}`;
+
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.setRequestHeader('x-session-token', sessionToken);
+
+        xhr.onprogress = (event) => {
+          if (event.loaded > 0) {
+            chunkProgressBytes.set(chunkIndex, Math.min(limit, event.loaded));
+            updateDownloadTelemetry(false, 'uploading');
+          }
+        };
+
+        const cleanup = () => {
+          const set = activeXhrsRef.current.get(task.id);
+          if (set) set.delete(xhr);
+        };
+
+        xhr.onload = () => {
+          cleanup();
+          if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+            const buf = xhr.response as ArrayBuffer;
+            chunkProgressBytes.set(chunkIndex, buf.byteLength || limit);
+            updateDownloadTelemetry(true, 'uploading');
+            resolve(buf);
+          } else {
+            let errMsg = `Download chunk failed (${xhr.status}).`;
+            try {
+              const dec = new TextDecoder().decode(new Uint8Array(xhr.response));
+              const parsed = JSON.parse(dec);
+              if (parsed.error) errMsg = parsed.error;
+            } catch {}
+            reject(new Error(errMsg));
+          }
+        };
+
+        xhr.onerror = () => {
+          cleanup();
+          reject(new Error('Network error during chunk download.'));
+        };
+
+        xhr.onabort = () => {
+          cleanup();
+          reject(new Error('Download cancelled'));
+        };
+
+        xhr.send();
+      });
+    };
+
+    try {
+      const totalChunks = Math.max(1, Math.ceil(totalSize / DOWNLOAD_CHUNK_SIZE));
+      const downloadedBuffers: ArrayBuffer[] = new Array(totalChunks);
+
+      let nextChunkIdx = 0;
+      const workerCount = Math.min(PARALLEL_DOWNLOAD_WORKERS, totalChunks);
+
+      const workers = Array.from({ length: workerCount }, async () => {
+        while (nextChunkIdx < totalChunks) {
+          if (cancelledTasksRef.current.has(task.id)) return;
+          const idx = nextChunkIdx++;
+          const offset = idx * DOWNLOAD_CHUNK_SIZE;
+          const limit = Math.min(DOWNLOAD_CHUNK_SIZE, Math.max(512 * 1024, totalSize - offset));
+
+          let attempt = 0;
+          let lastErr: Error | null = null;
+
+          while (attempt < 3) {
+            if (cancelledTasksRef.current.has(task.id)) return;
+            try {
+              const buf = await fetchDownloadChunkXhr(idx, offset, limit);
+              downloadedBuffers[idx] = buf;
+              lastErr = null;
+              break;
+            } catch (err: unknown) {
+              if (cancelledTasksRef.current.has(task.id)) return;
+              lastErr = err instanceof Error ? err : new Error(String(err));
+              attempt++;
+              if (attempt < 3) {
+                await new Promise((r) => setTimeout(r, 700 * attempt));
+              }
+            }
+          }
+
+          if (lastErr) {
+            throw lastErr;
+          }
+        }
+      });
+
+      await Promise.all(workers);
+
+      if (cancelledTasksRef.current.has(task.id)) return;
+
+      updateDownloadTelemetry(true, 'finalizing');
+
+      const blob = new Blob(downloadedBuffers, {
+        type: fileItem.mimeType || 'application/octet-stream',
+      });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileItem.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
+
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: 'completed',
+                progress: 100,
+                uploadedBytes: totalSize,
+                etaSeconds: 0,
+                phase: 'uploading',
+              }
+            : t
+        )
+      );
+    } catch (err: unknown) {
+      abortTaskXhrs(task.id);
+      if (cancelledTasksRef.current.has(task.id)) return;
+      const msg = err instanceof Error ? err.message : 'Network error during download';
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id ? { ...t, status: 'failed', error: msg, etaSeconds: null } : t
+        )
+      );
+    } finally {
+      activeXhrsRef.current.delete(task.id);
+    }
+  };
+
+  const downloadFile = async (fileItem: FileItem) => {
+    if (fileItem.downloadUrl && !fileItem.downloadUrl.startsWith('/api/telegram/')) {
+      const a = document.createElement('a');
+      a.href = fileItem.downloadUrl;
+      a.download = fileItem.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
+    if (!sessionToken) {
+      const failedTask: UploadTask = {
+        id: 'dl_' + Math.random().toString(36).substring(2, 9),
+        kind: 'download',
+        fileItem,
+        name: fileItem.name,
+        size: fileItem.fileSizeBytes,
+        progress: 0,
+        status: 'failed',
+        error: 'Telegram is not connected. Please connect your Telegram account first.',
+      };
+      setUploadTasks((prev) => [...prev, failedTask]);
+      return;
+    }
+
+    const dlTask: UploadTask = {
+      id: 'dl_' + Math.random().toString(36).substring(2, 9),
+      kind: 'download',
+      fileItem,
+      name: fileItem.name,
+      size: fileItem.fileSizeBytes,
+      progress: 0,
+      status: 'queued',
+      uploadedBytes: 0,
+      speedBytesPerSec: 0,
+      etaSeconds: null,
+      phase: 'uploading',
+    };
+
+    setUploadTasks((prev) => [...prev, dlTask]);
+    await executeTaskDownload(dlTask);
   };
 
   const retryUpload = async (taskId: string) => {
@@ -1053,7 +1356,11 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
       );
       return;
     }
-    await executeTaskUpload(task, currentFolderId);
+    if (task.kind === 'download') {
+      await executeTaskDownload(task);
+    } else {
+      await executeTaskUpload(task, currentFolderId);
+    }
   };
 
   const dismissUpload = (taskId: string) => {
@@ -1072,7 +1379,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     setUploadTasks((prev) =>
       prev.map((t) =>
         t.id === taskId
-          ? { ...t, status: 'cancelled', error: 'Upload cancelled', etaSeconds: null }
+          ? { ...t, status: 'cancelled', error: 'Transfer cancelled', etaSeconds: null }
           : t
       )
     );
@@ -1176,6 +1483,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         permanentlyDeleteFolder,
         emptyTrash,
         uploadFiles,
+        downloadFile,
         connectTelegramSuccess,
         disconnectTelegram,
         syncTelegram,

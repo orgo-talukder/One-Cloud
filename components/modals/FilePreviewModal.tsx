@@ -25,7 +25,7 @@ interface FilePreviewModalProps {
 }
 
 export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
-  const { sessionToken, toggleStarFile } = useDrive();
+  const { sessionToken, toggleStarFile, downloadFile } = useDrive();
   const category = getFileTypeCategory(file.mimeType, file.extension);
 
   const downloadUrl = file.downloadUrl || `/api/telegram/download/${file.id}?messageId=${file.telegramMessageId}&sessionToken=${encodeURIComponent(
@@ -72,14 +72,14 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
                 }`}
               />
             </button>
-            <a
-              href={downloadUrl}
-              download={file.name}
+            <button
+              type="button"
+              onClick={() => downloadFile(file)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-text-primary bg-primary-container hover:bg-brand-hover rounded-lg transition-colors cursor-pointer shadow-xs"
             >
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Download</span>
-            </a>
+            </button>
             <button
               onClick={onClose}
               className="p-2 text-text-muted hover:text-text-primary rounded-lg hover:bg-surface-hover transition-colors cursor-pointer"
@@ -159,14 +159,14 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
                 <p className="text-xs text-text-secondary mb-4 leading-relaxed">
                   Payload is safely stored in Telegram Saved Messages. Download the original payload to inspect locally.
                 </p>
-                <a
-                  href={downloadUrl}
-                  download={file.name}
+                <button
+                  type="button"
+                  onClick={() => downloadFile(file)}
                   className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-text-primary bg-primary-container hover:bg-brand-hover rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   <Download className="h-4 w-4" />
                   <span>Download File ({formatBytes(file.fileSizeBytes)})</span>
-                </a>
+                </button>
               </div>
             )}
         </div>
