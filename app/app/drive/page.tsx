@@ -36,7 +36,7 @@ import { MoveFileModal } from '@/components/modals/MoveFileModal';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import { RenameModal } from '@/components/modals/RenameModal';
 import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
-import type { FileItem } from '@/lib/drive/types';
+import type { FileItem, FolderItem } from '@/lib/drive/types';
 
 export default function MyDrivePage() {
   const {
@@ -78,6 +78,7 @@ export default function MyDrivePage() {
 
   // Active 3-dot dropdown ID
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [mobileActionFile, setMobileActionFile] = useState<FileItem | null>(null);
 
   // Sort dropdown
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -436,9 +437,9 @@ export default function MyDrivePage() {
         </div>
 
         {/* Action & Filter Toolbar */}
-        <div className="h-11 flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           {/* Left Pill Filters */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto min-w-0">
             <button
               onClick={() => setFileTypeFilter('all')}
               className={`h-8 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
@@ -790,7 +791,6 @@ export default function MyDrivePage() {
               </button>
             </div>
           ) : viewMode === 'grid' ? (
-            /* Grid View */
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {currentFiles.map((file) => {
                 const isSelected = selectedFileIds.includes(file.id);
@@ -864,48 +864,23 @@ export default function MyDrivePage() {
               })}
             </div>
           ) : (
-            /* List / Data Table Container */
-            <div className="bg-surface border border-border rounded-xl shadow-xs">
-              {/* Table Header */}
-              <div className="h-10 bg-sidebar border-b border-border text-xs font-semibold text-text-muted px-4 grid grid-cols-12 items-center select-none rounded-t-xl">
-                <div className="col-span-12 md:col-span-5 flex items-center gap-3">
-                  <div className="w-4 flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={allCurrentSelected}
-                      onChange={handleSelectAll}
-                      className="w-3.5 h-3.5 rounded bg-surface border-border text-primary-container focus:ring-0 cursor-pointer accent-[#528dff]"
-                    />
-                  </div>
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-text-primary transition-colors">
-                    <span>Name</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </div>
-                <div className="hidden md:block md:col-span-2">Location</div>
-                <div className="hidden md:block md:col-span-2">Modified</div>
-                <div className="hidden md:block md:col-span-1 text-right pr-2">Size</div>
-                <div className="hidden md:block md:col-span-2 text-right">Actions</div>
-              </div>
-
-              {/* File Rows Container */}
-              <div className="divide-y divide-border/60">
+            <div className="bg-surface border border-border rounded-xl shadow-xs overflow-hidden">
+              {/* MOBILE CARD LIST (< md) */}
+              <div className="md:hidden divide-y divide-border/60">
                 {currentFiles.map((file) => {
                   const isSelected = selectedFileIds.includes(file.id);
-                  const isMenuOpen = activeMenuId === `file-list-${file.id}`;
 
                   return (
                     <div
                       key={file.id}
                       onClick={() => toggleSelectFile(file.id)}
-                      onDoubleClick={() => setPreviewFile(file)}
-                      className={`px-4 py-3 grid grid-cols-12 items-center text-xs transition-colors group cursor-pointer ${
+                      className={`p-3.5 flex items-center justify-between gap-3 text-xs transition-colors cursor-pointer ${
                         isSelected
                           ? 'bg-brand-subtle/40 border-l-2 border-l-primary-container'
                           : 'hover:bg-surface-hover'
                       }`}
                     >
-                      <div className="col-span-12 md:col-span-5 flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -913,87 +888,203 @@ export default function MyDrivePage() {
                             e.stopPropagation();
                             toggleSelectFile(file.id);
                           }}
-                          className="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 cursor-pointer accent-[#528dff] flex-shrink-0"
+                          className="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 cursor-pointer accent-[#528dff] shrink-0"
                         />
-                        {getFileCategoryIcon(file.mimeType, file.extension)}
-                        <span
-                          className="text-text-primary font-medium truncate flex-1 group-hover:text-primary transition-colors text-xs sm:text-sm"
-                          title={file.name}
-                        >
-                          {file.name}
-                        </span>
-                        <button
-                          type="button"
-                          aria-label="Toggle star"
+                        <div
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleStarFile(file.id);
+                            setPreviewFile(file);
                           }}
-                          className={`flex-shrink-0 cursor-pointer p-0.5 rounded transition-transform ${
-                            file.isStarred
-                              ? 'text-warning fill-warning'
-                              : 'text-text-muted hover:text-warning'
-                          }`}
+                          className="shrink-0 cursor-pointer"
                         >
-                          <Star
-                            className={`w-4 h-4 ${file.isStarred ? 'fill-warning text-warning' : ''}`}
-                          />
-                        </button>
+                          {getFileCategoryIcon(file.mimeType, file.extension)}
+                        </div>
+                        <div
+                          className="flex flex-col min-w-0 flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewFile(file);
+                          }}
+                        >
+                          <span className="text-text-primary font-medium text-xs sm:text-sm truncate">
+                            {file.name}
+                          </span>
+                          <span className="text-[11px] text-text-muted mt-0.5 truncate">
+                            {formatBytes(file.fileSizeBytes)} · {formatDateDisplay(file.uploadedAt)}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="hidden md:flex md:col-span-2 items-center text-text-secondary truncate pr-2">
-                        <span className="truncate">
-                          {currentFolder ? currentFolder.name : 'My Drive'}
-                        </span>
-                      </div>
-
-                      <div className="hidden md:block md:col-span-2 text-text-secondary truncate">
-                        {formatDateDisplay(file.uploadedAt)}
-                      </div>
-
-                      <div className="hidden md:block md:col-span-1 text-right pr-2 text-text-secondary font-mono tabular-nums">
-                        {formatBytes(file.fileSizeBytes)}
-                      </div>
-
+                      {/* Mobile Quick Action Buttons (Touch friendly >= 40px) */}
                       <div
-                        className="drive-menu-container relative col-span-12 md:col-span-2 flex items-center justify-end gap-1 text-text-muted mt-2 md:mt-0"
+                        className="flex items-center gap-0.5 shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
                           type="button"
+                          onClick={() => toggleStarFile(file.id)}
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                            file.isStarred
+                              ? 'text-warning fill-warning'
+                              : 'text-text-muted hover:text-warning'
+                          }`}
+                          aria-label="Star file"
+                        >
+                          <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning text-warning' : ''}`} />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => downloadFile(file)}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
-                          title="Download"
+                          className="w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+                          aria-label="Download file"
                         >
                           <Download className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => setPreviewFile(file)}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-[#36AEEA] transition-colors cursor-pointer"
-                          title="View / Stream"
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenuId(isMenuOpen ? null : `file-list-${file.id}`);
-                          }}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer ${
-                            isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
-                          }`}
-                          title="More options"
+                          onClick={() => setMobileActionFile(file)}
+                          className="w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+                          aria-label="More options"
                         >
                           <MoreVertical className="w-4 h-4" />
                         </button>
-
-                        {isMenuOpen && renderFileDropdownMenu(file)}
                       </div>
                     </div>
                   );
                 })}
+              </div>
+
+              {/* DESKTOP / TABLET WORKSTATION TABLE (>= md) */}
+              <div className="hidden md:block">
+                {/* Table Header */}
+                <div className="h-10 bg-sidebar border-b border-border text-xs font-semibold text-text-muted px-4 grid grid-cols-12 items-center select-none rounded-t-xl">
+                  <div className="col-span-5 flex items-center gap-3">
+                    <div className="w-4 flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={allCurrentSelected}
+                        onChange={handleSelectAll}
+                        className="w-3.5 h-3.5 rounded bg-surface border-border text-primary-container focus:ring-0 cursor-pointer accent-[#528dff]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1 cursor-pointer hover:text-text-primary transition-colors">
+                      <span>Name</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </div>
+                  <div className="col-span-2">Location</div>
+                  <div className="col-span-2">Modified</div>
+                  <div className="col-span-1 text-right pr-2">Size</div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+
+                {/* File Rows Container */}
+                <div className="divide-y divide-border/60">
+                  {currentFiles.map((file) => {
+                    const isSelected = selectedFileIds.includes(file.id);
+                    const isMenuOpen = activeMenuId === `file-list-${file.id}`;
+
+                    return (
+                      <div
+                        key={file.id}
+                        onClick={() => toggleSelectFile(file.id)}
+                        onDoubleClick={() => setPreviewFile(file)}
+                        className={`px-4 py-3 grid grid-cols-12 items-center text-xs transition-colors group cursor-pointer ${
+                          isSelected
+                            ? 'bg-brand-subtle/40 border-l-2 border-l-primary-container'
+                            : 'hover:bg-surface-hover'
+                        }`}
+                      >
+                        <div className="col-span-5 flex items-center gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleSelectFile(file.id);
+                            }}
+                            className="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 cursor-pointer accent-[#528dff] flex-shrink-0"
+                          />
+                          {getFileCategoryIcon(file.mimeType, file.extension)}
+                          <span
+                            className="text-text-primary font-medium truncate flex-1 group-hover:text-primary transition-colors text-xs sm:text-sm"
+                            title={file.name}
+                          >
+                            {file.name}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Toggle star"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStarFile(file.id);
+                            }}
+                            className={`flex-shrink-0 cursor-pointer p-0.5 rounded transition-transform ${
+                              file.isStarred
+                                ? 'text-warning fill-warning'
+                                : 'text-text-muted hover:text-warning'
+                            }`}
+                          >
+                            <Star
+                              className={`w-4 h-4 ${file.isStarred ? 'fill-warning text-warning' : ''}`}
+                            />
+                          </button>
+                        </div>
+
+                        <div className="col-span-2 flex items-center text-text-secondary truncate pr-2">
+                          <span className="truncate">
+                            {currentFolder ? currentFolder.name : 'My Drive'}
+                          </span>
+                        </div>
+
+                        <div className="col-span-2 text-text-secondary truncate">
+                          {formatDateDisplay(file.uploadedAt)}
+                        </div>
+
+                        <div className="col-span-1 text-right pr-2 text-text-secondary font-mono tabular-nums">
+                          {formatBytes(file.fileSizeBytes)}
+                        </div>
+
+                        <div
+                          className="drive-menu-container relative col-span-2 flex items-center justify-end gap-1 text-text-muted"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => downloadFile(file)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
+                            title="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewFile(file)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-[#36AEEA] transition-colors cursor-pointer"
+                            title="View / Stream"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(isMenuOpen ? null : `file-list-${file.id}`);
+                            }}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer ${
+                              isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
+                            }`}
+                            title="More options"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {isMenuOpen && renderFileDropdownMenu(file)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
@@ -1025,8 +1116,8 @@ export default function MyDrivePage() {
 
         {/* Floating Selection Action Bar */}
         {selectedFileIds.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-surface-raised border border-border-strong shadow-2xl rounded-2xl px-5 py-3 flex items-center gap-4 z-40 animate-in fade-in slide-in-from-bottom-4 duration-200">
-            <div className="flex items-center gap-2 pr-4 border-r border-border">
+          <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 max-w-[calc(100vw-24px)] bg-surface-raised border border-border-strong shadow-2xl rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-4 z-40 animate-in fade-in slide-in-from-bottom-4 duration-200 overflow-x-auto">
+            <div className="flex items-center gap-2 pr-3 sm:pr-4 border-r border-border shrink-0">
               <div className="w-5 h-5 rounded bg-primary-container text-text-primary flex items-center justify-center text-xs font-bold">
                 {selectedFileIds.length}
               </div>
@@ -1090,7 +1181,132 @@ export default function MyDrivePage() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals & Mobile Action Sheet */}
+      {mobileActionFile && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs md:hidden animate-in fade-in duration-150"
+          onClick={() => setMobileActionFile(null)}
+        >
+          <div
+            className="bg-surface-raised border-t border-border rounded-t-2xl p-4 space-y-2 shadow-2xl animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header info */}
+            <div className="flex items-center justify-between pb-3 border-b border-border/50">
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                {getFileCategoryIcon(mobileActionFile.mimeType, mobileActionFile.extension)}
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-text-primary truncate">
+                    {mobileActionFile.name}
+                  </p>
+                  <p className="text-[11px] text-text-muted font-mono">
+                    {formatBytes(mobileActionFile.fileSizeBytes)} · {mobileActionFile.extension.toUpperCase()}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileActionFile(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Action rows */}
+            <div className="grid grid-cols-1 divide-y divide-border/30 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewFile(mobileActionFile);
+                  setMobileActionFile(null);
+                }}
+                className="w-full flex items-center gap-3 py-3 px-2 text-xs font-medium text-text-primary hover:bg-surface-hover rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Send className="w-4 h-4 text-primary" />
+                <span>Preview / Stream file</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  downloadFile(mobileActionFile);
+                  setMobileActionFile(null);
+                }}
+                className="w-full flex items-center gap-3 py-3 px-2 text-xs font-medium text-text-primary hover:bg-surface-hover rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-text-muted" />
+                <span>Download file</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  toggleStarFile(mobileActionFile.id);
+                  setMobileActionFile(null);
+                }}
+                className="w-full flex items-center gap-3 py-3 px-2 text-xs font-medium text-text-primary hover:bg-surface-hover rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Star className={`w-4 h-4 ${mobileActionFile.isStarred ? 'fill-warning text-warning' : 'text-text-muted'}`} />
+                <span>{mobileActionFile.isStarred ? 'Remove from Starred' : 'Add to Starred'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRenameTarget({ id: mobileActionFile.id, name: mobileActionFile.name, isFolder: false });
+                  setMobileActionFile(null);
+                }}
+                className="w-full flex items-center gap-3 py-3 px-2 text-xs font-medium text-text-primary hover:bg-surface-hover rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Edit2 className="w-4 h-4 text-text-muted" />
+                <span>Rename file</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMoveFileTarget(mobileActionFile);
+                  setMobileActionFile(null);
+                }}
+                className="w-full flex items-center gap-3 py-3 px-2 text-xs font-medium text-text-primary hover:bg-surface-hover rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <FolderInput className="w-4 h-4 text-text-muted" />
+                <span>Move to another folder</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteTarget({
+                    id: mobileActionFile.id,
+                    name: mobileActionFile.name,
+                    isFolder: false,
+                    defaultAction: 'trash',
+                  });
+                  setMobileActionFile(null);
+                }}
+                className="w-full flex items-center gap-3 py-3 px-2 text-xs font-medium text-warning hover:bg-warning/10 rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Move to Trash</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteTarget({
+                    id: mobileActionFile.id,
+                    name: mobileActionFile.name,
+                    isFolder: false,
+                    defaultAction: 'permanent',
+                  });
+                  setMobileActionFile(null);
+                }}
+                className="w-full flex items-center gap-3 py-3 px-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>Permanently Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showNewFolderModal && (
         <NewFolderModal onClose={() => setShowNewFolderModal(false)} />
       )}

@@ -219,157 +219,284 @@ export default function RecentPage() {
   const renderFileRow = (file: FileItem) => {
     const meta = getFileCategoryMeta(file.mimeType, file.extension);
     const folderName = file.parentFolderId ? folderMap.get(file.parentFolderId) || 'Projects' : 'My Drive';
+    const isMenuOpen = activeMenuId === `recent-${file.id}`;
 
     return (
-      <div
-        key={file.id}
-        onClick={() => setPreviewFile(file)}
-        className="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer border-b border-border/40 last:border-b-0"
-      >
-        <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
-          <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
-            {meta.icon}
+      <div key={file.id}>
+        {/* Mobile Row (< md) */}
+        <div
+          onClick={() => setPreviewFile(file)}
+          className="md:hidden p-3.5 flex items-center justify-between gap-3 bg-surface hover:bg-surface-hover transition-colors cursor-pointer border-b border-border/40 last:border-b-0"
+        >
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleStarFile(file.id);
+              }}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                file.isStarred ? 'text-warning' : 'text-text-muted hover:text-warning'
+              }`}
+              type="button"
+            >
+              <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning' : ''}`} />
+            </button>
+            <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0">
+              {meta.icon}
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-xs sm:text-sm font-medium text-text-primary truncate">
+                {file.name}
+              </span>
+              <span className="text-[11px] text-text-muted mt-0.5 truncate">
+                {formatBytes(file.fileSizeBytes)} · {folderName} · {formatDateDisplay(file.uploadedAt)}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors font-medium">
-              {file.name}
-            </span>
-            <span className="font-label-sm text-label-sm text-text-muted truncate md:hidden">
+
+          <div
+            className="drive-menu-container relative flex items-center gap-1 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={(e) => handleDownload(e, file)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+              type="button"
+              aria-label="Download"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveMenuId(isMenuOpen ? null : `recent-${file.id}`);
+              }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+              type="button"
+              aria-label="More options"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+
+            {isMenuOpen && (
+              <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewFile(file);
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5 text-primary" />
+                  <span>Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRenameTarget({ id: file.id, name: file.name, isFolder: false });
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                  <span>Rename</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleStarFile(file.id);
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                >
+                  <Star className={`w-3.5 h-3.5 ${file.isStarred ? 'fill-warning text-warning' : 'text-text-muted'}`} />
+                  <span>{file.isStarred ? 'Remove Star' : 'Star'}</span>
+                </button>
+                <div className="my-1 border-t border-border" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteTarget({
+                      id: file.id,
+                      name: file.name,
+                      isFolder: false,
+                      defaultAction: 'trash',
+                    });
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Move to Trash</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteTarget({
+                      id: file.id,
+                      name: file.name,
+                      isFolder: false,
+                      defaultAction: 'permanent',
+                    });
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop Row (>= md) */}
+        <div
+          onClick={() => setPreviewFile(file)}
+          className="file-row hidden md:grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer border-b border-border/40 last:border-b-0"
+        >
+          <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+            <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+              {meta.icon}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors font-medium">
+                {file.name}
+              </span>
+              <span className="font-label-sm text-label-sm text-text-muted truncate md:hidden">
+                {folderName}
+              </span>
+            </div>
+          </div>
+
+          <div className="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+            <Folder className="w-4 h-4 text-text-muted shrink-0" />
+            <span className="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">
               {folderName}
             </span>
           </div>
-        </div>
 
-        <div className="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
-          <Folder className="w-4 h-4 text-text-muted shrink-0" />
-          <span className="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">
-            {folderName}
-          </span>
-        </div>
+          <div className="col-span-2 flex items-center min-w-0">
+            <span className="font-body-sm text-body-sm text-text-muted">
+              {formatDateDisplay(file.uploadedAt)}
+            </span>
+          </div>
 
-        <div className="col-span-3 md:col-span-2 flex items-center min-w-0">
-          <span className="font-body-sm text-body-sm text-text-muted">
-            {formatDateDisplay(file.uploadedAt)}
-          </span>
-        </div>
+          <div className="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+            {formatBytes(file.fileSizeBytes)}
+          </div>
 
-        <div className="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
-          {formatBytes(file.fileSizeBytes)}
-        </div>
-
-        <div
-          className="drive-menu-container relative col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleStarFile(file.id);
-            }}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              file.isStarred
-                ? 'text-warning hover:bg-surface-raised'
-                : 'text-text-muted hover:text-warning hover:bg-surface-raised'
-            }`}
-            title={file.isStarred ? 'Starred' : 'Star file'}
-            type="button"
+          <div
+            className="drive-menu-container relative col-span-1 flex items-center justify-end gap-1"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning' : ''}`} />
-          </button>
-          <button
-            onClick={(e) => handleDownload(e, file)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
-            title="Download from Telegram CDN"
-            type="button"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setActiveMenuId(activeMenuId === `recent-${file.id}` ? null : `recent-${file.id}`);
-            }}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
-            title="More options"
-            type="button"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleStarFile(file.id);
+              }}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                file.isStarred
+                  ? 'text-warning hover:bg-surface-raised'
+                  : 'text-text-muted hover:text-warning hover:bg-surface-raised'
+              }`}
+              title={file.isStarred ? 'Starred' : 'Star file'}
+              type="button"
+            >
+              <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning' : ''}`} />
+            </button>
+            <button
+              onClick={(e) => handleDownload(e, file)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+              title="Download from Telegram CDN"
+              type="button"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveMenuId(isMenuOpen ? null : `recent-${file.id}`);
+              }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+              title="More options"
+              type="button"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
 
-          {activeMenuId === `recent-${file.id}` && (
-            <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
-              <button
-                type="button"
-                onClick={() => {
-                  setPreviewFile(file);
-                  setActiveMenuId(null);
-                }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-              >
-                <Eye className="w-3.5 h-3.5 text-primary" />
-                <span>Preview</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setRenameTarget({ id: file.id, name: file.name, isFolder: false });
-                  setActiveMenuId(null);
-                }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-              >
-                <Edit2 className="w-3.5 h-3.5 text-text-muted" />
-                <span>Rename</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  toggleStarFile(file.id);
-                  setActiveMenuId(null);
-                }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-              >
-                <Star
-                  className={`w-3.5 h-3.5 ${
-                    file.isStarred ? 'fill-warning text-warning' : 'text-text-muted'
-                  }`}
-                />
-                <span>{file.isStarred ? 'Remove Star' : 'Star'}</span>
-              </button>
-              <div className="my-1 border-t border-border" />
-              <button
-                type="button"
-                onClick={() => {
-                  setDeleteTarget({
-                    id: file.id,
-                    name: file.name,
-                    isFolder: false,
-                    defaultAction: 'trash',
-                  });
-                  setActiveMenuId(null);
-                }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Move to Trash</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDeleteTarget({
-                    id: file.id,
-                    name: file.name,
-                    isFolder: false,
-                    defaultAction: 'permanent',
-                  });
-                  setActiveMenuId(null);
-                }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
-              >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Delete</span>
-              </button>
-            </div>
-          )}
+            {isMenuOpen && (
+              <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewFile(file);
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5 text-primary" />
+                  <span>Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRenameTarget({ id: file.id, name: file.name, isFolder: false });
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                  <span>Rename</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleStarFile(file.id);
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                >
+                  <Star className={`w-3.5 h-3.5 ${file.isStarred ? 'fill-warning text-warning' : 'text-text-muted'}`} />
+                  <span>{file.isStarred ? 'Remove Star' : 'Star'}</span>
+                </button>
+                <div className="my-1 border-t border-border" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteTarget({
+                      id: file.id,
+                      name: file.name,
+                      isFolder: false,
+                      defaultAction: 'trash',
+                    });
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Move to Trash</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteTarget({
+                      id: file.id,
+                      name: file.name,
+                      isFolder: false,
+                      defaultAction: 'permanent',
+                    });
+                    setActiveMenuId(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -598,7 +725,7 @@ export default function RecentPage() {
           {viewMode === 'table' ? (
             <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
               {/* Table Header */}
-              <div className="bg-sidebar px-4 grid grid-cols-12 items-center h-10 select-none border-b border-border/40">
+              <div className="hidden md:grid bg-sidebar px-4 grid-cols-12 items-center h-10 select-none border-b border-border/40">
                 <div className="col-span-5 flex items-center gap-2 font-label-sm text-xs text-text-muted font-medium">
                   <span>Name</span>
                 </div>
@@ -645,7 +772,7 @@ export default function RecentPage() {
           {viewMode === 'table' ? (
             <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
               {/* Table Header */}
-              <div className="bg-sidebar px-4 grid grid-cols-12 items-center h-10 select-none border-b border-border/40">
+              <div className="hidden md:grid bg-sidebar px-4 grid-cols-12 items-center h-10 select-none border-b border-border/40">
                 <div className="col-span-5 flex items-center gap-2 font-label-sm text-xs text-text-muted font-medium">
                   <span>Name</span>
                 </div>

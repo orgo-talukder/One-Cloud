@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth-context';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { AppHeader } from '@/components/layout/AppHeader';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { UploadQueueDrawer } from '@/components/modals/UploadQueueDrawer';
 import { Cloud, Loader2 } from 'lucide-react';
 
@@ -48,22 +49,32 @@ export default function DriveAppLayout({ children }: { children: React.ReactNode
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden bg-black/60 backdrop-blur-xs">
-          <div className="relative flex flex-col w-[248px] max-w-xs bg-sidebar h-full shadow-2xl">
-            <AppSidebar />
+        <div className="fixed inset-0 z-50 flex md:hidden bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative flex flex-col w-[260px] max-w-xs bg-sidebar h-full shadow-2xl animate-in slide-in-from-left duration-200">
+            <AppSidebar
+              onNavigate={() => setMobileMenuOpen(false)}
+              onClose={() => setMobileMenuOpen(false)}
+            />
           </div>
-          <div className="flex-1" onClick={() => setMobileMenuOpen(false)} />
+          <div
+            className="flex-1 cursor-pointer"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close drawer"
+          />
         </div>
       )}
 
       {/* Main Workspace Viewport */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AppHeader onToggleMobileMenu={() => setMobileMenuOpen(true)} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
       </div>
 
       {/* Persistent Upload Manager Drawer */}
       <UploadQueueDrawer />
+
+      {/* Dedicated Mobile Bottom Navigation Bar */}
+      <MobileBottomNav />
     </div>
   );
 }

@@ -167,12 +167,12 @@ export default function LandingPage() {
                   <div className="col-span-12 md:col-span-9 bg-canvas p-4 sm:p-6 flex flex-col gap-6">
                     {/* Mock Header Bar with Search */}
                     <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 max-w-md bg-surface border border-border rounded-lg px-3 py-2 flex items-center gap-2.5 text-text-muted">
-                        <Search className="w-4 h-4 text-text-muted" />
-                        <span className="text-xs text-text-muted">
-                          Search files, archives, media...
+                      <div className="flex-1 max-w-md bg-surface border border-border rounded-lg px-2.5 sm:px-3 py-2 flex items-center gap-2 text-text-muted min-w-0">
+                        <Search className="w-4 h-4 text-text-muted shrink-0" />
+                        <span className="text-xs text-text-muted truncate">
+                          Search files, archives...
                         </span>
-                        <kbd className="ml-auto px-1.5 py-0.5 text-[10px] bg-canvas text-text-secondary rounded border border-border font-mono">
+                        <kbd className="ml-auto px-1.5 py-0.5 text-[10px] bg-canvas text-text-secondary rounded border border-border font-mono hidden sm:inline-block shrink-0">
                           ⌘K
                         </kbd>
                       </div>

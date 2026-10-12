@@ -75,7 +75,7 @@ export function UploadQueueDrawer() {
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 w-[440px] max-w-[calc(100vw-32px)] bg-surface border border-border rounded-[14px] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.65)] flex flex-col overflow-hidden text-text-primary transition-all duration-200"
+      className="fixed bottom-20 md:bottom-6 right-3 md:right-6 left-3 md:left-auto md:w-[440px] max-w-[calc(100vw-24px)] z-50 bg-surface border border-border rounded-[14px] shadow-2xl flex flex-col overflow-hidden text-text-primary transition-all duration-200"
       id="uploadQueueDrawer"
     >
       {/* Header Block */}

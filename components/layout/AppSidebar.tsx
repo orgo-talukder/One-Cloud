@@ -16,13 +16,19 @@ import {
   Send,
   ChevronDown,
   LayoutDashboard,
+  X,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 import { formatBytes } from '@/lib/drive/storage-calc';
 import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { ConnectTelegramModal } from '@/components/modals/ConnectTelegramModal';
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  onNavigate?: () => void;
+  onClose?: () => void;
+}
+
+export function AppSidebar({ onNavigate, onClose }: AppSidebarProps = {}) {
   const pathname = usePathname();
   const {
     storageSummary,
@@ -49,6 +55,7 @@ export function AppSidebar() {
     if (e.target.files && e.target.files.length > 0) {
       uploadFiles(e.target.files);
       setNewDropdownOpen(false);
+      onNavigate?.();
       e.target.value = '';
     }
   };
@@ -58,18 +65,30 @@ export function AppSidebar() {
       <aside className="w-[248px] shrink-0 border-r border-border bg-sidebar flex flex-col justify-between h-screen select-none transition-colors">
         <div className="flex flex-col">
           {/* Brand Header */}
-          <div className="h-[68px] px-4 flex items-center border-b border-border/40 gap-3">
-            <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-primary border border-border/60 shrink-0">
-              <Cloud className="w-4 h-4 text-primary" />
+          <div className="h-[68px] px-4 flex items-center justify-between border-b border-border/40">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-primary border border-border/60 shrink-0">
+                <Cloud className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="font-semibold text-text-primary tracking-tight text-[15px] leading-tight truncate">
+                  One Cloud
+                </span>
+                <span className="text-[11px] text-text-muted leading-tight truncate font-medium">
+                  Telegram Drive
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-text-primary tracking-tight text-[15px] leading-tight truncate">
-                One Cloud
-              </span>
-              <span className="text-[11px] text-text-muted leading-tight truncate font-medium">
-                Telegram Drive
-              </span>
-            </div>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* "+ New" Action Button */}
@@ -135,6 +154,7 @@ export function AppSidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => onNavigate?.()}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-colors ${
                     isActive
                       ? 'bg-brand-subtle text-primary font-medium'

@@ -683,14 +683,14 @@ export default function DashboardPage() {
           {/* File Table / Container */}
           <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
             {/* Table Header */}
-            <div className="grid grid-cols-12 items-center px-4 py-3 bg-surface-raised text-xs font-semibold text-text-muted uppercase tracking-wider select-none border-b border-border/40">
-              <div className="col-span-6 sm:col-span-5 flex items-center gap-3">
+            <div className="hidden md:grid grid-cols-12 items-center px-4 py-3 bg-surface-raised text-xs font-semibold text-text-muted uppercase tracking-wider select-none border-b border-border/40">
+              <div className="col-span-5 flex items-center gap-3">
                 <span className="w-4" />
                 <span>Name</span>
               </div>
-              <div className="hidden sm:block sm:col-span-2">Category</div>
-              <div className="col-span-3 sm:col-span-2">Modified</div>
-              <div className="col-span-2 sm:col-span-2 text-right sm:text-left">Size</div>
+              <div className="col-span-2">Category</div>
+              <div className="col-span-2">Modified</div>
+              <div className="col-span-2">Size</div>
               <div className="col-span-1 text-right">Actions</div>
             </div>
 
@@ -724,66 +724,125 @@ export default function DashboardPage() {
                   const isLast = idx === filteredRecentFiles.length - 1;
 
                   return (
-                    <div
-                      key={file.id}
-                      onClick={() => setPreviewFile(file)}
-                      className={`grid grid-cols-12 items-center px-4 h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer ${
-                        !isLast ? 'border-b border-border/40' : ''
-                      } ${idx % 2 === 1 ? 'bg-surface/50' : ''}`}
-                    >
-                      <div className="col-span-6 sm:col-span-5 flex items-center gap-3 min-w-0 pr-2">
-                        <button
-                          aria-label="Toggle favorite"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleStarFile(file.id);
-                          }}
-                          className={`focus:outline-none shrink-0 p-0.5 rounded transition-colors cursor-pointer ${
-                            file.isStarred
-                              ? 'text-warning fill-warning'
-                              : 'text-text-muted hover:text-warning'
-                          }`}
-                          type="button"
-                        >
-                          <Star
-                            className={`w-4 h-4 ${
-                              file.isStarred ? 'fill-warning text-warning' : ''
+                    <React.Fragment key={file.id}>
+                      {/* Mobile Row (< md) */}
+                      <div
+                        onClick={() => setPreviewFile(file)}
+                        className={`md:hidden p-3.5 flex items-center justify-between gap-3 hover:bg-surface-hover transition-colors cursor-pointer ${
+                          !isLast ? 'border-b border-border/40' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <button
+                            type="button"
+                            aria-label="Toggle favorite"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStarFile(file.id);
+                            }}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                              file.isStarred ? 'text-warning' : 'text-text-muted hover:text-warning'
                             }`}
-                          />
-                        </button>
-
-                        <div
-                          className={`w-8 h-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0 border border-border/30`}
-                        >
-                          {meta.icon}
+                          >
+                            <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning text-warning' : ''}`} />
+                          </button>
+                          <div className={`w-8 h-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0 border border-border/30`}>
+                            {meta.icon}
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-xs sm:text-sm font-medium text-text-primary truncate">
+                              {file.name}
+                            </span>
+                            <span className="text-[11px] text-text-muted mt-0.5 truncate">
+                              {formatBytes(file.fileSizeBytes)} · {formatDateDisplay(file.uploadedAt)}
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="flex flex-col min-w-0">
+                        {/* Quick action buttons */}
+                        <div
+                          className="drive-menu-container relative flex items-center gap-1 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => downloadFile(file)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                            aria-label="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(
+                                activeMenuId === `dash-${file.id}` ? null : `dash-${file.id}`
+                              );
+                            }}
+                            aria-label="More options"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                            type="button"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Desktop Workstation Row (>= md) */}
+                      <div
+                        onClick={() => setPreviewFile(file)}
+                        className={`hidden md:grid grid-cols-12 items-center px-4 h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer ${
+                          !isLast ? 'border-b border-border/40' : ''
+                        } ${idx % 2 === 1 ? 'bg-surface/50' : ''}`}
+                      >
+                        <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+                          <button
+                            aria-label="Toggle favorite"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStarFile(file.id);
+                            }}
+                            className={`focus:outline-none shrink-0 p-0.5 rounded transition-colors cursor-pointer ${
+                              file.isStarred
+                                ? 'text-warning fill-warning'
+                                : 'text-text-muted hover:text-warning'
+                            }`}
+                            type="button"
+                          >
+                            <Star
+                              className={`w-4 h-4 ${
+                                file.isStarred ? 'fill-warning text-warning' : ''
+                              }`}
+                            />
+                          </button>
+
+                          <div
+                            className={`w-8 h-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0 border border-border/30`}
+                          >
+                            {meta.icon}
+                          </div>
+
                           <span className="text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">
                             {file.name}
                           </span>
-                          <span className="sm:hidden text-[11px] text-text-muted leading-tight">
-                            {meta.label}
-                          </span>
                         </div>
-                      </div>
 
-                      <div className="hidden sm:flex sm:col-span-2 items-center">
-                        <span className="text-sm text-text-secondary">{meta.label}</span>
-                      </div>
+                        <div className="col-span-2 flex items-center">
+                          <span className="text-sm text-text-secondary">{meta.label}</span>
+                        </div>
 
-                      <div className="col-span-3 sm:col-span-2 text-sm text-text-muted truncate">
-                        {formatDateDisplay(file.uploadedAt)}
-                      </div>
+                        <div className="col-span-2 text-sm text-text-muted truncate">
+                          {formatDateDisplay(file.uploadedAt)}
+                        </div>
 
-                      <div className="col-span-2 sm:col-span-2 text-sm text-text-secondary text-right sm:text-left tabular-nums">
-                        {formatBytes(file.fileSizeBytes)}
-                      </div>
+                        <div className="col-span-2 text-sm text-text-secondary tabular-nums">
+                          {formatBytes(file.fileSizeBytes)}
+                        </div>
 
-                      <div
-                        className="drive-menu-container relative col-span-1 flex items-center justify-end gap-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                        <div
+                          className="drive-menu-container relative col-span-1 flex items-center justify-end gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                         <button
                           type="button"
                           onClick={() => downloadFile(file)}
@@ -882,6 +941,7 @@ export default function DashboardPage() {
                         )}
                       </div>
                     </div>
+                  </React.Fragment>
                   );
                 })}
               </div>

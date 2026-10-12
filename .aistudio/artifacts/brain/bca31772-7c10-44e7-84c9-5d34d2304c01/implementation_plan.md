@@ -1,140 +1,77 @@
-# One Cloud — Linux Desktop (.deb) হাইব্রিড আর্কিটেকচার ও সুপারফাস্ট ট্রান্সফার প্ল্যান
+# Mobile & Tablet Responsiveness Implementation Plan
 
-এই ইমপ্লিমেন্টেশন প্ল্যানের লক্ষ্য হলো **One Cloud**-কে একটি একক কোডবেসে রেখে এমনভাবে তৈরি করা যাতে এটি **একই সাথে Vercel ওয়েবসাইটেও চলবে** এবং **Linux ওএস-এর জন্য একটি নেটিভ `.deb` ইনস্টলার অ্যাপ** হিসেবেও চলবে। 
+## 1. Overview
+The goal is to transform **Telegram Cloud Drive** into a first-class, fully responsive web application that provides a native mobile app experience on smartphones (iOS & Android), an optimized layout on tablets (iPads & Android tablets), and retains its rich desktop workstation interface.
 
-ডেস্কটপ অ্যাপটিতে Vercel-এর কোনো সার্ভারলেস লিমিট থাকবে না; এটি আপনার পিসির লোকাল ইন্টারনেট ও ১৬টি প্যারালাল MTProto থ্রেড ব্যবহার করে **সরাসরি আপনার পিসি থেকে টেলিগ্রাম ডেটাসেন্টারে আনলিমিটেড সাইজের ফাইল (যেমন ২ GB – ৪ GB)** সুপারফাস্ট গতিতে আপলোড ও ডাউনলোড করবে।
-
----
-
-## ইউজার রিভিউ ও নিশ্চিতকৃত সিদ্ধান্তসমূহ (Confirmed Decisions)
-
-> [!IMPORTANT]
-> আপনার দেওয়া উত্তরের ওপর ভিত্তি করে নিচের ৩টি প্রধান সিদ্ধান্ত চূড়ান্ত করা হয়েছে:
-
-1. **টার্গেট ইনস্টলার — Linux `.deb` প্যাকেজ (Ubuntu / Debian / Mint)**:
-   - লিনাক্সের জন্য অফিসিয়াল `.deb` ইনস্টলার তৈরি করা হবে, যা `sudo dpkg -i one-cloud.deb` বা Software Center দিয়ে ১-ক্লিকে ইনস্টল করা যাবে।
-2. **সরাসরি লোকাল MTProto IPC ব্রিজ (16x Parallel Workers)**:
-   - লিনাক্স অ্যাপে কোনো Vercel সার্ভার প্রক্সি ব্যবহার করা হবে না। অ্যাপের ব্যাকগ্রাউন্ডে সরাসরি আপনার পিসির লোকাল Node.js রানটাইম টেলিগ্রামের সাথে ১৬টি প্যারালাল কানেকশন খুলবে। ফলে ৪.৫ MB বা ৬০ সেকেন্ডের কোনো লিমিট থাকবে না।
-3. **স্বয়ংক্রিয় `~/Downloads` ফোল্ডারে সেভ ও নেটিভ লিনাক্স নোটিফিকেশন**:
-   - ডাউনলোড সম্পন্ন হলে ফাইলটি স্বয়ংক্রিয়ভাবে ব্যবহারকারীর `~/Downloads` ফোল্ডারে সেভ হবে এবং লিনাক্স ডেক্সটপে নোটিফিকেশন আসবে।
-4. **ডুয়াল-মোড অটো-ডিটেকশন (Web vs Desktop)**:
-   - ব্রাউজারে Vercel-এ ঢুকলে বর্তমান ৪.২ MB চাঙ্কড মেথড চলবে।
-   - লিনাক্স অ্যাপ ওপেন করলে অটো-ডিটেক্ট হয়ে ডিরেক্ট ১৬x লোকাল ইঞ্জিন অন হয়ে যাবে।
+Based on user requirements:
+- **Mobile Navigation:** Bottom navigation bar plus slide-out drawer.
+- **Mobile File Display:** Touch-friendly responsive card list with quick actions and mobile action sheet.
 
 ---
 
-## ১. হাইব্রিড আর্কিটেকচার ডায়াগ্রাম (System Architecture)
+## 2. Key Architecture & Design Changes
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                       One Cloud Frontend (Next.js & React)                  │
-│                                                                             │
-│                   ┌──────────────────────────────────────┐                  │
-│                   │ Platform Detection: window.isDesktop? │                  │
-│                   └──────────────────┬───────────────────┘                  │
-└──────────────────────────────────────┼──────────────────────────────────────┘
-                                       │
-            ┌──────────────────────────┴──────────────────────────┐
-            ▼                                                     ▼
-┌───────────────────────────────┐             ┌───────────────────────────────┐
-│       MODE A: WEB (Vercel)    │             │   MODE B: LINUX DESKTOP (.deb)│
-│                               │             │                               │
-│  • Used when browsing site    │             │  • Electron Native Runtime    │
-│  • Safe 4.2 MB Chunks         │             │  • Direct Local MTProto IPC   │
-│  • 4x Parallel Workers        │             │  • 16x Parallel Workers       │
-│  • Vercel sin1 Serverless     │             │  • 0 MB Server Limit (2GB+)   │
-│               │               │             │  • Saves to ~/Downloads       │
-│               ▼               │             │  • Native Linux Notifications │
-│      [Vercel Serverless]      │             │               │               │
-│               │               │             │               ▼               │
-└───────────────┼───────────────┘             └───────────────┼───────────────┘
-                │                                             │
-                ▼                                             ▼
-        [Telegram Servers]                            [Telegram Servers]
-```
+### A. Public Website & Landing Page Navigation (`components/layout/Navbar.tsx` & Hero)
+- **Mobile Hamburger Menu:** Add a slide-out drawer on `< 768px` screens with smooth transitions to access `About`, `How It Works`, `Security`, `Help & FAQ`, and `Login / Open Drive`.
+- **Responsive Hero Mockup:** Fix the 1080px desktop mockup container on mobile (`< 640px`) to scale smoothly without horizontal scrolling or clipped elements.
+- **Touch-Friendly Buttons:** Increase button tap areas to a minimum of 44x44px.
 
----
+### B. App Layout & Mobile Bottom Navigation Bar (`components/layout/MobileBottomNav.tsx`)
+- **New Mobile Bottom Bar (`< 768px`):**
+  - **Home** (`/app`) - Dashboard & storage overview
+  - **My Drive** (`/app/drive`) - Folder hierarchy & files
+  - **Upload (+)** - Central floating upload trigger
+  - **Starred** (`/app/starred`) - Bookmarked files
+  - **Recent** (`/app/recent`) - Latest uploads
+- **Drawer Enhancements (`components/layout/Sidebar.tsx` & `AppHeader.tsx`):**
+  - Auto-close the mobile sidebar drawer upon selecting any navigation link.
+  - Add safe-area padding (`pb-20 md:pb-6`) so bottom navigation never overlaps content or action buttons.
+  - Responsive header search bar with collapsible mobile search icon.
 
-## ২. কেন ডেস্কটপ অ্যাপে স্পিড সবচেয়ে বেশি (সুপারফাস্ট) হবে?
+### C. Touch-Friendly File & Folder System (`app/app/drive/page.tsx` & `FileList.tsx`)
+- **Adaptive Mobile View (`< 768px`):**
+  - Replace broken 12-column desktop table on mobile with **Responsive Card List**:
+    - File icon with category badge
+    - Clean filename with truncation
+    - Metadata subtitle: File size + relative time + location tag
+    - Quick actions: One-tap Star, Download, and Preview buttons
+    - Mobile **Action Sheet** (Bottom Drawer) for 3-dot menu options (`Rename`, `Move`, `Trash`, `Permanent Delete`) so menus never clip off-screen.
+- **Tablet Layout (`768px – 1024px`):**
+  - 2 to 3 column fluid grid for folders and files.
+  - Responsive table with prioritized visible columns (Name, Size, Actions).
+- **Desktop Layout (`> 1024px`):**
+  - Retain the full 6-column professional workstation view with sorting and bulk actions.
 
-1. **মাঝখানের সার্ভার বাইপাস**:
-   - ওয়েবসাইটে ফাইলটি আপনার পিসি ➔ Vercel ➔ Telegram-এ যায়।
-   - লিনাক্স অ্যাপে ফাইলটি আপনার **পিসি ➔ সরাসরি Telegram ডেটাসেন্টারে** যাবে। মাঝখানে কোনো মধ্যবর্তী সার্ভার না থাকায় কোনো ডেটা ট্র্যাফিক জ্যাম থাকবে না।
-2. **১৬টি প্যারালাল সকেট (16x MTProto Workers)**:
-   - ব্রাউজারে ৬টির বেশি সকেট খোলা যায় না, কিন্তু লিনাক্স ওএসে লোকাল অ্যাপ হিসেবে GramJS একসাথে ১৬ থেকে ৩২টি সমান্তরাল MTProto সকেট খুলতে পারে। এতে আপনার পুরো ব্রডব্যান্ড লাইনের ১০০% স্পিড কাজে লাগবে।
-3. **বড় ফাইলের কোনো বাধা নেই**:
-   - ২ GB বা ৪ GB ফাইলও একবারে আপলোড/ডাউনলোড হবে, কোনো চাঙ্ক মিসিং বা টাইমআউটের ভয় থাকবে না।
+### D. Dashboard & Secondary Pages (`/app/app/page.tsx`, `/recent`, `/starred`, `/trash`)
+- **Storage Metrics Grid:** Responsive grid switching from 1 column on mobile (`grid-cols-1`) to 2 on tablets (`sm:grid-cols-2`) and 4 on desktop (`lg:grid-cols-4`).
+- **Storage Breakdown Tiles:** 2 columns on mobile, 3 on tablet, 5 on desktop with wrap support.
+- **Consistent Mobile List:** Apply the new responsive card view across Recent, Starred, and Trash pages.
 
----
-
-## ৩. যে ফাইলগুলো তৈরি ও আপডেট করা হবে (Planned Changes)
-
-### ক) Electron মেইন প্রসেস ও IPC ব্রিজ তৈরি
-- **`electron/main.ts` (নতুন ফাইল)**:
-  - লিনাক্স উইন্ডো তৈরি, অ্যাপ্লিকেশন মেনু ও ট্রাই আইকন হ্যান্ডলিং।
-  - `telegram:upload-file`: লোকাল ফাইল সিস্টেম থেকে ফাইল রিড করে সরাসরি Telegram Saved Messages-এ ১৬x ওয়ার্কার দিয়ে পুশ করা।
-  - `telegram:download-file`: সরাসরি টেলিগ্রাম থেকে ১৬x ওয়ার্কারে নামিয়ে `~/Downloads` ফোল্ডারে সেভ করা।
-  - নেটিভ লিনাক্স ওএস নোটিফিকেশন (`Notification.show`).
-- **`electron/preload.ts` (নতুন ফাইল)**:
-  - সিকিউর `contextBridge` দিয়ে ফ্রন্টএন্ডে `window.electronBridge` এক্সপোজ করা।
-
-### খ) ফ্রন্টএন্ডে প্ল্যাটফর্ম ডিটেকশন ও ইন্টিগ্রেশন
-- **`lib/drive/types.ts`**:
-  - `window.electronBridge` টাইপ ডিক্লারেশন যুক্ত করা।
-- **`lib/drive/drive-context.tsx`**:
-  - `uploadFiles` এবং `downloadFile`-এ চেক করা হবে:
-    - যদি `window.electronBridge` থাকে ➔ সরাসরি লোকাল ১৬x IPC মেথড কল হবে।
-    - যদি সাধারণ ব্রাউজার হয় ➔ বর্তমান Vercel চাঙ্কড পাইপলাইনে যাবে।
-  - উভয় ক্ষেত্রেই প্রগ্রেস বার, স্পিড (`MB/s`), এবং ETA একই সুন্দর ড্রয়ারে লাইভ দেখাবে।
-
-### গ) লিনাক্স `.deb` বিল্ডার কনফিগারেশন
-- **`electron-builder.json` (নতুন ফাইল)**:
-  - লিনাক্স প্যাকেজিং কনফিগারেশন:
-    - টার্গেট: `deb` এবং `AppImage`
-    - ক্যাটাগরি: `Network;FileTransfer;Utility;`
-    - আইকন এবং ইনস্টলেশন ডিরেক্টরি সেটআপ (`/opt/One Cloud`)
-- **`package.json`**:
-  - ডিপেনডেন্সি: `electron`, `electron-builder`, `concurrently`, `cross-env`
-  - স্ক্রিপ্টস:
-    - `npm run electron:dev` (লোকাল ডেভেলপমেন্ট রান করার জন্য)
-    - `npm run build:linux` (সরাসরি `.deb` ইনস্টলার তৈরি করার জন্য)
+### E. Modals & Overlay Drawers
+- **`UploadQueueDrawer.tsx`:** Anchor as a bottom sheet on mobile screens (`w-full bottom-16 sm:bottom-6 sm:right-6 sm:w-[440px]`), preventing horizontal overflow.
+- **Dialogs (`FilePreviewModal`, `ConnectTelegramModal`, `RenameModal`, `MoveFileModal`, `DeleteConfirmModal`):**
+  - Use fluid widths (`w-[calc(100vw-32px)] max-w-lg`) with proper safe margins and touch-friendly buttons.
+  - Video and audio streaming modal optimized for mobile portrait and landscape view.
 
 ---
 
-## ৪. ইনস্টলার তৈরি করার ধাপসমূহ (User Guide)
+## 3. Step-by-Step Implementation Steps
 
-কোড আপডেট শেষ হলে আপনি আপনার লিনাক্স মেশিনে (অথবা যেকোনো লিনাক্স টার্মিনালে) নিচের কমান্ডটি দিলেই ইনস্টলার তৈরি হবে:
-```bash
-npm run build:linux
-```
-কমান্ডটি সম্পন্ন হলে আপনার প্রজেক্টের `dist/` ফোল্ডারে নিচের ফাইলটি তৈরি হবে:
-- **`one-cloud_1.0.0_amd64.deb`**
-
-ইনস্টল করার নিয়ম:
-```bash
-sudo dpkg -i dist/one-cloud_1.0.0_amd64.deb
-```
-ইনস্টল হওয়ার পর আপনার লিনাক্স অ্যাপ মেনুতেই **"One Cloud"** চলে আসবে!
+1. **Step 1:** Create `components/layout/MobileBottomNav.tsx` and integrate it into `app/app/layout.tsx`.
+2. **Step 2:** Update `components/layout/Navbar.tsx` to include mobile hamburger toggle and animated slide-out navigation sheet.
+3. **Step 3:** Optimize `components/layout/AppHeader.tsx` and `components/layout/Sidebar.tsx` for mobile drawer auto-close and responsive search.
+4. **Step 4:** Refactor `app/app/drive/page.tsx` to support the responsive mobile card list view and mobile bottom sheet for file options.
+5. **Step 5:** Refactor `app/app/page.tsx` (Dashboard) metrics grid, storage breakdown, and recent files list.
+6. **Step 6:** Update `app/app/recent/page.tsx`, `app/app/starred/page.tsx`, and `app/app/trash/page.tsx` with unified mobile-first card list.
+7. **Step 7:** Update `UploadQueueDrawer.tsx` and modals for mobile viewport safety.
+8. **Step 8:** Run `compile_applet` and test all breakpoints (`360px`, `768px`, `1024px`, `1440px`).
 
 ---
 
-## ৫. নিরাপত্তা ও ডেটাবেজ ধারাবাহিকতা (Security & Firebase)
-
-- **Firebase Firestore**: আপনার ফাইল ও ফোল্ডারের তালিকা, স্টার, ট্র্যাশ সবকিছু Firebase Firestore-এর মাধ্যমেই রিয়েলটাইমে সিঙ্ক থাকবে।
-- ফলে আপনি লিনাক্স অ্যাপ থেকে ফাইল আপলোড করলেও সেটি সাথে সাথে আপনার ওয়েবসাইটে দেখতে পাবেন, আবার ওয়েবসাইট থেকে করা কাজও লিনাক্স অ্যাপে দেখতে পাবেন।
-
----
-
-## ৬. API Keys নিরাপত্তা ও সংরক্ষণের নিয়ম (Security & Key Storage)
-
-আপনার মন্তব্যের পরিপ্রেক্ষিতে ডেস্কটপ অ্যাপের API কী ও সিক্রেট সম্পূর্ণ সুরক্ষিত রাখার পূর্ণাঙ্গ ব্যবস্থা নিচে ব্যাখ্যা করা হলো:
-
-1. **`.deb` প্যাকেজে কোনো কী থাকবে না (Zero Secret Leak)**:
-   - অ্যাপের সোর্স কোড বা বিল্ড করা ইনস্টলারে কোনো পার্সোনাল API Key হার্ডকোড করা থাকে না। ফলে কেউ অ্যাপটিকে রিভার্স-ইঞ্জিনিয়ার বা ডিকম্পাইল করলেও কোনো গোপন তথ্য পাবে না।
-2. **হার্ডওয়্যার ও ওএস-লেভেল কী-রিং এনক্রিপশন (`safeStorage`)**:
-   - লিনাক্সে Electron-এর `safeStorage` সরাসরি লিনাক্স কার্নেলের সিক্রেট সার্ভিস (GNOME Keyring / KWallet)-এর মাধ্যমে এনক্রিপশন পরিচালনা করে।
-3. **আপনি কোথায় রাখবেন (২টি অপশন)**:
-   - **অপশন ১ (অ্যাপের UI থেকে)**: অ্যাপ খুলে **Settings** ➔ **Linux Desktop & API Key Security**-তে গিয়ে আপনার `Telegram API ID` ও `API Hash` দিয়ে **Save to OS Keyring** চাপুন। এটি এনক্রিপ্ট হয়ে সেভ হবে।
-   - **অপশন ২ (লোকাল `.env` ফাইল)**: আপনি টার্মিনালে `~/.config/one-cloud/.env` ফাইল বানিয়ে `TELEGRAM_API_ID=...` এবং `TELEGRAM_API_HASH=...` লিখে `chmod 600 ~/.config/one-cloud/.env` করে দিলে শুধু আপনার অ্যাকাউন্ট থেকেই এটি পড়তে পারবে।
-   - আপনি চাইলে এখনই দিতে পারেন, অথবা পরবর্তীতে যেকোনো সময় দিতে পারেন।
-
+## 4. Verification & Testing Checklist
+- [ ] Mobile screen (< 480px): No horizontal page scrollbars, clean touch targets (>= 44px), readable fonts.
+- [ ] Bottom navigation: Smooth switching between Home, Drive, Starred, Recent, and Upload.
+- [ ] Landing page: Mobile navbar opens and closes smoothly; all links work.
+- [ ] File actions: Mobile bottom sheet menu opens cleanly without off-screen clipping.
+- [ ] Tablet screen (768px - 1024px): Balanced grid spacing, adaptive table, clean layout.
+- [ ] Desktop screen (> 1024px): Preserves all existing workstation capabilities and aesthetics.

@@ -437,17 +437,15 @@ export default function StarredPage() {
           {/* Table Container */}
           <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
             {/* Table Header */}
-            <div className="bg-sidebar px-4 h-10 grid grid-cols-12 items-center text-text-muted font-label-sm text-xs select-none border-b border-border/40">
-              <div className="col-span-12 sm:col-span-6 md:col-span-5 flex items-center gap-3">
+            <div className="hidden md:grid bg-sidebar px-4 h-10 grid-cols-12 items-center text-text-muted font-label-sm text-xs select-none border-b border-border/40">
+              <div className="col-span-5 flex items-center gap-3">
                 <span className="w-5 text-center">★</span>
                 <span>Name</span>
               </div>
-              <div className="hidden md:block md:col-span-3">Location</div>
-              <div className="hidden sm:block sm:col-span-3 md:col-span-2">Modified</div>
-              <div className="hidden sm:block sm:col-span-1 md:col-span-1 text-right sm:text-left">
-                Size
-              </div>
-              <div className="col-span-12 sm:col-span-2 md:col-span-1 text-right">Actions</div>
+              <div className="col-span-3">Location</div>
+              <div className="col-span-2">Modified</div>
+              <div className="col-span-1 text-right">Size</div>
+              <div className="col-span-1 text-right">Actions</div>
             </div>
 
             {/* File Rows Container */}
@@ -456,153 +454,278 @@ export default function StarredPage() {
                 const folderName = file.parentFolderId
                   ? folderMap.get(file.parentFolderId) || 'Projects / Roadmaps'
                   : 'My Drive';
+                const isMenuOpen = activeMenuId === `file-${file.id}`;
 
                 return (
-                  <div
-                    key={file.id}
-                    onClick={() => setPreviewFile(file)}
-                    className="file-row group px-4 h-14 grid grid-cols-12 items-center bg-surface hover:bg-surface-hover transition-colors cursor-pointer"
-                  >
-                    <div className="col-span-12 sm:col-span-6 md:col-span-5 flex items-center gap-3 min-w-0 pr-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleStarFile(file.id);
-                        }}
-                        className="w-6 h-6 flex items-center justify-center text-warning hover:scale-110 transition-transform cursor-pointer shrink-0"
-                        title="Unstar file"
-                      >
-                        <Star className="w-4 h-4 fill-warning" />
-                      </button>
-
-                      <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0">
-                        {getFileCategoryIcon(file.mimeType, file.extension)}
+                  <div key={file.id}>
+                    {/* Mobile Card Row (< md) */}
+                    <div
+                      onClick={() => setPreviewFile(file)}
+                      className="md:hidden p-3.5 flex items-center justify-between gap-3 bg-surface hover:bg-surface-hover transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleStarFile(file.id);
+                          }}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-warning hover:scale-110 transition-transform cursor-pointer shrink-0"
+                          title="Unstar file"
+                        >
+                          <Star className="w-4 h-4 fill-warning" />
+                        </button>
+                        <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0">
+                          {getFileCategoryIcon(file.mimeType, file.extension)}
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="text-xs sm:text-sm text-text-primary font-medium truncate">
+                            {file.name}
+                          </span>
+                          <span className="text-[11px] text-text-muted mt-0.5 truncate">
+                            {formatBytes(file.fileSizeBytes)} · {folderName}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs sm:text-sm text-text-primary font-medium truncate group-hover:text-primary transition-colors">
+                      <div
+                        className="drive-menu-container relative flex items-center gap-1 shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownload(e, file)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                          title="Download"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(isMenuOpen ? null : `file-${file.id}`);
+                          }}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                          title="More options"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {isMenuOpen && (
+                          <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreviewFile(file);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-primary" />
+                              <span>Preview</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRenameTarget({ id: file.id, name: file.name, isFolder: false });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                              <span>Rename</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toggleStarFile(file.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Star className="w-3.5 h-3.5 fill-warning text-warning" />
+                              <span>Remove Star</span>
+                            </button>
+                            <div className="my-1 border-t border-border" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteTarget({
+                                  id: file.id,
+                                  name: file.name,
+                                  isFolder: false,
+                                  defaultAction: 'trash',
+                                });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Move to Trash</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteTarget({
+                                  id: file.id,
+                                  name: file.name,
+                                  isFolder: false,
+                                  defaultAction: 'permanent',
+                                });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Desktop Workstation Row (>= md) */}
+                    <div
+                      onClick={() => setPreviewFile(file)}
+                      className="file-row group px-4 h-14 hidden md:grid grid-cols-12 items-center bg-surface hover:bg-surface-hover transition-colors cursor-pointer"
+                    >
+                      <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleStarFile(file.id);
+                          }}
+                          className="w-6 h-6 flex items-center justify-center text-warning hover:scale-110 transition-transform cursor-pointer shrink-0"
+                          title="Unstar file"
+                        >
+                          <Star className="w-4 h-4 fill-warning" />
+                        </button>
+
+                        <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0">
+                          {getFileCategoryIcon(file.mimeType, file.extension)}
+                        </div>
+
+                        <span className="text-sm text-text-primary font-medium truncate group-hover:text-primary transition-colors">
                           {file.name}
                         </span>
-                        <span className="sm:hidden text-[11px] text-text-muted truncate">
-                          {folderName} • {formatBytes(file.fileSizeBytes)}
+                      </div>
+
+                      <div className="col-span-3 flex items-center gap-1.5 text-text-secondary text-xs truncate">
+                        <FolderOpen className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                        <span className="truncate hover:text-text-primary transition-colors">
+                          {folderName}
                         </span>
                       </div>
-                    </div>
 
-                    <div className="hidden md:flex md:col-span-3 items-center gap-1.5 text-text-secondary text-xs truncate">
-                      <FolderOpen className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                      <span className="truncate hover:text-text-primary transition-colors">
-                        {folderName}
-                      </span>
-                    </div>
+                      <div className="col-span-2 text-text-muted text-xs">
+                        {new Date(file.uploadedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </div>
 
-                    <div className="hidden sm:block sm:col-span-3 md:col-span-2 text-text-muted text-xs">
-                      {new Date(file.uploadedAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </div>
+                      <div className="col-span-1 text-text-secondary text-xs font-mono text-right">
+                        {formatBytes(file.fileSizeBytes)}
+                      </div>
 
-                    <div className="hidden sm:block sm:col-span-1 md:col-span-1 text-text-secondary text-xs font-mono">
-                      {formatBytes(file.fileSizeBytes)}
-                    </div>
-
-                    <div
-                      className="drive-menu-container relative col-span-12 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => handleDownload(e, file)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
-                        title="Download"
+                      <div
+                        className="drive-menu-container relative col-span-1 flex items-center justify-end gap-1"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuId(activeMenuId === `file-${file.id}` ? null : `file-${file.id}`);
-                        }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
-                        title="More options"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownload(e, file)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                          title="Download"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(isMenuOpen ? null : `file-${file.id}`);
+                          }}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                          title="More options"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
 
-                      {activeMenuId === `file-${file.id}` && (
-                        <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPreviewFile(file);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-primary" />
-                            <span>Preview</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRenameTarget({ id: file.id, name: file.name, isFolder: false });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 text-text-muted" />
-                            <span>Rename</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              toggleStarFile(file.id);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Star className="w-3.5 h-3.5 fill-warning text-warning" />
-                            <span>Remove Star</span>
-                          </button>
-                          <div className="my-1 border-t border-border" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget({
-                                id: file.id,
-                                name: file.name,
-                                isFolder: false,
-                                defaultAction: 'trash',
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Move to Trash</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget({
-                                id: file.id,
-                                name: file.name,
-                                isFolder: false,
-                                defaultAction: 'permanent',
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>Delete</span>
-                          </button>
-                        </div>
-                      )}
+                        {isMenuOpen && (
+                          <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreviewFile(file);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-primary" />
+                              <span>Preview</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRenameTarget({ id: file.id, name: file.name, isFolder: false });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                              <span>Rename</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toggleStarFile(file.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Star className="w-3.5 h-3.5 fill-warning text-warning" />
+                              <span>Remove Star</span>
+                            </button>
+                            <div className="my-1 border-t border-border" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteTarget({
+                                  id: file.id,
+                                  name: file.name,
+                                  isFolder: false,
+                                  defaultAction: 'trash',
+                                });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Move to Trash</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteTarget({
+                                  id: file.id,
+                                  name: file.name,
+                                  isFolder: false,
+                                  defaultAction: 'permanent',
+                                });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
