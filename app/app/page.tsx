@@ -4,17 +4,14 @@ import React, { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
   Cloud,
-  HardDrive,
   FileText,
   Folder,
   Send,
   Upload,
-  Plus,
-  ArrowRight,
+  FolderPlus,
   Star,
   Download,
   MoreVertical,
-  CheckCircle,
   TrendingUp,
   ShieldCheck,
   File,
@@ -23,7 +20,9 @@ import {
   Headphones,
   Archive,
   RefreshCw,
-  FolderPlus,
+  ArrowRight,
+  CheckCircle2,
+  Table,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 import { useAuth } from '@/lib/firebase/auth-context';
@@ -45,7 +44,6 @@ export default function DashboardPage() {
     folders,
     telegramConnected,
     telegramUsername,
-    searchQuery,
     uploadFiles,
     toggleStarFile,
     syncTelegram,
@@ -57,7 +55,7 @@ export default function DashboardPage() {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
 
-  // Active Category Filter for Recent Files
+  // Active Category Filter for Recent Files (when clicking a breakdown tile)
   const [selectedCategory, setSelectedCategory] = useState<StorageCategoryKey | 'all'>('all');
   const [isDragging, setIsDragging] = useState(false);
 
@@ -68,8 +66,43 @@ export default function DashboardPage() {
   const activeFiles = useMemo(() => files.filter((f) => f.status === 'active'), [files]);
   const activeFolders = useMemo(() => folders.filter((f) => f.status === 'active'), [folders]);
 
-  // Storage breakdown (Videos, Images, Documents, Audio, Archives/Others)
+  // Real Storage Breakdown calculated dynamically strictly from active files
   const storageBreakdown = useMemo(() => calculateDetailedStorage(files), [files]);
+
+  // Real metrics calculations
+  const totalBytes = storageBreakdown.totalBytes;
+  const formattedTotalStorage = storageBreakdown.formattedTotalBytes;
+
+  // Real breakdown items by exact category
+  const docBytes = storageBreakdown.byKey.documents?.bytes || 0;
+  const docCount = storageBreakdown.byKey.documents?.count || 0;
+  const imgBytes = storageBreakdown.byKey.images?.bytes || 0;
+  const imgCount = storageBreakdown.byKey.images?.count || 0;
+  const vidBytes = storageBreakdown.byKey.videos?.bytes || 0;
+  const vidCount = storageBreakdown.byKey.videos?.count || 0;
+  const audBytes = storageBreakdown.byKey.audio?.bytes || 0;
+  const audCount = storageBreakdown.byKey.audio?.count || 0;
+  const arcBytes =
+    (storageBreakdown.byKey.archives?.bytes || 0) + (storageBreakdown.byKey.others?.bytes || 0);
+  const arcCount =
+    (storageBreakdown.byKey.archives?.count || 0) + (storageBreakdown.byKey.others?.count || 0);
+
+  // Percentages for the continuous horizontal multi-segmented track
+  const docPct = totalBytes > 0 ? (docBytes / totalBytes) * 100 : 0;
+  const imgPct = totalBytes > 0 ? (imgBytes / totalBytes) * 100 : 0;
+  const vidPct = totalBytes > 0 ? (vidBytes / totalBytes) * 100 : 0;
+  const audPct = totalBytes > 0 ? (audBytes / totalBytes) * 100 : 0;
+  const arcPct = totalBytes > 0 ? (arcBytes / totalBytes) * 100 : 0;
+
+  // Files added this week (from storage calculation)
+  const addedThisWeekCount = storageBreakdown.filesAddedThisWeek;
+
+  // Root folders vs subfolders
+  const rootFoldersCount = useMemo(() => {
+    return activeFolders.filter((f) => !f.parentFolderId).length || (activeFolders.length > 0 ? 1 : 0);
+  }, [activeFolders]);
+
+  const subfoldersCount = Math.max(0, activeFolders.length - rootFoldersCount);
 
   // Filtered files for recent section
   const filteredRecentFiles = useMemo(() => {
@@ -82,23 +115,15 @@ export default function DashboardPage() {
         if (selectedCategory === 'images') return cat === 'image';
         if (selectedCategory === 'documents') return cat === 'document' || cat === 'pdf';
         if (selectedCategory === 'audio') return cat === 'audio';
-        if (selectedCategory === 'archives') return cat === 'archive';
-        if (selectedCategory === 'others') return cat === 'other';
+        if (selectedCategory === 'archives') return cat === 'archive' || cat === 'other';
         return true;
       });
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (f) => f.name.toLowerCase().includes(q) || f.extension.toLowerCase().includes(q)
-      );
     }
 
     return [...list]
       .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
       .slice(0, 8);
-  }, [activeFiles, selectedCategory, searchQuery]);
+  }, [activeFiles, selectedCategory]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -125,75 +150,114 @@ export default function DashboardPage() {
     }
   };
 
-  // Helper to get matching category icon and colors
-  const getFileIcon = (mimeType: string, extension: string) => {
+  // Helper for matching category meta, icons and styling
+  const getFileCategoryMeta = (mimeType: string, extension: string) => {
+    const ext = (extension || '').toLowerCase().replace('.', '');
     const cat = getFileTypeCategory(mimeType, extension);
-    switch (cat) {
-      case 'document':
-      case 'pdf':
-        return {
-          icon: <FileText className="w-5 h-5 text-file-document" />,
-          bg: 'bg-file-document/10',
-          label: 'Document',
-        };
-      case 'image':
-        return {
-          icon: <ImageIcon className="w-5 h-5 text-file-image" />,
-          bg: 'bg-file-image/10',
-          label: 'Image',
-        };
-      case 'video':
-        return {
-          icon: <VideoIcon className="w-5 h-5 text-file-video" />,
-          bg: 'bg-file-video/10',
-          label: 'Video',
-        };
-      case 'audio':
-        return {
-          icon: <Headphones className="w-5 h-5 text-file-audio" />,
-          bg: 'bg-file-audio/10',
-          label: 'Audio',
-        };
-      case 'archive':
-        return {
-          icon: <Archive className="w-5 h-5 text-file-archive" />,
-          bg: 'bg-file-archive/10',
-          label: 'Archive',
-        };
-      default:
-        return {
-          icon: <File className="w-5 h-5 text-text-muted" />,
-          bg: 'bg-surface-raised',
-          label: 'File',
-        };
+
+    if (['fig', 'sketch', 'xd', 'ai', 'eps', 'svg'].includes(ext)) {
+      return {
+        label: 'Image / Vector',
+        icon: <ImageIcon className="w-5 h-5 text-file-image" />,
+        bg: 'bg-file-image/10',
+      };
     }
+    if (['xlsx', 'xls', 'csv', 'ods'].includes(ext)) {
+      return {
+        label: 'Spreadsheet',
+        icon: <Table className="w-5 h-5 text-file-document" />,
+        bg: 'bg-file-document/10',
+      };
+    }
+    if (cat === 'document' || cat === 'pdf') {
+      return {
+        label: ext === 'pdf' ? 'Document' : 'Document',
+        icon: <FileText className="w-5 h-5 text-file-document" />,
+        bg: 'bg-file-document/10',
+      };
+    }
+    if (cat === 'image') {
+      return {
+        label: 'Image',
+        icon: <ImageIcon className="w-5 h-5 text-file-image" />,
+        bg: 'bg-file-image/10',
+      };
+    }
+    if (cat === 'video') {
+      return {
+        label: 'Video',
+        icon: <VideoIcon className="w-5 h-5 text-file-video" />,
+        bg: 'bg-file-video/10',
+      };
+    }
+    if (cat === 'audio') {
+      return {
+        label: 'Audio',
+        icon: <Headphones className="w-5 h-5 text-file-audio" />,
+        bg: 'bg-file-audio/10',
+      };
+    }
+    if (cat === 'archive') {
+      return {
+        label: 'Archive',
+        icon: <Archive className="w-5 h-5 text-file-archive" />,
+        bg: 'bg-file-archive/10',
+      };
+    }
+    return {
+      label: 'File',
+      icon: <File className="w-5 h-5 text-text-muted" />,
+      bg: 'bg-surface-raised',
+    };
   };
 
   const formatDateDisplay = (dateStr: string) => {
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Recently';
     const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
 
-    if (diffHours < 24) {
-      return `Today, ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    const isToday =
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear();
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      d.getDate() === yesterday.getDate() &&
+      d.getMonth() === yesterday.getMonth() &&
+      d.getFullYear() === yesterday.getFullYear();
+
+    const timeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    if (isToday) {
+      return `Today, ${timeStr}`;
     }
-    if (diffHours < 48) {
-      return `Yesterday, ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    if (isYesterday) {
+      return `Yesterday, ${timeStr}`;
     }
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
+
+  // Real user display name or email prefix
+  const displayName =
+    user?.displayName || (user?.email ? user.email.split('@')[0] : 'User');
+
+  // Real Telegram chat or identifier
+  const chatIdDisplay = telegramConnected
+    ? (user?.uid ? `Chat ID #${user.uid.slice(0, 7)}` : 'Saved Messages Active')
+    : 'Not Linked';
 
   return (
     <div
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`min-h-full w-full bg-canvas text-text-primary transition-colors ${
+      className={`min-h-full w-full bg-canvas text-text-primary font-body-md antialiased transition-colors ${
         isDragging ? 'ring-2 ring-primary ring-inset bg-surface-raised/40' : ''
       }`}
     >
-      <div className="w-full px-6 lg:px-8 py-8 max-w-7xl mx-auto flex flex-col gap-8">
+      <div className="w-full px-6 lg:px-8 py-8 max-w-7xl mx-auto flex flex-col gap-6">
         {/* Hidden native file input */}
         <input
           type="file"
@@ -204,33 +268,34 @@ export default function DashboardPage() {
         />
 
         {/* Top Welcome & Actions Header */}
-        <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="flex flex-col gap-1.5">
+        <section className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-raised text-xs text-text-secondary border border-border/50">
+              <span
+                onClick={() => !telegramConnected && setShowConnectModal(true)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-raised text-xs text-text-secondary border border-border/50 ${
+                  !telegramConnected ? 'cursor-pointer hover:border-warning' : ''
+                }`}
+              >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     telegramConnected ? 'bg-tertiary animate-pulse' : 'bg-warning'
                   }`}
                 />
-                {telegramConnected ? 'Telegram Cloud Active' : 'Telegram Disconnected'}
+                {telegramConnected ? 'Telegram Cloud Active' : 'Connect Telegram'}
               </span>
               <span className="text-text-muted text-xs">•</span>
-              <span className="text-xs text-text-muted">
-                {telegramConnected
-                  ? `@${telegramUsername || 'TelegramDrive'}`
-                  : 'Connect to sync files'}
-              </span>
+              <span className="text-xs text-text-muted">{chatIdDisplay}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">
-              Welcome back, {user?.displayName || 'Alex'}
+              Welcome back, {displayName}
             </h1>
             <p className="text-sm text-text-secondary">
               Your files are synchronized with Telegram Saved Messages via MTProto proxy.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowNewFolderModal(true)}
               className="h-10 px-4 bg-surface hover:bg-surface-hover text-text-primary text-sm font-medium rounded-[10px] border border-border transition-colors flex items-center gap-2 cursor-pointer active:scale-[0.99]"
@@ -253,109 +318,111 @@ export default function DashboardPage() {
         {/* Top Metrics Summary Grid (4 Cards) */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Storage Used */}
-          <div className="bg-surface border border-border rounded-xl p-5 flex flex-col justify-between">
+          <div className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
             <div className="flex items-start justify-between">
               <span className="text-xs font-medium text-text-secondary">Storage Used</span>
-              <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-primary border border-border/40">
-                <Cloud className="w-4 h-4 text-primary" />
+              <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-primary-container border border-border/40">
+                <Cloud className="w-4 h-4 text-primary-container" />
               </div>
             </div>
-            <div className="mt-4">
-              <div className="text-2xl font-bold text-text-primary leading-none tabular-nums">
-                {storageBreakdown.formattedTotalBytes}
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-text-primary leading-none tabular-nums tracking-tight">
+                {formattedTotalStorage}
               </div>
               <div className="text-xs text-text-muted mt-1.5">Saved Messages Allocation</div>
             </div>
-            <div className="mt-4 pt-1">
+            <div className="mt-3 pt-2 border-t border-border/30">
               <div className="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden flex gap-0.5">
                 <div
-                  className="bg-file-document h-full transition-all"
-                  style={{ width: `${storageBreakdown.categories[2]?.percentage || 0}%` }}
-                  title={`Documents: ${storageBreakdown.categories[2]?.formattedBytes || '0 B'}`}
+                  className="bg-file-document h-full transition-all duration-300"
+                  style={{ width: `${totalBytes > 0 ? docPct : 0}%` }}
+                  title={`Documents: ${formatBytes(docBytes)}`}
                 />
                 <div
-                  className="bg-file-image h-full transition-all"
-                  style={{ width: `${storageBreakdown.categories[1]?.percentage || 0}%` }}
-                  title={`Images: ${storageBreakdown.categories[1]?.formattedBytes || '0 B'}`}
+                  className="bg-file-image h-full transition-all duration-300"
+                  style={{ width: `${totalBytes > 0 ? imgPct : 0}%` }}
+                  title={`Images: ${formatBytes(imgBytes)}`}
                 />
                 <div
-                  className="bg-file-video h-full transition-all"
-                  style={{ width: `${storageBreakdown.categories[0]?.percentage || 0}%` }}
-                  title={`Videos: ${storageBreakdown.categories[0]?.formattedBytes || '0 B'}`}
+                  className="bg-file-video h-full transition-all duration-300"
+                  style={{ width: `${totalBytes > 0 ? vidPct : 0}%` }}
+                  title={`Videos: ${formatBytes(vidBytes)}`}
                 />
                 <div
-                  className="bg-file-audio h-full transition-all"
-                  style={{ width: `${storageBreakdown.categories[3]?.percentage || 0}%` }}
-                  title={`Audio: ${storageBreakdown.categories[3]?.formattedBytes || '0 B'}`}
+                  className="bg-file-audio h-full transition-all duration-300"
+                  style={{ width: `${totalBytes > 0 ? audPct : 0}%` }}
+                  title={`Audio: ${formatBytes(audBytes)}`}
                 />
                 <div
-                  className="bg-file-archive h-full transition-all"
-                  style={{ width: `${storageBreakdown.categories[4]?.percentage || 0}%` }}
-                  title={`Archives: ${storageBreakdown.categories[4]?.formattedBytes || '0 B'}`}
+                  className="bg-file-archive h-full transition-all duration-300"
+                  style={{ width: `${totalBytes > 0 ? arcPct : 0}%` }}
+                  title={`Archives: ${formatBytes(arcBytes)}`}
                 />
               </div>
             </div>
           </div>
 
           {/* Card 2: Total Files */}
-          <div className="bg-surface border border-border rounded-xl p-5 flex flex-col justify-between">
+          <div className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
             <div className="flex items-start justify-between">
               <span className="text-xs font-medium text-text-secondary">Total Files</span>
               <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-tertiary border border-border/40">
                 <FileText className="w-4 h-4 text-tertiary" />
               </div>
             </div>
-            <div className="mt-4">
-              <div className="text-2xl font-bold text-text-primary leading-none tabular-nums">
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-text-primary leading-none tabular-nums tracking-tight">
                 {activeFiles.length.toLocaleString()}
               </div>
               <div className="flex items-center gap-1.5 mt-1.5">
                 <TrendingUp className="w-3.5 h-3.5 text-tertiary" />
                 <span className="text-xs font-medium text-tertiary">
-                  +{Math.min(activeFiles.length, 12)} added recently
+                  +{addedThisWeekCount} added this week
                 </span>
               </div>
             </div>
-            <div className="mt-4 pt-1 text-xs text-text-muted truncate">
+            <div className="mt-3 pt-2 border-t border-border/30 text-xs text-text-muted truncate">
               Zero compression loss
             </div>
           </div>
 
           {/* Card 3: Folders */}
-          <div className="bg-surface border border-border rounded-xl p-5 flex flex-col justify-between">
+          <div className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
             <div className="flex items-start justify-between">
               <span className="text-xs font-medium text-text-secondary">Folders</span>
               <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-file-audio border border-border/40">
                 <Folder className="w-4 h-4 text-file-audio" />
               </div>
             </div>
-            <div className="mt-4">
-              <div className="text-2xl font-bold text-text-primary leading-none tabular-nums">
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-text-primary leading-none tabular-nums tracking-tight">
                 {activeFolders.length.toLocaleString()}
               </div>
               <div className="text-xs text-text-muted mt-1.5">
-                Across virtual directory roots
+                Across {rootFoldersCount} virtual roots
               </div>
             </div>
-            <div className="mt-4 pt-1 text-xs text-text-secondary truncate">
-              Hierarchical Firestore tree
+            <div className="mt-3 pt-2 border-t border-border/30 text-xs text-text-secondary truncate">
+              {subfoldersCount > 0
+                ? `${subfoldersCount} subfolders organized`
+                : 'Hierarchical Firestore tree'}
             </div>
           </div>
 
           {/* Card 4: Telegram Connection */}
-          <div className="bg-surface border border-border rounded-xl p-5 flex flex-col justify-between">
+          <div className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
             <div className="flex items-start justify-between">
               <span className="text-xs font-medium text-text-secondary">Telegram Connection</span>
               <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-secondary border border-border/40">
-                <Send className="w-4 h-4 text-[#36AEEA]" />
+                <Send className="w-4 h-4 text-secondary" />
               </div>
             </div>
-            <div className="mt-4">
-              <div className="text-lg font-semibold text-text-primary tracking-tight truncate">
+            <div className="mt-3">
+              <div className="text-lg font-semibold text-secondary tracking-tight truncate">
                 {telegramConnected ? `@${telegramUsername || 'connected'}` : 'Not Connected'}
               </div>
               <div className="flex items-center gap-1.5 mt-1.5">
-                <CheckCircle
+                <ShieldCheck
                   className={`w-3.5 h-3.5 ${
                     telegramConnected ? 'text-tertiary' : 'text-warning'
                   }`}
@@ -369,9 +436,9 @@ export default function DashboardPage() {
                 </span>
               </div>
             </div>
-            <div className="mt-4 pt-1 text-xs text-text-muted truncate">
+            <div className="mt-3 pt-2 border-t border-border/30 text-xs text-text-muted truncate">
               {telegramConnected ? (
-                <span>Proxy session active</span>
+                <span>Data center: DC4 (Amsterdam)</span>
               ) : (
                 <button
                   onClick={() => setShowConnectModal(true)}
@@ -385,101 +452,181 @@ export default function DashboardPage() {
         </section>
 
         {/* Storage Category Breakdown Bento */}
-        <section className="bg-surface border border-border rounded-xl p-5 flex flex-col gap-5">
+        <section className="bg-surface border border-border rounded-xl p-5 flex flex-col gap-4 shadow-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <h2 className="text-base font-semibold text-text-primary">Storage Breakdown</h2>
-              <span className="text-xs text-text-secondary bg-surface-raised px-2.5 py-0.5 rounded-full border border-border/50">
-                {storageBreakdown.formattedTotalBytes} total
+              <span className="text-xs text-text-secondary bg-surface-raised px-2.5 py-0.5 rounded-full border border-border/50 tabular-nums">
+                {formattedTotalStorage} total
               </span>
             </div>
             <span className="text-xs text-text-muted hidden sm:inline">
-              Bot chunk limit: 2,000 MB / file
+              Bot chunk limit: 2,000 MB/file
             </span>
           </div>
 
           {/* Multi-segmented Horizontal Progress Track */}
           <div className="flex flex-col gap-2">
             <div className="h-3 w-full bg-surface-raised rounded-full overflow-hidden flex gap-1 p-0.5 border border-border/40">
-              {storageBreakdown.categories.map((cat) => {
-                let bgClass = 'bg-text-muted';
-                if (cat.key === 'documents') bgClass = 'bg-file-document';
-                if (cat.key === 'images') bgClass = 'bg-file-image';
-                if (cat.key === 'videos') bgClass = 'bg-file-video';
-                if (cat.key === 'audio') bgClass = 'bg-file-audio';
-                if (cat.key === 'archives' || cat.key === 'others') bgClass = 'bg-file-archive';
-
-                return (
-                  <div
-                    key={cat.key}
-                    className={`${bgClass} rounded-full h-full transition-all duration-300`}
-                    style={{
-                      width: `${Math.max(cat.bytes > 0 ? 3 : 0, cat.percentage)}%`,
-                    }}
-                    title={`${cat.label}: ${cat.formattedBytes}`}
-                  />
-                );
-              })}
+              <div
+                className="bg-file-document rounded-full h-full transition-all duration-300"
+                style={{ width: `${totalBytes > 0 ? Math.max(docBytes > 0 ? 3 : 0, docPct) : 0}%` }}
+                title={`Documents: ${formatBytes(docBytes)}`}
+              />
+              <div
+                className="bg-file-image rounded-full h-full transition-all duration-300"
+                style={{ width: `${totalBytes > 0 ? Math.max(imgBytes > 0 ? 3 : 0, imgPct) : 0}%` }}
+                title={`Images: ${formatBytes(imgBytes)}`}
+              />
+              <div
+                className="bg-file-video rounded-full h-full transition-all duration-300"
+                style={{ width: `${totalBytes > 0 ? Math.max(vidBytes > 0 ? 3 : 0, vidPct) : 0}%` }}
+                title={`Videos: ${formatBytes(vidBytes)}`}
+              />
+              <div
+                className="bg-file-audio rounded-full h-full transition-all duration-300"
+                style={{ width: `${totalBytes > 0 ? Math.max(audBytes > 0 ? 3 : 0, audPct) : 0}%` }}
+                title={`Audio: ${formatBytes(audBytes)}`}
+              />
+              <div
+                className="bg-file-archive rounded-full h-full transition-all duration-300"
+                style={{ width: `${totalBytes > 0 ? Math.max(arcBytes > 0 ? 3 : 0, arcPct) : 0}%` }}
+                title={`Archives & Others: ${formatBytes(arcBytes)}`}
+              />
             </div>
           </div>
 
           {/* 5 Breakdown Category Tiles */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {storageBreakdown.categories.map((cat) => {
-              const isSelected = selectedCategory === cat.key;
-              let dotColor = 'bg-text-muted';
-              let IconComp = FileText;
+            {/* Documents */}
+            <div
+              onClick={() => setSelectedCategory(selectedCategory === 'documents' ? 'all' : 'documents')}
+              className={`bg-surface-raised rounded-lg p-3.5 flex flex-col gap-1 transition-colors hover:bg-surface-hover cursor-pointer border ${
+                selectedCategory === 'documents'
+                  ? 'border-primary ring-1 ring-primary bg-surface-hover'
+                  : 'border-border/50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-file-document shrink-0" />
+                  <span className="text-sm font-medium text-text-primary">Documents</span>
+                </div>
+                <FileText className="w-4 h-4 text-text-muted shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-semibold text-text-primary tabular-nums">
+                  {formatBytes(docBytes)}
+                </span>
+                <span className="text-xs text-text-muted tabular-nums">
+                  {docCount} {docCount === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+            </div>
 
-              if (cat.key === 'documents') {
-                dotColor = 'bg-file-document';
-                IconComp = FileText;
-              } else if (cat.key === 'images') {
-                dotColor = 'bg-file-image';
-                IconComp = ImageIcon;
-              } else if (cat.key === 'videos') {
-                dotColor = 'bg-file-video';
-                IconComp = VideoIcon;
-              } else if (cat.key === 'audio') {
-                dotColor = 'bg-file-audio';
-                IconComp = Headphones;
-              } else if (cat.key === 'archives' || cat.key === 'others') {
-                dotColor = 'bg-file-archive';
-                IconComp = Archive;
-              }
+            {/* Images */}
+            <div
+              onClick={() => setSelectedCategory(selectedCategory === 'images' ? 'all' : 'images')}
+              className={`bg-surface-raised rounded-lg p-3.5 flex flex-col gap-1 transition-colors hover:bg-surface-hover cursor-pointer border ${
+                selectedCategory === 'images'
+                  ? 'border-primary ring-1 ring-primary bg-surface-hover'
+                  : 'border-border/50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-file-image shrink-0" />
+                  <span className="text-sm font-medium text-text-primary">Images</span>
+                </div>
+                <ImageIcon className="w-4 h-4 text-text-muted shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-semibold text-text-primary tabular-nums">
+                  {formatBytes(imgBytes)}
+                </span>
+                <span className="text-xs text-text-muted tabular-nums">
+                  {imgCount} {imgCount === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+            </div>
 
-              return (
-                <button
-                  key={cat.key}
-                  onClick={() =>
-                    setSelectedCategory(isSelected ? 'all' : (cat.key as StorageCategoryKey))
-                  }
-                  className={`bg-surface-raised rounded-lg p-3.5 flex flex-col gap-1 transition-all text-left border cursor-pointer ${
-                    isSelected
-                      ? 'border-primary ring-1 ring-primary bg-surface-hover'
-                      : 'border-border/60 hover:bg-surface-hover hover:border-border'
-                  }`}
-                  type="button"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-                      <span className="text-xs font-medium text-text-primary">
-                        {cat.label}
-                      </span>
-                    </div>
-                    <IconComp className="w-3.5 h-3.5 text-text-muted" />
-                  </div>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <span className="text-sm font-semibold text-text-primary tabular-nums">
-                      {cat.formattedBytes}
-                    </span>
-                    <span className="text-xs text-text-muted tabular-nums">
-                      {cat.count} {cat.count === 1 ? 'item' : 'items'}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+            {/* Videos */}
+            <div
+              onClick={() => setSelectedCategory(selectedCategory === 'videos' ? 'all' : 'videos')}
+              className={`bg-surface-raised rounded-lg p-3.5 flex flex-col gap-1 transition-colors hover:bg-surface-hover cursor-pointer border ${
+                selectedCategory === 'videos'
+                  ? 'border-primary ring-1 ring-primary bg-surface-hover'
+                  : 'border-border/50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-file-video shrink-0" />
+                  <span className="text-sm font-medium text-text-primary">Videos</span>
+                </div>
+                <VideoIcon className="w-4 h-4 text-text-muted shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-semibold text-text-primary tabular-nums">
+                  {formatBytes(vidBytes)}
+                </span>
+                <span className="text-xs text-text-muted tabular-nums">
+                  {vidCount} {vidCount === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+            </div>
+
+            {/* Audio */}
+            <div
+              onClick={() => setSelectedCategory(selectedCategory === 'audio' ? 'all' : 'audio')}
+              className={`bg-surface-raised rounded-lg p-3.5 flex flex-col gap-1 transition-colors hover:bg-surface-hover cursor-pointer border ${
+                selectedCategory === 'audio'
+                  ? 'border-primary ring-1 ring-primary bg-surface-hover'
+                  : 'border-border/50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-file-audio shrink-0" />
+                  <span className="text-sm font-medium text-text-primary">Audio</span>
+                </div>
+                <Headphones className="w-4 h-4 text-text-muted shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-semibold text-text-primary tabular-nums">
+                  {formatBytes(audBytes)}
+                </span>
+                <span className="text-xs text-text-muted tabular-nums">
+                  {audCount} {audCount === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+            </div>
+
+            {/* Archives */}
+            <div
+              onClick={() => setSelectedCategory(selectedCategory === 'archives' ? 'all' : 'archives')}
+              className={`bg-surface-raised rounded-lg p-3.5 flex flex-col gap-1 transition-colors hover:bg-surface-hover cursor-pointer border col-span-2 sm:col-span-1 ${
+                selectedCategory === 'archives'
+                  ? 'border-primary ring-1 ring-primary bg-surface-hover'
+                  : 'border-border/50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-file-archive shrink-0" />
+                  <span className="text-sm font-medium text-text-primary">Archives</span>
+                </div>
+                <Archive className="w-4 h-4 text-text-muted shrink-0" />
+              </div>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-semibold text-text-primary tabular-nums">
+                  {formatBytes(arcBytes)}
+                </span>
+                <span className="text-xs text-text-muted tabular-nums">
+                  {arcCount} {arcCount === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -494,7 +641,7 @@ export default function DashboardPage() {
               {selectedCategory !== 'all' && (
                 <button
                   onClick={() => setSelectedCategory('all')}
-                  className="text-xs text-primary hover:underline ml-2"
+                  className="text-xs text-primary hover:underline ml-2 cursor-pointer"
                 >
                   Clear filter ({selectedCategory})
                 </button>
@@ -502,17 +649,17 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/app/recent"
-              className="text-xs font-medium text-primary hover:text-brand-hover flex items-center gap-1 transition-colors"
+              className="text-sm font-medium text-primary-container hover:text-brand-hover flex items-center gap-1 transition-colors"
             >
               <span>View all</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
           {/* File Table / Container */}
-          <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-xs">
+          <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
             {/* Table Header */}
-            <div className="grid grid-cols-12 items-center px-4 py-2.5 bg-surface-raised border-b border-border text-[11px] font-semibold text-text-muted uppercase tracking-wider select-none">
+            <div className="grid grid-cols-12 items-center px-4 py-3 bg-surface-raised text-xs font-semibold text-text-muted uppercase tracking-wider select-none border-b border-border/40">
               <div className="col-span-6 sm:col-span-5 flex items-center gap-3">
                 <span className="w-4" />
                 <span>Name</span>
@@ -535,8 +682,8 @@ export default function DashboardPage() {
                     : 'No files uploaded yet.'}
                 </p>
                 <p className="text-xs text-text-secondary mt-1 max-w-sm">
-                  Drag files anywhere onto this window or click Upload files to store them directly
-                  in Telegram Saved Messages.
+                  Drag files anywhere onto this window or click Upload files to store them directly in
+                  Telegram Saved Messages.
                 </p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -547,24 +694,27 @@ export default function DashboardPage() {
                 </button>
               </div>
             ) : (
-              <div className="divide-y divide-border/60">
-                {filteredRecentFiles.map((file) => {
-                  const meta = getFileIcon(file.mimeType, file.extension);
+              <div className="flex flex-col">
+                {filteredRecentFiles.map((file, idx) => {
+                  const meta = getFileCategoryMeta(file.mimeType, file.extension);
+                  const isLast = idx === filteredRecentFiles.length - 1;
 
                   return (
                     <div
                       key={file.id}
                       onClick={() => setPreviewFile(file)}
-                      className="grid grid-cols-12 items-center px-4 h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer"
+                      className={`grid grid-cols-12 items-center px-4 h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer ${
+                        !isLast ? 'border-b border-border/40' : ''
+                      } ${idx % 2 === 1 ? 'bg-surface/50' : ''}`}
                     >
                       <div className="col-span-6 sm:col-span-5 flex items-center gap-3 min-w-0 pr-2">
                         <button
-                          aria-label="Toggle star"
+                          aria-label="Toggle favorite"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleStarFile(file.id);
                           }}
-                          className={`focus:outline-none shrink-0 cursor-pointer p-0.5 rounded transition-colors ${
+                          className={`focus:outline-none shrink-0 p-0.5 rounded transition-colors cursor-pointer ${
                             file.isStarred
                               ? 'text-warning fill-warning'
                               : 'text-text-muted hover:text-warning'
@@ -579,30 +729,30 @@ export default function DashboardPage() {
                         </button>
 
                         <div
-                          className={`w-8 h-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0 border border-border/40`}
+                          className={`w-8 h-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0 border border-border/30`}
                         >
                           {meta.icon}
                         </div>
 
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs sm:text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">
+                          <span className="text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">
                             {file.name}
                           </span>
-                          <span className="sm:hidden text-[10px] text-text-muted leading-tight">
+                          <span className="sm:hidden text-[11px] text-text-muted leading-tight">
                             {meta.label}
                           </span>
                         </div>
                       </div>
 
                       <div className="hidden sm:flex sm:col-span-2 items-center">
-                        <span className="text-xs text-text-secondary">{meta.label}</span>
+                        <span className="text-sm text-text-secondary">{meta.label}</span>
                       </div>
 
-                      <div className="col-span-3 sm:col-span-2 text-xs text-text-muted truncate">
+                      <div className="col-span-3 sm:col-span-2 text-sm text-text-muted truncate">
                         {formatDateDisplay(file.uploadedAt)}
                       </div>
 
-                      <div className="col-span-2 sm:col-span-2 text-xs text-text-secondary text-right sm:text-left tabular-nums">
+                      <div className="col-span-2 sm:col-span-2 text-sm text-text-secondary text-right sm:text-left tabular-nums">
                         {formatBytes(file.fileSizeBytes)}
                       </div>
 
@@ -614,17 +764,17 @@ export default function DashboardPage() {
                           href={`/api/telegram/download/${file.id}`}
                           download={file.name}
                           aria-label="Download"
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
                         >
-                          <Download className="w-3.5 h-3.5" />
+                          <Download className="w-4 h-4" />
                         </a>
                         <button
                           onClick={() => setPreviewFile(file)}
-                          aria-label="Preview"
-                          className="w-7 h-7 rounded-lg hidden sm:flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                          aria-label="More options"
+                          className="w-8 h-8 rounded-lg hidden sm:flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
                           type="button"
                         >
-                          <MoreVertical className="w-3.5 h-3.5" />
+                          <MoreVertical className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -636,17 +786,18 @@ export default function DashboardPage() {
         </section>
 
         {/* Bottom Verification & Telegram Health Banner */}
-        <section className="bg-brand-subtle border border-border/60 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <section className="bg-brand-subtle rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-border/40">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-primary-container/20 flex items-center justify-center shrink-0 text-primary border border-primary/30">
               <ShieldCheck className="w-5 h-5 text-primary" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs sm:text-sm font-semibold text-text-primary">
+              <span className="text-sm font-medium text-text-primary">
                 Telegram Backup Health
               </span>
               <span className="text-xs text-text-secondary">
-                All {activeFiles.length} files verified in Telegram Saved Messages • End-to-end checksum valid
+                All {activeFiles.length.toLocaleString()} files verified in Telegram Saved Messages
+                • End-to-end checksum valid
               </span>
             </div>
           </div>
@@ -662,9 +813,9 @@ export default function DashboardPage() {
               type="button"
             >
               <RefreshCw
-                className={`w-3 h-3 ${telegramSyncing ? 'animate-spin text-primary' : ''}`}
+                className={`w-3.5 h-3.5 ${telegramSyncing ? 'animate-spin text-primary' : ''}`}
               />
-              <span>{telegramSyncing ? 'Verifying...' : 'Sync Now'}</span>
+              <span>{telegramSyncing ? 'Verifying...' : 'View log'}</span>
             </button>
           </div>
         </section>

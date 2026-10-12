@@ -161,8 +161,8 @@ export function AppSidebar() {
               <span className="text-xs font-semibold text-text-primary">
                 {formatBytes(storageSummary.trackedBytes)} used
               </span>
-              <span className="text-[11px] text-text-muted">
-                {storageSummary.trackedFileCount} items
+              <span className="text-xs text-text-muted font-medium">
+                {Math.min(100, Math.round((storageSummary.trackedBytes / (100 * 1024 * 1024 * 1024)) * 100))}%
               </span>
             </div>
             <div className="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden">
@@ -171,12 +171,15 @@ export function AppSidebar() {
                 style={{
                   width: `${Math.min(
                     100,
-                    Math.max(8, (storageSummary.trackedBytes / (50 * 1024 * 1024 * 1024)) * 100)
+                    Math.max(
+                      storageSummary.trackedBytes > 0 ? 3 : 0,
+                      Math.round((storageSummary.trackedBytes / (100 * 1024 * 1024 * 1024)) * 100)
+                    )
                   )}%`,
                 }}
               />
             </div>
-            <span className="text-[11px] text-text-muted">
+            <span className="text-xs text-text-muted">
               Saved in Telegram
             </span>
           </div>

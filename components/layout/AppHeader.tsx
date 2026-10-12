@@ -13,6 +13,7 @@ import {
   Moon,
   Laptop,
   Check,
+  HelpCircle,
   FileText,
   Image as ImageIcon,
   Video as VideoIcon,
@@ -368,6 +369,16 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
               </div>
             )}
           </div>
+
+          {/* Help Button */}
+          <Link
+            href="/help"
+            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+            title="Help & Knowledge Base"
+            aria-label="Help"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </Link>
 
           {/* Sync with Telegram Button */}
           {telegramConnected && (

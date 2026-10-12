@@ -129,6 +129,7 @@ export interface DetailedStorageBreakdown {
   largestFiles: FileItem[];
   averageFileSizeBytes: number;
   formattedAverageFileSize: string;
+  filesAddedThisWeek: number;
 }
 
 /**
@@ -286,6 +287,12 @@ export function calculateDetailedStorage(files: FileItem[]): DetailedStorageBrea
 
   const avgBytes = totalCount > 0 ? Math.round(totalBytes / totalCount) : 0;
 
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const filesAddedThisWeek = activeFiles.filter((f) => {
+    const time = new Date(f.uploadedAt).getTime();
+    return !isNaN(time) && time >= oneWeekAgo;
+  }).length;
+
   return {
     totalBytes,
     formattedTotalBytes: formatBytes(totalBytes),
@@ -295,6 +302,7 @@ export function calculateDetailedStorage(files: FileItem[]): DetailedStorageBrea
     largestFiles,
     averageFileSizeBytes: avgBytes,
     formattedAverageFileSize: formatBytes(avgBytes),
+    filesAddedThisWeek,
   };
 }
 
