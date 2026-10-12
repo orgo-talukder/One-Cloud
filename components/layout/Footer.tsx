@@ -27,6 +27,11 @@ export function Footer() {
             <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary">Product</h4>
             <ul className="mt-3 space-y-2 text-xs">
               <li>
+                <Link href="/about" className="text-text-secondary hover:text-text-primary transition-colors">
+                  About One Cloud
+                </Link>
+              </li>
+              <li>
                 <Link href="/how-it-works" className="text-text-secondary hover:text-text-primary transition-colors">
                   How It Works
                 </Link>
@@ -91,7 +96,7 @@ export function Footer() {
           <p>© {new Date().getFullYear()} One Cloud Inc. Telegram-backed distributed personal drive.</p>
           <div className="flex items-center gap-2">
             <Lock className="w-3.5 h-3.5 text-tertiary" />
-            <span className="text-text-muted">End-to-End Encrypted Cloud</span>
+            <span className="text-text-muted">Zero-Binary Custody Architecture</span>
           </div>
         </div>
       </div>
