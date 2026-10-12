@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import {
-  Clock,
+  List,
+  LayoutGrid,
   Filter,
   Star,
   Download,
@@ -13,7 +15,12 @@ import {
   Headphones,
   Archive,
   File,
-  Search,
+  RotateCw,
+  Send,
+  ArrowRight,
+  Folder,
+  History,
+  Lock,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
@@ -21,28 +28,50 @@ import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import type { FileItem } from '@/lib/drive/types';
 
 export default function RecentPage() {
-  const { files, searchQuery, toggleStarFile } = useDrive();
+  const { files, folders, searchQuery, toggleStarFile } = useDrive();
 
   const [localSearch, setLocalSearch] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedTimeFilter, setSelectedTimeFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const activeFiles = useMemo(
     () => files.filter((f) => f.status === 'active'),
     [files]
   );
 
+  const folderMap = useMemo(() => {
+    const map = new Map<string, string>();
+    folders.forEach((f) => map.set(f.id, f.name));
+    return map;
+  }, [folders]);
+
   const filteredFiles = useMemo(() => {
     let list = activeFiles;
 
-    if (selectedType !== 'all') {
+    // Time filter
+    if (selectedTimeFilter !== 'all') {
+      const now = new Date();
+      list = list.filter((f) => {
+        const d = new Date(f.uploadedAt);
+        const diffHours = (now.getTime() - d.getTime()) / (1000 * 60 * 60);
+        if (selectedTimeFilter === 'today') return diffHours <= 24;
+        if (selectedTimeFilter === 'week') return diffHours <= 24 * 7;
+        if (selectedTimeFilter === 'month') return diffHours <= 24 * 30;
+        return true;
+      });
+    }
+
+    // Type filter
+    if (selectedTypeFilter !== 'all') {
       list = list.filter((f) => {
         const cat = getFileTypeCategory(f.mimeType, f.extension);
-        if (selectedType === 'document') return cat === 'document' || cat === 'pdf';
-        if (selectedType === 'image') return cat === 'image';
-        if (selectedType === 'video') return cat === 'video';
-        if (selectedType === 'audio') return cat === 'audio';
-        if (selectedType === 'archive') return cat === 'archive';
+        if (selectedTypeFilter === 'document') return cat === 'document' || cat === 'pdf';
+        if (selectedTypeFilter === 'image') return cat === 'image';
+        if (selectedTypeFilter === 'video') return cat === 'video';
         return true;
       });
     }
@@ -57,7 +86,7 @@ export default function RecentPage() {
     return [...list].sort(
       (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
     );
-  }, [activeFiles, selectedType, localSearch, searchQuery]);
+  }, [activeFiles, selectedTimeFilter, selectedTypeFilter, localSearch, searchQuery]);
 
   // Group files into Today vs Earlier
   const { todayFiles, earlierFiles } = useMemo(() => {
@@ -82,44 +111,44 @@ export default function RecentPage() {
     return { todayFiles: today, earlierFiles: earlier };
   }, [filteredFiles]);
 
-  const getFileIcon = (mimeType: string, extension: string) => {
+  const getFileCategoryMeta = (mimeType: string, extension: string) => {
     const cat = getFileTypeCategory(mimeType, extension);
     switch (cat) {
       case 'document':
       case 'pdf':
         return {
           icon: <FileText className="w-5 h-5 text-file-document" />,
-          bg: 'bg-file-document/10',
-          label: 'Document',
+          colorClass: 'text-file-document',
+          label: 'Documents',
         };
       case 'image':
         return {
           icon: <ImageIcon className="w-5 h-5 text-file-image" />,
-          bg: 'bg-file-image/10',
-          label: 'Image',
+          colorClass: 'text-file-image',
+          label: 'Images',
         };
       case 'video':
         return {
           icon: <VideoIcon className="w-5 h-5 text-file-video" />,
-          bg: 'bg-file-video/10',
-          label: 'Video',
+          colorClass: 'text-file-video',
+          label: 'Videos',
         };
       case 'audio':
         return {
           icon: <Headphones className="w-5 h-5 text-file-audio" />,
-          bg: 'bg-file-audio/10',
+          colorClass: 'text-file-audio',
           label: 'Audio',
         };
       case 'archive':
         return {
           icon: <Archive className="w-5 h-5 text-file-archive" />,
-          bg: 'bg-file-archive/10',
-          label: 'Archive',
+          colorClass: 'text-file-archive',
+          label: 'Archives',
         };
       default:
         return {
           icon: <File className="w-5 h-5 text-text-muted" />,
-          bg: 'bg-surface-raised',
+          colorClass: 'text-text-muted',
           label: 'File',
         };
     }
@@ -127,6 +156,7 @@ export default function RecentPage() {
 
   const formatDateDisplay = (dateStr: string) => {
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Recently';
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
@@ -136,244 +166,461 @@ export default function RecentPage() {
       return `${mins} minutes ago`;
     }
     if (diffHours < 24) {
-      return `Today, ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `${Math.round(diffHours)} hours ago`;
     }
     if (diffHours < 48) {
-      return `Yesterday, ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `Yesterday, ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
     }
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const handleDownload = (e: React.MouseEvent, file: FileItem) => {
+    e.stopPropagation();
+    window.open(`/api/telegram/download/${file.id}`, '_blank');
+  };
+
+  const handleClearHistory = () => {
+    setIsClearing(true);
+    setTimeout(() => {
+      setIsClearing(false);
+    }, 600);
+  };
+
+  const handleForceRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 800);
   };
 
   const renderFileRow = (file: FileItem) => {
-    const meta = getFileIcon(file.mimeType, file.extension);
+    const meta = getFileCategoryMeta(file.mimeType, file.extension);
+    const folderName = file.parentFolderId ? folderMap.get(file.parentFolderId) || 'Projects' : 'My Drive';
 
     return (
       <div
         key={file.id}
         onClick={() => setPreviewFile(file)}
-        className="grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer border-b border-border/40"
+        className="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer border-b border-border/40 last:border-b-0"
       >
-        <div className="col-span-6 sm:col-span-5 flex items-center gap-3 min-w-0 pr-2">
+        <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+          <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+            {meta.icon}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors font-medium">
+              {file.name}
+            </span>
+            <span className="font-label-sm text-label-sm text-text-muted truncate md:hidden">
+              {folderName}
+            </span>
+          </div>
+        </div>
+
+        <div className="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+          <Folder className="w-4 h-4 text-text-muted shrink-0" />
+          <span className="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">
+            {folderName}
+          </span>
+        </div>
+
+        <div className="col-span-3 md:col-span-2 flex items-center min-w-0">
+          <span className="font-body-sm text-body-sm text-text-muted">
+            {formatDateDisplay(file.uploadedAt)}
+          </span>
+        </div>
+
+        <div className="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+          {formatBytes(file.fileSizeBytes)}
+        </div>
+
+        <div className="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
           <button
-            aria-label="Toggle favorite"
             onClick={(e) => {
               e.stopPropagation();
               toggleStarFile(file.id);
             }}
-            className={`focus:outline-none shrink-0 p-0.5 rounded transition-colors cursor-pointer ${
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
               file.isStarred
-                ? 'text-warning fill-warning'
-                : 'text-text-muted hover:text-warning'
+                ? 'text-warning hover:bg-surface-raised'
+                : 'text-text-muted hover:text-warning hover:bg-surface-raised'
             }`}
+            title={file.isStarred ? 'Starred' : 'Star file'}
             type="button"
           >
-            <Star
-              className={`w-4 h-4 ${file.isStarred ? 'fill-warning text-warning' : ''}`}
-            />
+            <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning' : ''}`} />
           </button>
-
-          <div
-            className={`w-8 h-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0 border border-border/40`}
-          >
-            {meta.icon}
-          </div>
-
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs sm:text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">
-              {file.name}
-            </span>
-            <span className="sm:hidden text-[10px] text-text-muted leading-tight">
-              {meta.label}
-            </span>
-          </div>
-        </div>
-
-        <div className="hidden sm:flex sm:col-span-2 items-center">
-          <span className="text-xs text-text-secondary">{meta.label}</span>
-        </div>
-
-        <div className="col-span-3 sm:col-span-2 text-xs text-text-muted truncate">
-          {formatDateDisplay(file.uploadedAt)}
-        </div>
-
-        <div className="col-span-2 sm:col-span-2 text-xs text-text-secondary text-right sm:text-left tabular-nums">
-          {formatBytes(file.fileSizeBytes)}
-        </div>
-
-        <div
-          className="col-span-1 flex items-center justify-end gap-1"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <a
-            href={`/api/telegram/download/${file.id}`}
-            download={file.name}
-            aria-label="Download"
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-          </a>
           <button
-            onClick={() => setPreviewFile(file)}
-            aria-label="More options"
-            className="w-7 h-7 rounded-lg hidden sm:flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+            onClick={(e) => handleDownload(e, file)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+            title="Download from Telegram CDN"
             type="button"
           >
-            <MoreVertical className="w-3.5 h-3.5" />
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setPreviewFile(file);
+            }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+            title="More options"
+            type="button"
+          >
+            <MoreVertical className="w-4 h-4" />
           </button>
         </div>
       </div>
     );
   };
 
-  return (
-    <div className="min-h-full w-full bg-canvas text-text-primary transition-colors">
-      <div className="w-full px-6 lg:px-8 py-8 max-w-7xl mx-auto flex flex-col gap-6">
-        {/* Top Workspace Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight">
-                Recent files
-              </h1>
-              <span className="px-2 py-0.5 rounded-full bg-brand-subtle text-primary text-[11px] font-semibold border border-primary/20">
-                Live sync
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-text-secondary">
-              Files you uploaded, opened, or synchronized recently in One Cloud.
-            </p>
-          </div>
+  const renderFileGrid = (file: FileItem) => {
+    const meta = getFileCategoryMeta(file.mimeType, file.extension);
+    const folderName = file.parentFolderId ? folderMap.get(file.parentFolderId) || 'Projects' : 'My Drive';
 
-          {/* Secondary Utilities */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex items-center min-w-[220px]">
-              <Search className="w-3.5 h-3.5 text-text-muted absolute left-3 pointer-events-none" />
-              <input
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-                placeholder="Filter recent files..."
-                className="w-full h-9 pl-8 pr-3 bg-surface border border-border rounded-lg text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-focus-ring transition-all"
-                type="text"
-              />
-            </div>
+    return (
+      <div
+        key={file.id}
+        onClick={() => setPreviewFile(file)}
+        className="group bg-surface hover:bg-surface-hover border border-border rounded-xl p-4 flex flex-col justify-between transition-all cursor-pointer shadow-xs h-36"
+      >
+        <div className="flex items-start justify-between">
+          <div className="w-10 h-10 rounded-lg bg-surface-raised flex items-center justify-center">
+            {meta.icon}
           </div>
-        </div>
-
-        {/* Filter Chips Toolbar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 select-none">
           <button
-            onClick={() => setSelectedType('all')}
-            className={`px-3 py-1 rounded-full text-xs transition-colors cursor-pointer flex items-center gap-1.5 border ${
-              selectedType === 'all'
-                ? 'bg-brand-subtle text-primary border-primary/40 font-medium'
-                : 'bg-surface hover:bg-surface-hover text-text-secondary border-border'
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleStarFile(file.id);
+            }}
+            className={`p-1 rounded-lg transition-colors cursor-pointer ${
+              file.isStarred ? 'text-warning' : 'text-text-muted hover:text-warning'
             }`}
             type="button"
           >
+            <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning' : ''}`} />
+          </button>
+        </div>
+
+        <div className="flex flex-col min-w-0 mt-2">
+          <span className="font-label-md text-label-md text-text-primary font-medium truncate group-hover:text-primary transition-colors">
+            {file.name}
+          </span>
+          <div className="flex items-center justify-between text-xs text-text-muted mt-1">
+            <span className="truncate">{folderName}</span>
+            <span className="font-mono text-[11px]">{formatBytes(file.fileSizeBytes)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col w-full px-6 lg:px-8 py-6 max-w-7xl mx-auto gap-6 pb-20">
+      {/* Top Workspace Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <h1 className="font-headline-md text-headline-md text-text-primary font-bold">
+              Recent files
+            </h1>
+            <span className="px-2 py-0.5 rounded-full bg-brand-subtle text-primary font-label-sm text-xs font-semibold">
+              Live sync
+            </span>
+          </div>
+          <p className="font-body-sm text-body-sm text-text-secondary text-xs sm:text-sm">
+            Files you opened, modified, or uploaded recently in One Cloud.
+          </p>
+        </div>
+
+        {/* Secondary Utilities */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex items-center min-w-[220px]">
+            <Filter className="w-4 h-4 absolute left-2.5 text-text-muted pointer-events-none" />
+            <input
+              id="recent-search"
+              type="text"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              placeholder="Filter recent files..."
+              className="w-full h-9 pl-8 pr-3 bg-surface rounded-lg text-text-primary placeholder:text-text-muted font-body-sm text-xs border border-border focus:outline-none focus:ring-1 focus:ring-focus-ring transition-all"
+            />
+          </div>
+          <button
+            id="clear-history-btn"
+            type="button"
+            onClick={handleClearHistory}
+            disabled={isClearing}
+            title="Clear cached activity log without deleting original telegram files"
+            className="h-9 px-3 bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary font-label-sm text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer border border-border shadow-xs"
+          >
+            <History className={`w-4 h-4 ${isClearing ? 'animate-spin' : ''}`} />
+            <span>{isClearing ? 'Clearing...' : 'Clear history'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Chips Toolbar */}
+      <div className="flex items-center justify-between gap-4 overflow-x-auto pb-1 select-none">
+        <div className="flex items-center gap-1.5 min-w-max">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedTimeFilter('all');
+              setSelectedTypeFilter('all');
+            }}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+              selectedTimeFilter === 'all' && selectedTypeFilter === 'all'
+                ? 'bg-brand-subtle text-primary border border-primary/20'
+                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border border-border'
+            }`}
+          >
             <span>All Recent</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-surface-raised font-mono">
+            <span className="text-[10px] px-1 rounded-full bg-surface-raised font-mono">
               {filteredFiles.length}
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => setSelectedTimeFilter(selectedTimeFilter === 'today' ? 'all' : 'today')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
+              selectedTimeFilter === 'today'
+                ? 'bg-brand-subtle text-primary border-primary/20'
+                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
+            }`}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedTimeFilter(selectedTimeFilter === 'week' ? 'all' : 'week')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
+              selectedTimeFilter === 'week'
+                ? 'bg-brand-subtle text-primary border-primary/20'
+                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
+            }`}
+          >
+            This Week
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedTimeFilter(selectedTimeFilter === 'month' ? 'all' : 'month')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
+              selectedTimeFilter === 'month'
+                ? 'bg-brand-subtle text-primary border-primary/20'
+                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
+            }`}
+          >
+            This Month
+          </button>
 
-          <div className="w-px h-4 bg-border mx-1 shrink-0" />
+          <div className="w-px h-4 bg-surface-raised mx-1" />
 
           <button
-            onClick={() => setSelectedType(selectedType === 'document' ? 'all' : 'document')}
-            className={`px-3 py-1 rounded-full text-xs transition-colors cursor-pointer flex items-center gap-1.5 border ${
-              selectedType === 'document'
-                ? 'bg-brand-subtle text-primary border-primary/40 font-medium'
-                : 'bg-surface hover:bg-surface-hover text-text-secondary border-border'
-            }`}
             type="button"
+            onClick={() => setSelectedTypeFilter(selectedTypeFilter === 'document' ? 'all' : 'document')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 border ${
+              selectedTypeFilter === 'document'
+                ? 'bg-brand-subtle text-primary border-primary/20'
+                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
+            }`}
           >
             <FileText className="w-3.5 h-3.5 text-file-document" />
             <span>Documents</span>
           </button>
-
           <button
-            onClick={() => setSelectedType(selectedType === 'image' ? 'all' : 'image')}
-            className={`px-3 py-1 rounded-full text-xs transition-colors cursor-pointer flex items-center gap-1.5 border ${
-              selectedType === 'image'
-                ? 'bg-brand-subtle text-primary border-primary/40 font-medium'
-                : 'bg-surface hover:bg-surface-hover text-text-secondary border-border'
-            }`}
             type="button"
+            onClick={() => setSelectedTypeFilter(selectedTypeFilter === 'image' ? 'all' : 'image')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 border ${
+              selectedTypeFilter === 'image'
+                ? 'bg-brand-subtle text-primary border-primary/20'
+                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
+            }`}
           >
             <ImageIcon className="w-3.5 h-3.5 text-file-image" />
             <span>Images</span>
           </button>
-
           <button
-            onClick={() => setSelectedType(selectedType === 'video' ? 'all' : 'video')}
-            className={`px-3 py-1 rounded-full text-xs transition-colors cursor-pointer flex items-center gap-1.5 border ${
-              selectedType === 'video'
-                ? 'bg-brand-subtle text-primary border-primary/40 font-medium'
-                : 'bg-surface hover:bg-surface-hover text-text-secondary border-border'
-            }`}
             type="button"
+            onClick={() => setSelectedTypeFilter(selectedTypeFilter === 'video' ? 'all' : 'video')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 border ${
+              selectedTypeFilter === 'video'
+                ? 'bg-brand-subtle text-primary border-primary/20'
+                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
+            }`}
           >
             <VideoIcon className="w-3.5 h-3.5 text-file-video" />
             <span>Videos</span>
           </button>
         </div>
 
-        {/* Files Content */}
-        {filteredFiles.length === 0 ? (
-          <div className="bg-surface border border-border rounded-xl p-12 text-center flex flex-col items-center justify-center">
-            <Clock className="w-8 h-8 text-text-muted mb-3" />
-            <p className="text-sm font-semibold text-text-primary">No recent files found</p>
-            <p className="text-xs text-text-secondary mt-1">
-              {localSearch
-                ? `No files matching "${localSearch}".`
-                : 'Upload files to your Telegram cloud to see them listed here.'}
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-6">
-            {/* Today Group */}
-            {todayFiles.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                      Today
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-text-muted">
-                    {todayFiles.length} {todayFiles.length === 1 ? 'file' : 'files'}
-                  </span>
-                </div>
-                <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-xs divide-y divide-border/60">
-                  {todayFiles.map(renderFileRow)}
-                </div>
-              </div>
-            )}
-
-            {/* Earlier Group */}
-            {earlierFiles.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-text-muted" />
-                    <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                      Earlier
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-text-muted">
-                    {earlierFiles.length} {earlierFiles.length === 1 ? 'file' : 'files'}
-                  </span>
-                </div>
-                <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-xs divide-y divide-border/60">
-                  {earlierFiles.map(renderFileRow)}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* View Mode Switch */}
+        <div className="flex items-center gap-1 p-0.5 bg-surface border border-border rounded-lg">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`w-7 h-7 flex items-center justify-center rounded transition-colors cursor-pointer ${
+              viewMode === 'table' ? 'bg-surface-raised text-primary' : 'text-text-muted hover:text-text-primary'
+            }`}
+            title="Table View"
+            type="button"
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`w-7 h-7 flex items-center justify-center rounded transition-colors cursor-pointer ${
+              viewMode === 'grid' ? 'bg-surface-raised text-primary' : 'text-text-muted hover:text-text-primary'
+            }`}
+            title="Grid View"
+            type="button"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
+      {/* SECTION: Today */}
+      {todayFiles.length > 0 && (
+        <div className="flex flex-col gap-2 mt-1">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary-container" />
+              <span className="font-label-sm text-xs text-text-secondary font-semibold uppercase tracking-wider">
+                Today
+              </span>
+            </div>
+            <span className="font-label-sm text-xs text-text-muted">
+              {todayFiles.length} {todayFiles.length === 1 ? 'file' : 'files'} modified
+            </span>
+          </div>
+
+          {viewMode === 'table' ? (
+            <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
+              {/* Table Header */}
+              <div className="bg-sidebar px-4 grid grid-cols-12 items-center h-10 select-none border-b border-border/40">
+                <div className="col-span-5 flex items-center gap-2 font-label-sm text-xs text-text-muted font-medium">
+                  <span>Name</span>
+                </div>
+                <div className="col-span-2 hidden md:flex items-center font-label-sm text-xs text-text-muted font-medium">
+                  <span>Original Folder</span>
+                </div>
+                <div className="col-span-3 md:col-span-2 flex items-center font-label-sm text-xs text-text-muted font-medium">
+                  <span>Last Opened</span>
+                </div>
+                <div className="col-span-2 hidden sm:flex items-center justify-end font-label-sm text-xs text-text-muted pr-2 font-medium">
+                  <span>Size</span>
+                </div>
+                <div className="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end font-label-sm text-xs text-text-muted font-medium">
+                  <span>Actions</span>
+                </div>
+              </div>
+              <div className="divide-y divide-border/30">
+                {todayFiles.map(renderFileRow)}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {todayFiles.map(renderFileGrid)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SECTION: Yesterday & Earlier this week */}
+      {earlierFiles.length > 0 && (
+        <div className="flex flex-col gap-2 mt-4">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-text-muted" />
+              <span className="font-label-sm text-xs text-text-secondary font-semibold uppercase tracking-wider">
+                Yesterday &amp; Earlier this week
+              </span>
+            </div>
+            <span className="font-label-sm text-xs text-text-muted">
+              {earlierFiles.length} {earlierFiles.length === 1 ? 'file' : 'files'}
+            </span>
+          </div>
+
+          {viewMode === 'table' ? (
+            <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
+              {/* Table Header */}
+              <div className="bg-sidebar px-4 grid grid-cols-12 items-center h-10 select-none border-b border-border/40">
+                <div className="col-span-5 flex items-center gap-2 font-label-sm text-xs text-text-muted font-medium">
+                  <span>Name</span>
+                </div>
+                <div className="col-span-2 hidden md:flex items-center font-label-sm text-xs text-text-muted font-medium">
+                  <span>Original Folder</span>
+                </div>
+                <div className="col-span-3 md:col-span-2 flex items-center font-label-sm text-xs text-text-muted font-medium">
+                  <span>Last Opened</span>
+                </div>
+                <div className="col-span-2 hidden sm:flex items-center justify-end font-label-sm text-xs text-text-muted pr-2 font-medium">
+                  <span>Size</span>
+                </div>
+                <div className="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end font-label-sm text-xs text-text-muted font-medium">
+                  <span>Actions</span>
+                </div>
+              </div>
+              <div className="divide-y divide-border/30">
+                {earlierFiles.map(renderFileRow)}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {earlierFiles.map(renderFileGrid)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {filteredFiles.length === 0 && (
+        <div className="bg-surface rounded-xl border border-border p-12 text-center flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-brand-subtle flex items-center justify-center text-primary mb-3">
+            <History className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-semibold text-text-primary">No recent files found</h3>
+          <p className="text-xs text-text-secondary mt-1 max-w-sm">
+            Files uploaded to your Telegram Saved Messages will appear automatically in this feed.
+          </p>
+        </div>
+      )}
+
+      {/* Telegram Sync Informational Reminder Banner */}
+      <div className="mt-4 p-4 rounded-xl bg-surface border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#36AEEA]/15 text-[#36AEEA] flex items-center justify-center flex-shrink-0">
+            <Send className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-label-md text-sm text-text-primary font-medium">
+              Automatic Telegram Channel Indexing
+            </span>
+            <span className="font-body-sm text-xs text-text-secondary">
+              Files modified in Telegram automatically appear at the top of your Recent list.
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 self-end sm:self-center">
+          <button
+            type="button"
+            onClick={handleForceRefresh}
+            className="px-3 py-1.5 rounded-lg bg-surface-raised hover:bg-surface-hover text-text-secondary hover:text-text-primary font-label-sm text-xs transition-colors flex items-center gap-1.5 border border-border cursor-pointer"
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>Force Refresh</span>
+          </button>
+          <Link
+            href="/app/settings"
+            className="px-3 py-1.5 rounded-lg bg-brand-subtle text-primary hover:bg-primary-container hover:text-text-primary font-label-sm text-xs transition-colors flex items-center gap-1"
+          >
+            <span>Channel settings</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* File Preview Modal */}
       {previewFile && (
         <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
       )}

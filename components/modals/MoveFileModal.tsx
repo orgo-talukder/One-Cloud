@@ -4,22 +4,31 @@ import React, { useState } from 'react';
 import { Folder, FolderInput, X, HardDrive } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 
+import type { FileItem, FolderItem } from '@/lib/drive/types';
+
 interface MoveFileModalProps {
-  itemId: string;
-  itemName: string;
+  itemId?: string;
+  itemName?: string;
+  file?: FileItem | FolderItem | null;
   isFolder?: boolean;
   onClose: () => void;
 }
 
-export function MoveFileModal({ itemId, itemName, isFolder, onClose }: MoveFileModalProps) {
+export function MoveFileModal({ itemId, itemName, file, isFolder, onClose }: MoveFileModalProps) {
   const { folders, moveFile } = useDrive();
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
+  const effectiveId = itemId || file?.id || '';
+  const effectiveName = itemName || file?.name || 'Item';
+  const effectiveIsFolder = isFolder ?? (file ? 'itemCount' in file : false);
+
   // Exclude self if moving a folder
-  const availableFolders = folders.filter((f) => (isFolder ? f.id !== itemId : true));
+  const availableFolders = folders.filter((f) => (effectiveIsFolder ? f.id !== effectiveId : true));
 
   const handleMove = () => {
-    moveFile(itemId, selectedFolderId);
+    if (effectiveId) {
+      moveFile(effectiveId, selectedFolderId);
+    }
     onClose();
   };
 
@@ -40,7 +49,7 @@ export function MoveFileModal({ itemId, itemName, isFolder, onClose }: MoveFileM
           <div>
             <h3 className="text-sm font-semibold text-text-primary">Move Item</h3>
             <p className="text-[11px] text-text-muted truncate max-w-[200px]">
-              Move &ldquo;{itemName}&rdquo; to folder
+              Move &ldquo;{effectiveName}&rdquo; to folder
             </p>
           </div>
         </div>

@@ -2,20 +2,29 @@
 
 import React, { useState } from 'react';
 import { Edit2, X } from 'lucide-react';
+import { useDrive } from '@/lib/drive/drive-context';
 
 interface RenameModalProps {
-  currentName: string;
-  onRename: (newName: string) => void;
+  currentName?: string;
+  item?: { id: string; name: string; isFolder?: boolean } | null;
+  onRename?: (newName: string) => void;
   onClose: () => void;
 }
 
-export function RenameModal({ currentName, onRename, onClose }: RenameModalProps) {
-  const [name, setName] = useState(currentName);
+export function RenameModal({ currentName, item, onRename, onClose }: RenameModalProps) {
+  const { renameFile } = useDrive();
+  const initialName = item ? item.name : currentName || '';
+  const [name, setName] = useState(initialName);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
-      onRename(name.trim());
+    const cleanName = name.trim();
+    if (cleanName) {
+      if (onRename) {
+        onRename(cleanName);
+      } else if (item) {
+        renameFile(item.id, cleanName);
+      }
       onClose();
     }
   };

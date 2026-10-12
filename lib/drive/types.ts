@@ -24,6 +24,7 @@ export interface FolderItem {
   status: 'active' | 'trashed';
   createdAt: string;
   updatedAt: string;
+  itemCount?: number;
 }
 
 export interface UploadTask {
