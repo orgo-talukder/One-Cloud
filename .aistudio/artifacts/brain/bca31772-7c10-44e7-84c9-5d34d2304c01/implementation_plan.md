@@ -1,77 +1,68 @@
-# Mobile & Tablet Responsiveness Implementation Plan
+# Implementation Plan: Mobile Screen UI/UX Improvements
 
-## 1. Overview
-The goal is to transform **Telegram Cloud Drive** into a first-class, fully responsive web application that provides a native mobile app experience on smartphones (iOS & Android), an optimized layout on tablets (iPads & Android tablets), and retains its rich desktop workstation interface.
-
-Based on user requirements:
-- **Mobile Navigation:** Bottom navigation bar plus slide-out drawer.
-- **Mobile File Display:** Touch-friendly responsive card list with quick actions and mobile action sheet.
+মোবাইল স্ক্রিনে ড্যাশবোর্ডের ওভারভিউ কার্ড অপ্টিমাইজেশন এবং সাইডবার UI/UX রিডিজাইন করার পূর্ণাঙ্গ পরিকল্পনা।
 
 ---
 
-## 2. Key Architecture & Design Changes
+## ১. সমস্যা বিশ্লেষণ (Problem Analysis from User Screenshots)
 
-### A. Public Website & Landing Page Navigation (`components/layout/Navbar.tsx` & Hero)
-- **Mobile Hamburger Menu:** Add a slide-out drawer on `< 768px` screens with smooth transitions to access `About`, `How It Works`, `Security`, `Help & FAQ`, and `Login / Open Drive`.
-- **Responsive Hero Mockup:** Fix the 1080px desktop mockup container on mobile (`< 640px`) to scale smoothly without horizontal scrolling or clipped elements.
-- **Touch-Friendly Buttons:** Increase button tap areas to a minimum of 44x44px.
+1. **মোবাইল ড্যাশবোর্ড স্ক্রিন (Screenshot 3)**:
+   - বর্তমানে মোবাইলে ৩টি আলাদা আলাদা বিশাল কার্ড স্ট্যাক হয়ে থাকে (`Storage Used`, `Total Files`, `Folders`)।
+   - এগুলো অনেক বেশি উল্লম্ব (vertical) জায়গা দখল করে, যার ফলে ব্যবহারকারীকে অনেক নিচে স্ক্রল করতে হয়।
+   - ব্যবহারকারীর চাহিদা অনুযায়ী: Storage Breakdown-এর মতো একটি সিঙ্গেল সমন্বিত (unified) কার্ডে **Total Used**, **Total Files**, **Folders**, এবং **Telegram Connection** এক সাথে ২x২ গ্রিডে দেখতে চাওয়া হয়েছে।
 
-### B. App Layout & Mobile Bottom Navigation Bar (`components/layout/MobileBottomNav.tsx`)
-- **New Mobile Bottom Bar (`< 768px`):**
-  - **Home** (`/app`) - Dashboard & storage overview
-  - **My Drive** (`/app/drive`) - Folder hierarchy & files
-  - **Upload (+)** - Central floating upload trigger
-  - **Starred** (`/app/starred`) - Bookmarked files
-  - **Recent** (`/app/recent`) - Latest uploads
-- **Drawer Enhancements (`components/layout/Sidebar.tsx` & `AppHeader.tsx`):**
-  - Auto-close the mobile sidebar drawer upon selecting any navigation link.
-  - Add safe-area padding (`pb-20 md:pb-6`) so bottom navigation never overlaps content or action buttons.
-  - Responsive header search bar with collapsible mobile search icon.
+2. **মোবাইল সাইডবার ড্রয়ার (Screenshot 1)**:
+   - মোবাইলে অ্যান্ড্রয়েড নেভিগেশন বার বা ডায়নামিক ভিউপোর্ট হাইটের কারণে সাইডবারের নিচের অংশ কেটে যাচ্ছে, যার ফলে **Settings**, **Storage links**, ও **User Profile** দেখা যাচ্ছে না।
+   - সাইডবারে কোনো নির্দিষ্ট স্ক্রলেবল এরিয়া বা সেফ-এরিয়া প্যাডিং ছিল না (`h-[100dvh]` ও `overflow-y-auto` অভাব)।
+   - সাইডবারের নিচের অংশটিকে একটি প্রিমিয়াম **Bottom Profile & Settings Card** আকারে সাজানো প্রয়োজন যাতে সরাসরি Settings, Help, Storage তথ্য ও Logout অ্যাকশন হাতের নাগালে থাকে।
 
-### C. Touch-Friendly File & Folder System (`app/app/drive/page.tsx` & `FileList.tsx`)
-- **Adaptive Mobile View (`< 768px`):**
-  - Replace broken 12-column desktop table on mobile with **Responsive Card List**:
-    - File icon with category badge
-    - Clean filename with truncation
-    - Metadata subtitle: File size + relative time + location tag
-    - Quick actions: One-tap Star, Download, and Preview buttons
-    - Mobile **Action Sheet** (Bottom Drawer) for 3-dot menu options (`Rename`, `Move`, `Trash`, `Permanent Delete`) so menus never clip off-screen.
-- **Tablet Layout (`768px – 1024px`):**
-  - 2 to 3 column fluid grid for folders and files.
-  - Responsive table with prioritized visible columns (Name, Size, Actions).
-- **Desktop Layout (`> 1024px`):**
-  - Retain the full 6-column professional workstation view with sorting and bulk actions.
-
-### D. Dashboard & Secondary Pages (`/app/app/page.tsx`, `/recent`, `/starred`, `/trash`)
-- **Storage Metrics Grid:** Responsive grid switching from 1 column on mobile (`grid-cols-1`) to 2 on tablets (`sm:grid-cols-2`) and 4 on desktop (`lg:grid-cols-4`).
-- **Storage Breakdown Tiles:** 2 columns on mobile, 3 on tablet, 5 on desktop with wrap support.
-- **Consistent Mobile List:** Apply the new responsive card view across Recent, Starred, and Trash pages.
-
-### E. Modals & Overlay Drawers
-- **`UploadQueueDrawer.tsx`:** Anchor as a bottom sheet on mobile screens (`w-full bottom-16 sm:bottom-6 sm:right-6 sm:w-[440px]`), preventing horizontal overflow.
-- **Dialogs (`FilePreviewModal`, `ConnectTelegramModal`, `RenameModal`, `MoveFileModal`, `DeleteConfirmModal`):**
-  - Use fluid widths (`w-[calc(100vw-32px)] max-w-lg`) with proper safe margins and touch-friendly buttons.
-  - Video and audio streaming modal optimized for mobile portrait and landscape view.
+3. **ডেস্কটপ ও ট্যাবলেট ভিউ অপরিবর্তিত রাখা**:
+   - ব্যবহারকারীর নির্দেশ অনুযায়ী: ডেস্কটপ ও ট্যাবলেট স্ক্রিনে বিদ্যমান লেআউট (৪টি আলাদা মেটান্যাল কার্ড ও স্ট্যান্ডার্ড সাইডবার) সম্পূর্ণ অপরিবর্তিত থাকবে। কেবল মোবাইলের জন্য রেসপনসিভ সুইচিং প্রয়োগ করা হবে।
 
 ---
 
-## 3. Step-by-Step Implementation Steps
+## ২. প্রস্তাবিত সমাধান ও পরিবর্তনসমূহ (Proposed Changes)
 
-1. **Step 1:** Create `components/layout/MobileBottomNav.tsx` and integrate it into `app/app/layout.tsx`.
-2. **Step 2:** Update `components/layout/Navbar.tsx` to include mobile hamburger toggle and animated slide-out navigation sheet.
-3. **Step 3:** Optimize `components/layout/AppHeader.tsx` and `components/layout/Sidebar.tsx` for mobile drawer auto-close and responsive search.
-4. **Step 4:** Refactor `app/app/drive/page.tsx` to support the responsive mobile card list view and mobile bottom sheet for file options.
-5. **Step 5:** Refactor `app/app/page.tsx` (Dashboard) metrics grid, storage breakdown, and recent files list.
-6. **Step 6:** Update `app/app/recent/page.tsx`, `app/app/starred/page.tsx`, and `app/app/trash/page.tsx` with unified mobile-first card list.
-7. **Step 7:** Update `UploadQueueDrawer.tsx` and modals for mobile viewport safety.
-8. **Step 8:** Run `compile_applet` and test all breakpoints (`360px`, `768px`, `1024px`, `1440px`).
+### ক. মোবাইল ড্যাশবোর্ড সমন্বিত ২x২ ওভারভিউ কার্ড (`app/app/page.tsx`)
+- **স্মার্টফোন স্ক্রিন (`< sm` / Mobile)**:
+  - বিদ্যমান ৩টি পৃথক বড় কার্ডের পরিবর্তে একটি সিঙ্গেল প্রিমিয়াম কার্ড রেন্ডার করা হবে।
+  - **কার্ডের হেডার**: "Drive & Storage Overview" শিরোনাম, মোট ব্যবহৃত স্টোরেজ ব্যাজ (`44.3 MB used`) এবং মাল্টি-কালার ক্যাটাগরি প্রোগ্রেস বার (Documents, Images, Videos, Audio, Archives)।
+  - **২x২ কমপ্যাক্ট গ্রিড সেকশন**:
+    1. **Storage Used**: মোট ব্যবহৃত সাইজ (`44.3 MB`), "Saved in Telegram" ক্যাপশন, ক্লাউড আইকন।
+    2. **Total Files**: মোট ফাইলের সংখ্যা (`1`), "+1 this week" গ্রিন ব্যাজ, ফাইল আইকন।
+    3. **Folders**: ফোল্ডার সংখ্যা (`1`), "Virtual roots" ক্যাপশন, ফোল্ডার আইকন।
+    4. **Telegram Connection**: কানেক্টেড টেলিগ্রাম চ্যানেল/বট (`@username` বা `Connected`), পালসিং স্ট্যাটাস ডট, টেলিগ্রাম আইকন এবং দ্রুত কানেক্ট/ডিসকানেক্ট ট্যাপ ট্রিগার।
+- **ট্যাবলেট ও ডেস্কটপ (`sm:grid`)**: পূর্বের ৪-কলাম বিশিষ্ট বিস্তারিত কার্ড লেআউট হুবহু বজায় থাকবে।
+
+### খ. মোবাইল সাইডবার রিভ্যাম্প ও সেটিংস দৃশ্যমানকরণ (`components/layout/AppSidebar.tsx` ও `app/app/layout.tsx`)
+- **ভিউপোর্ট ও স্ক্রলিং সমাধান**:
+  - সাইডবার কনটেইনারে `h-[100dvh] max-h-[100dvh] flex flex-col justify-between overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+12px)]` নিশ্চিত করা হবে। ফলে যে কোনো ছোট মোবাইল স্ক্রিনেও পুরো মেনু অনায়াসে স্ক্রল করা যাবে এবং কোনো অপশন কেটে যাবে না।
+- **নতুন বটম প্রোফাইল ও সেটিংস কার্ড**:
+  - সাইডবারের নিচে প্রিমিয়াম প্রোফাইল সেকশন:
+    - ইউজার অবতার বা ইমেইল আইডি সংক্ষিপ্ত রূপ।
+    - সরাসরি ক্লিকেবল **Settings** বাটন (গিয়ার আইকনসহ), যা সহজেই `/app/settings`-এ নিয়ে যাবে এবং মোবাইল ড্রয়ার বন্ধ করবে।
+    - **Telegram Bot / Channel Status** টগল ও স্টোরেজ প্রোগ্রেস বার।
+    - **Logout / Sign Out** অপশন।
+- **নেভিগেশন আইটেম তালিকায় সেটিংস অন্তর্ভুক্তি**:
+  - মূল নেভিগেশন তালিকায়ও (Home, My Drive, Recent, Starred, Trash-এর ঠিক নিচে) একটি ডেডিকেটেড **Settings** আইটেম যোগ করা হবে যাতে ব্যবহারকারী যেকোনো স্থান থেকেই এক ক্লিকে সেটিংস খুঁজে পান।
 
 ---
 
-## 4. Verification & Testing Checklist
-- [ ] Mobile screen (< 480px): No horizontal page scrollbars, clean touch targets (>= 44px), readable fonts.
-- [ ] Bottom navigation: Smooth switching between Home, Drive, Starred, Recent, and Upload.
-- [ ] Landing page: Mobile navbar opens and closes smoothly; all links work.
-- [ ] File actions: Mobile bottom sheet menu opens cleanly without off-screen clipping.
-- [ ] Tablet screen (768px - 1024px): Balanced grid spacing, adaptive table, clean layout.
-- [ ] Desktop screen (> 1024px): Preserves all existing workstation capabilities and aesthetics.
+## ৩. ফাইল পরিবর্তনের পরিকল্পনা (File Action Plan)
+
+| ফাইল পাথ | পরিবর্তনের বিবরণ |
+|---|---|
+| `components/layout/AppSidebar.tsx` | ১. নেভিগেশন মেনুতে Settings যুক্ত করা।<br>২. বটম সেকশনে উন্নত Profile, Storage, Telegram ও Settings কার্ড তৈরি করা।<br>৩. `h-[100dvh]` ও সেফ এরিয়া স্ক্রলিং নিশ্চিত করা। |
+| `app/app/layout.tsx` | মোবাইল ড্রয়ার কনটেইনারে `h-[100dvh]` এবং সঠিক জেড-ইনডেক্স ও স্ক্রলিং র‍্যাপার যুক্ত করা। |
+| `app/app/page.tsx` | ১. মোবাইলের জন্য একটি ডেডিকেটেড ২x২ সমন্বিত Overview Card তৈরি করা (`sm:hidden`)।<br>২. ডেস্কটপের জন্য আগের ৪-কার্ড গ্রিড বজায় রাখা (`hidden sm:grid`)। |
+
+---
+
+## ৪. যাচাইকরণ ও টেস্টিং (Verification Plan)
+
+1. **কম্পাইলেশন ভেরিফিকেশন**: `compile_applet` চালিয়ে নিশ্চিত করা হবে কোনো টাইপ বা বিল্ড এরর নেই।
+2. **মোবাইল ভিউপোর্ট টেস্টিং (375px - 430px)**:
+   - হোম ড্যাশবোর্ডে ৪টি মেট্রিক একটি সুন্দর ২x২ সমন্বিত কার্ডে দৃশ্যমান হচ্ছে কি না।
+   - সাইডবার ড্রয়ার খুললে Settings বাটন ও প্রোফাইল কার্ড নিচে স্পষ্ট দেখা যাচ্ছে কি না এবং কোনো কনটেন্ট কেটে যাচ্ছে কি না।
+   - Settings লিঙ্কে ট্যাপ করলে সরাসরি সেটিংস পেজ লোড হচ্ছে কি না।
+3. **ডেস্কটপ ও ট্যাবলেট রিগ্রেশন চেক**: বড় স্ক্রিনে পূর্বের লেআউট হুবহু বজায় রয়েছে কি না তা নিশ্চিত করা।

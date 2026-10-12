@@ -339,8 +339,132 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Top Metrics Summary Grid (4 Cards) */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* MOBILE ONLY: Single Unified 2x2 Overview Card (< sm) */}
+        <section className="sm:hidden bg-surface border border-border rounded-xl p-4 shadow-xs flex flex-col gap-3">
+          {/* Header with Title and Total Storage */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-text-primary">Overview</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-brand-subtle text-primary font-medium">
+                Saved Messages
+              </span>
+            </div>
+            <span className="text-xs font-bold text-text-primary tabular-nums">
+              {formattedTotalStorage}
+            </span>
+          </div>
+
+          {/* Multi-category Progress Bar */}
+          <div className="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden flex gap-0.5">
+            <div
+              className="bg-file-document h-full transition-all duration-300"
+              style={{ width: `${totalBytes > 0 ? docPct : 0}%` }}
+              title={`Documents: ${formatBytes(docBytes)}`}
+            />
+            <div
+              className="bg-file-image h-full transition-all duration-300"
+              style={{ width: `${totalBytes > 0 ? imgPct : 0}%` }}
+              title={`Images: ${formatBytes(imgBytes)}`}
+            />
+            <div
+              className="bg-file-video h-full transition-all duration-300"
+              style={{ width: `${totalBytes > 0 ? vidPct : 0}%` }}
+              title={`Videos: ${formatBytes(vidBytes)}`}
+            />
+            <div
+              className="bg-file-audio h-full transition-all duration-300"
+              style={{ width: `${totalBytes > 0 ? audPct : 0}%` }}
+              title={`Audio: ${formatBytes(audBytes)}`}
+            />
+            <div
+              className="bg-file-archive h-full transition-all duration-300"
+              style={{ width: `${totalBytes > 0 ? arcPct : 0}%` }}
+              title={`Archives: ${formatBytes(arcBytes)}`}
+            />
+          </div>
+
+          {/* 2x2 Grid of the 4 Key Metrics */}
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
+            {/* 1. Storage Used */}
+            <div className="p-2.5 rounded-lg bg-surface-raised border border-border/50 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-text-muted font-medium">Storage Used</span>
+                <Cloud className="w-3.5 h-3.5 text-primary-container" />
+              </div>
+              <div className="mt-1.5">
+                <span className="text-base font-bold text-text-primary tabular-nums block">
+                  {formattedTotalStorage}
+                </span>
+                <span className="text-[10px] text-text-muted">Saved in Telegram</span>
+              </div>
+            </div>
+
+            {/* 2. Total Files */}
+            <div className="p-2.5 rounded-lg bg-surface-raised border border-border/50 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-text-muted font-medium">Total Files</span>
+                <FileText className="w-3.5 h-3.5 text-tertiary" />
+              </div>
+              <div className="mt-1.5">
+                <span className="text-base font-bold text-text-primary tabular-nums block">
+                  {activeFiles.length.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-tertiary font-medium">
+                  +{addedThisWeekCount} this week
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Folders */}
+            <div className="p-2.5 rounded-lg bg-surface-raised border border-border/50 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-text-muted font-medium">Folders</span>
+                <Folder className="w-3.5 h-3.5 text-file-audio" />
+              </div>
+              <div className="mt-1.5">
+                <span className="text-base font-bold text-text-primary tabular-nums block">
+                  {activeFolders.length.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-text-muted truncate">
+                  {rootFoldersCount} virtual roots
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Telegram Connection */}
+            <div
+              onClick={() => {
+                if (!telegramConnected) setShowConnectModal(true);
+              }}
+              className={`p-2.5 rounded-lg bg-surface-raised border border-border/50 flex flex-col justify-between ${
+                !telegramConnected ? 'cursor-pointer hover:border-primary/40' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-text-muted font-medium">Telegram</span>
+                <Send className="w-3.5 h-3.5 text-[#36AEEA]" />
+              </div>
+              <div className="mt-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      telegramConnected ? 'bg-tertiary animate-pulse' : 'bg-warning'
+                    }`}
+                  />
+                  <span className="text-xs font-semibold text-text-primary truncate">
+                    {telegramConnected ? `@${telegramUsername || 'connected'}` : 'Connect'}
+                  </span>
+                </div>
+                <span className="text-[10px] text-text-muted">
+                  {telegramConnected ? 'DC4 Encrypted' : 'Tap to connect'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* DESKTOP & TABLET: Top Metrics Summary Grid (4 Cards) */}
+        <section className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Storage Used */}
           <div className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
             <div className="flex items-start justify-between">

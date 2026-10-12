@@ -50,7 +50,7 @@ export default function DriveAppLayout({ children }: { children: React.ReactNode
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative flex flex-col w-[260px] max-w-xs bg-sidebar h-full shadow-2xl animate-in slide-in-from-left duration-200">
+          <div className="relative flex flex-col w-[270px] max-w-[85vw] bg-sidebar h-[100dvh] max-h-[100dvh] shadow-2xl animate-in slide-in-from-left duration-200 overflow-hidden">
             <AppSidebar
               onNavigate={() => setMobileMenuOpen(false)}
               onClose={() => setMobileMenuOpen(false)}
