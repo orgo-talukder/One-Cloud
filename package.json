@@ -1,11 +1,14 @@
 {
-  "name": "ai-studio-applet",
-  "version": "0.1.0",
+  "name": "one-cloud",
+  "version": "1.0.0",
+  "description": "One Cloud — Ultra-Fast Encrypted Telegram Cloud Storage",
+  "homepage": "https://github.com/orgo-talukder/One-Cloud",
+  "author": "Argo Talukder <argotalukder10@gmail.com>",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "NODE_ENV=production next build",
+    "build": "next build",
     "start": "next start",
     "electron:dev": "ELECTRON_START_URL=http://localhost:3000 electron electron/main.js --no-sandbox",
     "build:linux": "electron-builder --linux deb AppImage",
