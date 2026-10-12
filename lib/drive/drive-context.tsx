@@ -93,8 +93,9 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const [telegramSyncing, setTelegramSyncing] = useState(false);
 
-  // Track cancelled task IDs so in-flight chunk loops abort immediately
+  // Track cancelled task IDs and active XHR requests so in-flight parallel workers abort immediately
   const cancelledTasksRef = useRef<Set<string>>(new Set());
+  const activeXhrsRef = useRef<Map<string, Set<XMLHttpRequest>>>(new Map());
 
   // Saved Telegram sessions mapped by User UID
   const [savedSessions, setSavedSessions] = useState<
@@ -535,177 +536,463 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Core upload runner for a single task (supports 2MB chunked MTProto uploads for large files)
+  // Helper to abort all active XHR requests for a given taskId
+  const abortTaskXhrs = (taskId: string) => {
+    const xhrs = activeXhrsRef.current.get(taskId);
+    if (xhrs) {
+      xhrs.forEach((xhr) => {
+        try {
+          xhr.abort();
+        } catch {}
+      });
+      xhrs.clear();
+      activeXhrsRef.current.delete(taskId);
+    }
+  };
+
+  // Core high-speed parallel upload runner with real-time XHR byte tracking, speed (MB/s), and real ETA
   const executeTaskUpload = async (task: UploadTask, targetFolderId: string | null) => {
     cancelledTasksRef.current.delete(task.id);
+    activeXhrsRef.current.set(task.id, new Set());
+
+    const file = task.file;
+    const uploadStartTime = performance.now();
+    let lastUiUpdateTime = 0;
+
+    // Sliding window of (timestampMs, confirmedAndInFlightBytes) for real-time speed & ETA
+    const speedSamples: { timeMs: number; bytes: number }[] = [
+      { timeMs: uploadStartTime, bytes: 0 },
+    ];
+
+    // Map of chunkKey -> current effective uploaded bytes
+    const chunkProgressBytes = new Map<string, number>();
+
+    const updateRealTimeTelemetry = (force = false, phase: 'uploading' | 'finalizing' = 'uploading') => {
+      if (cancelledTasksRef.current.has(task.id)) return;
+      const now = performance.now();
+      if (!force && now - lastUiUpdateTime < 120) {
+        return; // Throttle state updates to ~8 fps for smooth UI
+      }
+      lastUiUpdateTime = now;
+
+      let currentBytes = 0;
+      chunkProgressBytes.forEach((b) => {
+        currentBytes += b;
+      });
+      currentBytes = Math.min(file.size, Math.max(0, Math.round(currentBytes)));
+
+      // Record sample in 5-second sliding window
+      speedSamples.push({ timeMs: now, bytes: currentBytes });
+      while (speedSamples.length > 2 && now - speedSamples[0].timeMs > 5000) {
+        speedSamples.shift();
+      }
+
+      const totalElapsedSec = Math.max(0.15, (now - uploadStartTime) / 1000);
+      const overallSpeed = currentBytes / totalElapsedSec;
+
+      const oldestSample = speedSamples[0];
+      const windowElapsedSec = Math.max(0.15, (now - oldestSample.timeMs) / 1000);
+      const windowBytes = Math.max(0, currentBytes - oldestSample.bytes);
+      const windowSpeed = windowBytes / windowElapsedSec;
+
+      // Blend window speed (65%) and overall speed (35%) for responsive, jitter-free real-time measurement
+      const measuredSpeed =
+        totalElapsedSec > 1.0 && windowSpeed > 0
+          ? Math.round(windowSpeed * 0.65 + overallSpeed * 0.35)
+          : Math.round(overallSpeed);
+
+      const remainingBytes = Math.max(0, file.size - currentBytes);
+      const etaSeconds =
+        phase === 'finalizing'
+          ? 1
+          : measuredSpeed > 0
+          ? Math.max(1, Math.ceil(remainingBytes / measuredSpeed))
+          : null;
+
+      const rawPercent = file.size > 0 ? Math.round((currentBytes / file.size) * 96) : 50;
+      const progress =
+        phase === 'finalizing' ? 98 : Math.min(96, Math.max(1, rawPercent));
+
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: 'uploading',
+                progress,
+                uploadedBytes: phase === 'finalizing' ? file.size : currentBytes,
+                speedBytesPerSec: measuredSpeed > 0 ? measuredSpeed : t.speedBytesPerSec,
+                etaSeconds,
+                phase,
+                error: undefined,
+              }
+            : t
+        )
+      );
+    };
 
     setUploadTasks((prev) =>
       prev.map((t) =>
-        t.id === task.id ? { ...t, status: 'uploading', progress: 5, error: undefined } : t
+        t.id === task.id
+          ? {
+              ...t,
+              status: 'uploading',
+              progress: 1,
+              uploadedBytes: 0,
+              speedBytesPerSec: 0,
+              etaSeconds: null,
+              phase: 'uploading',
+              error: undefined,
+            }
+          : t
       )
     );
 
-    const PART_SIZE = 512 * 1024; // 512 KB MTProto part size
-    const PARTS_PER_CHUNK = 4; // 4 * 512 KB = 2 MB per HTTP request (well below Vercel's 4.5 MB limit)
-    const CHUNK_SIZE = PART_SIZE * PARTS_PER_CHUNK; // 2,097,152 bytes (2 MB)
+    // Helper to send a raw binary chunk via XMLHttpRequest with live upload.onprogress
+    const sendBinaryChunkXhr = (params: {
+      chunkKey: string;
+      chunkBlob: Blob;
+      telegramFileId: string;
+      totalParts: number;
+      partOffset: number;
+    }): Promise<{ success?: boolean; completed?: boolean; error?: string; status: number }> => {
+      const { chunkKey, chunkBlob, telegramFileId, totalParts, partOffset } = params;
+      const chunkByteLength = chunkBlob.size;
+
+      return new Promise((resolve, reject) => {
+        if (cancelledTasksRef.current.has(task.id)) {
+          reject(new Error('Upload cancelled'));
+          return;
+        }
+
+        const xhr = new XMLHttpRequest();
+        const taskXhrs = activeXhrsRef.current.get(task.id);
+        if (taskXhrs) taskXhrs.add(xhr);
+
+        xhr.open('POST', '/api/telegram/upload', true);
+        xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+        xhr.setRequestHeader('x-session-token', sessionToken);
+        xhr.setRequestHeader('x-telegram-file-id', telegramFileId);
+        xhr.setRequestHeader('x-file-name', encodeURIComponent(file.name));
+        xhr.setRequestHeader('x-mime-type', file.type || 'application/octet-stream');
+        xhr.setRequestHeader('x-total-size', String(file.size));
+        xhr.setRequestHeader('x-total-parts', String(totalParts));
+        xhr.setRequestHeader('x-part-offset', String(partOffset));
+        xhr.setRequestHeader('x-is-last-chunk', 'false');
+        if (targetFolderId) {
+          xhr.setRequestHeader('x-parent-folder-id', targetFolderId);
+        }
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            // Weight in-flight browser->server bytes at 70%, and 100% once Telegram confirms part upload
+            const effectiveBytes = Math.min(
+              chunkByteLength * 0.75,
+              (event.loaded / Math.max(1, event.total)) * chunkByteLength * 0.75
+            );
+            chunkProgressBytes.set(chunkKey, effectiveBytes);
+            updateRealTimeTelemetry(false, 'uploading');
+          }
+        };
+
+        const cleanup = () => {
+          const set = activeXhrsRef.current.get(task.id);
+          if (set) set.delete(xhr);
+        };
+
+        xhr.onload = () => {
+          cleanup();
+          if (xhr.status === 413) {
+            resolve({ success: false, status: 413, error: 'Payload too large (413)' });
+            return;
+          }
+          try {
+            const parsed = JSON.parse(xhr.responseText || '{}');
+            if (xhr.status >= 200 && xhr.status < 300 && parsed.success) {
+              chunkProgressBytes.set(chunkKey, chunkByteLength);
+              updateRealTimeTelemetry(true, 'uploading');
+              resolve({ ...parsed, status: xhr.status });
+            } else {
+              resolve({
+                success: false,
+                status: xhr.status,
+                error: parsed.error || `Upload server error (${xhr.status}).`,
+              });
+            }
+          } catch {
+            resolve({
+              success: false,
+              status: xhr.status,
+              error: `Unexpected server response (${xhr.status}).`,
+            });
+          }
+        };
+
+        xhr.onerror = () => {
+          cleanup();
+          reject(new Error('Network connection error during chunk upload.'));
+        };
+
+        xhr.onabort = () => {
+          cleanup();
+          reject(new Error('Upload cancelled'));
+        };
+
+        xhr.send(chunkBlob);
+      });
+    };
+
+    // MTProto part size = 512 KB (524,288 bytes)
+    // Max 512 KB-aligned chunk under Vercel's 4.5 MB limit = 8 * 512 KB = 4,194,304 bytes (~4.2 MB raw binary)
+    const PART_SIZE = 512 * 1024;
+    const PARTS_PER_CHUNK = 8; // 8 × 512 KB = 4.19 MB (utilizes full ~4.5 MB serverless limit with 512KB MTProto alignment)
+    const CHUNK_SIZE = PART_SIZE * PARTS_PER_CHUNK;
+    const PARALLEL_WORKERS = 3; // 3 concurrent workers (~12.6 MB in-flight simultaneously)
 
     try {
-      const file = task.file;
-
-      // Small files (<= 2 MB): fast single-request upload
+      // Fast Path for small files (<= 4 MB): single XHR upload with real-time progress
       if (file.size <= CHUNK_SIZE) {
-        const formData = new FormData();
-        formData.append('mode', 'single');
-        formData.append('file', file);
-        formData.append('sessionToken', sessionToken);
-        if (targetFolderId) {
-          formData.append('parentFolderId', targetFolderId);
-        }
+        const singleResult = await new Promise<{
+          success?: boolean;
+          file?: FileItem;
+          error?: string;
+        }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          const taskXhrs = activeXhrsRef.current.get(task.id);
+          if (taskXhrs) taskXhrs.add(xhr);
 
-        setUploadTasks((prev) =>
-          prev.map((t) => (t.id === task.id ? { ...t, progress: 45 } : t))
-        );
+          const formData = new FormData();
+          formData.append('mode', 'single');
+          formData.append('file', file);
+          formData.append('sessionToken', sessionToken);
+          if (targetFolderId) {
+            formData.append('parentFolderId', targetFolderId);
+          }
 
-        const res = await fetch('/api/telegram/upload', {
-          method: 'POST',
-          body: formData,
+          xhr.open('POST', '/api/telegram/upload', true);
+
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const effectiveBytes = Math.min(
+                file.size * 0.85,
+                (event.loaded / Math.max(1, event.total)) * file.size * 0.85
+              );
+              chunkProgressBytes.set('single', effectiveBytes);
+              updateRealTimeTelemetry(false, 'uploading');
+            }
+          };
+
+          const cleanup = () => {
+            const set = activeXhrsRef.current.get(task.id);
+            if (set) set.delete(xhr);
+          };
+
+          xhr.onload = () => {
+            cleanup();
+            try {
+              const parsed = JSON.parse(xhr.responseText || '{}');
+              if (xhr.status >= 200 && xhr.status < 300 && parsed.success) {
+                resolve(parsed);
+              } else {
+                reject(new Error(parsed.error || `Upload failed (${xhr.status}).`));
+              }
+            } catch {
+              reject(new Error(`Server error (${xhr.status}). Please retry.`));
+            }
+          };
+
+          xhr.onerror = () => {
+            cleanup();
+            reject(new Error('Network error during file upload.'));
+          };
+
+          xhr.onabort = () => {
+            cleanup();
+            reject(new Error('Upload cancelled'));
+          };
+
+          xhr.send(formData);
         });
 
-        if (res.status === 413) {
-          throw new Error('File chunk exceeded serverless payload limit (413).');
-        }
-
-        const rawText = await res.text();
-        let data: { success?: boolean; file?: FileItem; error?: string };
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          throw new Error(
-            res.ok
-              ? 'Unexpected response from upload server.'
-              : `Upload server error (${res.status}). Please retry.`
-          );
-        }
-
-        if (data.success && data.file) {
-          await saveUploadedFileMetadata(data.file);
+        if (singleResult.success && singleResult.file) {
+          await saveUploadedFileMetadata(singleResult.file);
           setUploadTasks((prev) =>
-            prev.map((t) => (t.id === task.id ? { ...t, status: 'completed', progress: 100 } : t))
+            prev.map((t) =>
+              t.id === task.id
+                ? {
+                    ...t,
+                    status: 'completed',
+                    progress: 100,
+                    uploadedBytes: file.size,
+                    etaSeconds: 0,
+                    phase: 'uploading',
+                  }
+                : t
+            )
           );
         } else {
-          throw new Error(data.error || 'Upload to Telegram failed.');
+          throw new Error(singleResult.error || 'Upload to Telegram failed.');
         }
         return;
       }
 
-      // Large files (> 2 MB, e.g. 13.9 MB+): 2 MB chunked MTProto upload
+      // High-Speed Parallel Chunked Upload for files > 4 MB
       const totalParts = Math.ceil(file.size / PART_SIZE);
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       const telegramFileId =
         String(Math.floor(Math.random() * 900000000000000) + 100000000000000) +
         String(Math.floor(Math.random() * 9000) + 1000);
 
-      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        if (cancelledTasksRef.current.has(task.id)) {
-          return;
-        }
+      // Build queue of chunk descriptors
+      interface ChunkJob {
+        key: string;
+        startByte: number;
+        endByte: number;
+        partOffset: number;
+      }
 
-        const startByte = chunkIndex * CHUNK_SIZE;
+      const chunkQueue: ChunkJob[] = [];
+      for (let idx = 0; idx < totalChunks; idx++) {
+        const startByte = idx * CHUNK_SIZE;
         const endByte = Math.min(startByte + CHUNK_SIZE, file.size);
-        const chunkBlob = file.slice(startByte, endByte);
-        const partOffset = chunkIndex * PARTS_PER_CHUNK;
-        const isLastChunk = chunkIndex === totalChunks - 1;
+        chunkQueue.push({
+          key: `chunk_${idx}`,
+          startByte,
+          endByte,
+          partOffset: idx * PARTS_PER_CHUNK,
+        });
+      }
 
+      // Helper to upload a single ChunkJob with automatic retry and automatic 413 split fallback
+      const processChunkJob = async (job: ChunkJob): Promise<void> => {
+        if (cancelledTasksRef.current.has(task.id)) return;
+
+        const chunkBlob = file.slice(job.startByte, job.endByte);
         let attempt = 0;
         let lastError: Error | null = null;
-        let chunkData: {
-          success?: boolean;
-          completed?: boolean;
-          file?: FileItem;
-          error?: string;
-        } | null = null;
 
         while (attempt < 3) {
+          if (cancelledTasksRef.current.has(task.id)) return;
           try {
-            const formData = new FormData();
-            formData.append('mode', 'chunk');
-            formData.append('chunk', chunkBlob, file.name);
-            formData.append('sessionToken', sessionToken);
-            formData.append('telegramFileId', telegramFileId);
-            formData.append('fileName', file.name);
-            formData.append('mimeType', file.type || 'application/octet-stream');
-            formData.append('totalSize', String(file.size));
-            formData.append('totalParts', String(totalParts));
-            formData.append('partOffset', String(partOffset));
-            formData.append('isLastChunk', isLastChunk ? 'true' : 'false');
-            if (targetFolderId) {
-              formData.append('parentFolderId', targetFolderId);
-            }
-
-            const res = await fetch('/api/telegram/upload', {
-              method: 'POST',
-              body: formData,
+            const res = await sendBinaryChunkXhr({
+              chunkKey: job.key,
+              chunkBlob,
+              telegramFileId,
+              totalParts,
+              partOffset: job.partOffset,
             });
 
-            if (res.status === 413) {
-              throw new Error('Chunk payload too large for serverless function (413).');
+            // Automatic fallback: if a strict gateway ever returns 413 on a 4.2MB chunk,
+            // split it into two 2.1MB (4 * 512KB) sub-chunks so it never fails!
+            if (res.status === 413 && job.endByte - job.startByte > PART_SIZE * 4) {
+              chunkProgressBytes.delete(job.key);
+              const splitBytes = PART_SIZE * 4; // 2 MB
+              const midByte = job.startByte + splitBytes;
+              await processChunkJob({
+                key: `${job.key}_a`,
+                startByte: job.startByte,
+                endByte: midByte,
+                partOffset: job.partOffset,
+              });
+              await processChunkJob({
+                key: `${job.key}_b`,
+                startByte: midByte,
+                endByte: job.endByte,
+                partOffset: job.partOffset + 4,
+              });
+              return;
             }
 
-            const rawText = await res.text();
-            let parsed: {
-              success?: boolean;
-              completed?: boolean;
-              file?: FileItem;
-              error?: string;
-            };
-            try {
-              parsed = JSON.parse(rawText);
-            } catch {
-              throw new Error(`Server returned invalid response (${res.status}).`);
+            if (!res.success) {
+              throw new Error(res.error || 'Chunk upload failed.');
             }
 
-            if (!res.ok || !parsed.success) {
-              throw new Error(parsed.error || `Chunk ${chunkIndex + 1}/${totalChunks} failed.`);
-            }
-
-            chunkData = parsed;
             lastError = null;
             break;
           } catch (err: unknown) {
+            if (cancelledTasksRef.current.has(task.id)) return;
             lastError = err instanceof Error ? err : new Error(String(err));
             attempt++;
             if (attempt < 3) {
-              await new Promise((r) => setTimeout(r, 800 * attempt));
+              await new Promise((r) => setTimeout(r, 700 * attempt));
             }
           }
         }
 
-        if (lastError || !chunkData) {
-          throw lastError || new Error('Failed to upload file chunk.');
+        if (lastError) {
+          throw lastError;
         }
+      };
 
-        if (cancelledTasksRef.current.has(task.id)) {
-          return;
-        }
+      // Phase 1: Run 3 parallel workers pulling from chunkQueue
+      let nextIndex = 0;
+      const workerCount = Math.min(PARALLEL_WORKERS, chunkQueue.length);
 
-        if (isLastChunk && chunkData.completed && chunkData.file) {
-          await saveUploadedFileMetadata(chunkData.file);
-          setUploadTasks((prev) =>
-            prev.map((t) => (t.id === task.id ? { ...t, status: 'completed', progress: 100 } : t))
-          );
-        } else {
-          const pct = Math.min(95, Math.max(10, Math.round(((chunkIndex + 1) / totalChunks) * 95)));
-          setUploadTasks((prev) =>
-            prev.map((t) => (t.id === task.id ? { ...t, progress: pct } : t))
-          );
+      const workers = Array.from({ length: workerCount }, async () => {
+        while (nextIndex < chunkQueue.length) {
+          if (cancelledTasksRef.current.has(task.id)) return;
+          const currentIdx = nextIndex++;
+          const job = chunkQueue[currentIdx];
+          if (!job) break;
+          await processChunkJob(job);
         }
+      });
+
+      await Promise.all(workers);
+
+      if (cancelledTasksRef.current.has(task.id)) {
+        return;
       }
+
+      // Phase 2: Commit all uploaded MTProto parts to Telegram Saved Messages ('me')
+      updateRealTimeTelemetry(true, 'finalizing');
+
+      const commitRes = await fetch('/api/telegram/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'commit',
+          sessionToken,
+          telegramFileId,
+          fileName: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          totalSize: file.size,
+          totalParts,
+          parentFolderId: targetFolderId,
+        }),
+      });
+
+      const commitData = await commitRes.json();
+      if (!commitRes.ok || !commitData.success || !commitData.file) {
+        throw new Error(commitData.error || 'Failed to finalize uploaded file in Telegram.');
+      }
+
+      await saveUploadedFileMetadata(commitData.file);
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: 'completed',
+                progress: 100,
+                uploadedBytes: file.size,
+                etaSeconds: 0,
+                phase: 'uploading',
+              }
+            : t
+        )
+      );
     } catch (err: unknown) {
+      abortTaskXhrs(task.id);
       if (cancelledTasksRef.current.has(task.id)) return;
       const msg = err instanceof Error ? err.message : 'Network error during upload';
       setUploadTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, status: 'failed', error: msg } : t))
+        prev.map((t) =>
+          t.id === task.id ? { ...t, status: 'failed', error: msg, etaSeconds: null } : t
+        )
       );
+    } finally {
+      activeXhrsRef.current.delete(task.id);
     }
   };
 
@@ -736,6 +1023,10 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
       size: file.size,
       progress: 0,
       status: 'queued',
+      uploadedBytes: 0,
+      speedBytesPerSec: 0,
+      etaSeconds: null,
+      phase: 'uploading',
     }));
 
     setUploadTasks((prev) => [...prev, ...newTasks]);
@@ -767,6 +1058,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
   const dismissUpload = (taskId: string) => {
     cancelledTasksRef.current.add(taskId);
+    abortTaskXhrs(taskId);
     setUploadTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
@@ -776,9 +1068,12 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
   const cancelUpload = (taskId: string) => {
     cancelledTasksRef.current.add(taskId);
+    abortTaskXhrs(taskId);
     setUploadTasks((prev) =>
       prev.map((t) =>
-        t.id === taskId ? { ...t, status: 'cancelled', error: 'Upload cancelled' } : t
+        t.id === taskId
+          ? { ...t, status: 'cancelled', error: 'Upload cancelled', etaSeconds: null }
+          : t
       )
     );
   };

@@ -35,6 +35,10 @@ export interface UploadTask {
   progress: number;
   status: 'queued' | 'uploading' | 'completed' | 'failed' | 'cancelled';
   error?: string;
+  uploadedBytes?: number;
+  speedBytesPerSec?: number;
+  etaSeconds?: number | null;
+  phase?: 'uploading' | 'finalizing';
 }
 
 export interface DriveStorageSummary {

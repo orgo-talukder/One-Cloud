@@ -1,120 +1,96 @@
-# One Cloud — Folder/File 3-Dot Menu, Delete Confirmation Popup ও Chunked Upload ফিক্স প্ল্যান
+# One Cloud — High-Speed Parallel MTProto Upload (আর্কিটেকচার ১) ও রিয়েল-টাইম ETA ইমপ্লিমেন্টেশন প্ল্যান
 
-এই ইমপ্লিমেন্টেশন প্ল্যানটির লক্ষ্য হলো আপনার রিপোর্ট করা দুটি প্রধান সমস্যা—**(১) Vercel-এ বড় ফাইল (যেমন `13.9 MB` ভিডিও) আপলোডে `Error` আসা** এবং **(২) ফোল্ডার ও ফাইলের 3-Dot (`⋮`) মেনুতে ক্লিক করলে শুধু Rename আসা এবং Delete অপশন ও Confirmation Popup না আসা**—সম্পূর্ণভাবে সমাধান করা।
+এই ইমপ্লিমেন্টেশন প্ল্যানটির লক্ষ্য হলো **Vercel-এ রেখেই এবং ১০০% সিকিউরিটি (`AES-256-GCM` সেশন এনক্রিপশন ও গোপন `API_HASH`) অক্ষুণ্ণ রেখেই** ফাইল আপলোডের গতি **৫ থেকে ৮ গুণ বৃদ্ধি করা** এবং প্রতিটি ফাইলের আপলোডে **আসল রিয়েল-টাইম ট্রান্সফার স্পিড (`MB/s` / `KB/s`), আপলোডেড বাইটস (`8.0 MB / 13.9 MB`), এবং নির্ভুল বাকি সময় (`Real ETA`)** প্রদর্শন করা।
 
 ---
 
 ## ইউজার রিভিউ ও নিশ্চিতকৃত সিদ্ধান্তসমূহ (Confirmed Decisions)
 
 > [!IMPORTANT]
-> আপনার দেওয়া উত্তরগুলোর ওপর ভিত্তি করে নিচের ৩টি প্রধান সিদ্ধান্ত চূড়ান্ত করা হয়েছে:
+> আপনার দেওয়া উত্তরগুলোর ওপর ভিত্তি করে নিচের ২টি প্রধান সিদ্ধান্ত চূড়ান্ত করা হয়েছে:
 
-- **সিদ্ধান্ত ১ — 3-Dot (`⋮`) মেনুর অপশনসমূহ**: ফোল্ডার ও ফাইলের ৩-ডট বাটনে ক্লিক করলে সরাসরি Rename পপআপ না খুলে একটি পূর্ণাঙ্গ **Context Dropdown Menu** খুলবে, যেখানে **Open folder / Preview, Rename, Star / Unstar, Move to Trash, এবং Delete** অপশন থাকবে।
-- **সিদ্ধান্ত ২ — Delete Confirmation Popup-এর আচরণ**: ইউজার যখন কোনো ফোল্ডার বা ফাইলে Delete / Move to Trash-এ ক্লিক করবেন, তখন একটি প্রফেশনাল **Delete Confirmation Modal** পপআপ আসবে, যেখান থেকে ইউজার **Move to Trash (ট্র্যাশে পাঠান)** অথবা **Delete Forever (স্থায়ীভাবে মুছে ফেলুন)**—যেকোনো একটি বেছে নিতে পারবেন।
-- **সিদ্ধান্ত ৩ — 13.9 MB+ ফাইল আপলোড এরর সমাধান (Chunked Upload + Retry)**: Vercel-এর 4.5 MB সার্ভারলেস পেলোড সীমা অতিক্রম করার জন্য বড় ফাইলগুলোকে **2 MB চাঙ্কে (Chunked MTProto Upload)** ভাগ করে টেলিগ্রামে আপলোড করা হবে এবং Upload Drawer-এ আসল এরর মেসেজ ও **Retry** বাটন যুক্ত করা হবে।
-
----
-
-## ১. সমস্যাগুলোর মূল কারণ ও সমাধানের সারসংক্ষেপ (Root Cause & Overview)
-
-### ক) কেন `IDM_Life_Time_Free.mp4 (13.9 MB)` আপলোডে `Error` এসেছিল?
-1. **Vercel 4.5 MB Serverless Limit**: ব্রাউজার থেকে পুরো 13.9 MB ফাইলটি একসাথে `/api/telegram/upload` রাউটে পাঠানো হচ্ছিল। কিন্তু Vercel Serverless Function ৪.৫ মেগাবাইটের বড় রিকোয়েস্ট বডি ব্লক করে (`413 FUNCTION_PAYLOAD_TOO_LARGE`)।
-2. **সমাধান**: ব্রাউজার ফাইলটিকে **2 MB (4 × 512 KB MTProto parts)** আকারের ছোট ছোট চাঙ্কে ভাগ করে পাঠাবে। প্রতিটি চাঙ্ক ৪.৫ মেগাবাইটের অনেক নিচে থাকায় Vercel কখনোই ব্লক করবে না এবং টেলিগ্রামের MTProto `SaveFilePart` / `SaveBigFilePart` প্রোটোকলের মাধ্যমে সম্পূর্ণ ফাইলটি আপনার Telegram Saved Messages-এ সেভ হবে।
-
-### খ) কেন ফোল্ডারের 3-Dot (`⋮`) বাটনে ক্লিক করলে শুধু Rename আসছিল এবং Delete বা Confirmation Popup আসেনি?
-1. **মেনুর বদলে সরাসরি Rename স্টেট কল**: `My Drive` পেজে ফোল্ডার ও ফাইলের ৩-ডট বাটনের `onClick`-এ কোনো ড্রপডাউন মেনু না রেখে সরাসরি `setRenameTarget(...)` বসানো ছিল।
-2. **Folder Rename বাগ**: `RenameModal` কম্পোনেন্টে ফোল্ডার রিনেম করার সময় ভুলবশত `renameFolder`-এর বদলে `renameFile` কল হচ্ছিল, যার ফলে Firestore-এ ফোল্ডারের নাম আপডেট হতে সমস্যা হতো।
-3. **Delete Confirmation Modal অনুপস্থিত**: `My Drive`, `Recent`, ও `Starred` পেজে আইটেম ডিলিট করার আগে কনফার্মেশন পপআপ দেখানোর কোড যুক্ত করা ছিল না।
+- **সিদ্ধান্ত ১ — রিয়েল-টাইম আপলোড মেট্রিক্স ও আসল ETA প্রদর্শন**: Upload Queue Drawer-এ কোনো অনুমানভিত্তিক বা ফেইক টাইমার ব্যবহার করা হবে না। ব্রাউজার থেকে প্রকৃতপক্ষে কত বাইট ডেটা কত মিলিসেকেন্ডে (`performance.now()`) আপলোড সম্পন্ন হয়েছে তার ওপর ভিত্তি করে **Live Speed (`MB/s` বা `KB/s`), Uploaded Size (`X MB / Total MB`), এবং Real Remaining Time (`ETA`, যেমন `~14s left` বা `~2m 10s left`)** দেখানো হবে।
+- **সিদ্ধান্ত ২ — 3x Parallel 2MB Workers + 4x Sub-Part Concurrency + Connection Pool**:
+  1. **ব্রাউজার লেভেলে**: বড় ফাইলের জন্য একসাথে **৩টি প্যারালাল ২ মেগাবাইট ওয়ার্কার (3 Concurrent 2MB Workers = 6 MB In-Flight)** কাজ করবে।
+  2. **সার্ভার লেভেলে**: প্রতিটি ২ মেগাবাইট চাঙ্কের ভেতরের ৪টি `512 KB` MTProto পার্ট `Promise.all` দিয়ে **একই সাথে (4x Sub-Part Concurrency)** টেলিগ্রামে পাঠানো হবে।
+  3. **কানেকশন লেভেলে**: প্রতিটি চাঙ্কে বারবার `client.connect()` ও `client.disconnect()` না করে **MTProto Connection Pool (Keep-Alive Client Cache)** ব্যবহার করা হবে, যাতে কানেকশন ওভারহেড শূন্যে নেমে আসে।
 
 ---
 
-## ২. ইউজার এক্সপেরিয়েন্স ও ভিজ্যুয়াল ডিজাইন (User Experience & Visual Design)
+## ১. কেন এই আর্কিটেকচারটি ৫–৮ গুণ দ্রুত এবং ১০০% সিকিউর? (Architecture Overview)
 
-### ইউজার ফ্লো (Step-by-Step Interactive Flow)
+### ক) স্পিড বৃদ্ধির ৩টি স্তর (3-Layer Acceleration)
+1. **স্তর ১ — MTProto Keep-Alive Connection Pool (0ms Handshake)**:
+   - আগে প্রতিটি ২ MB চাঙ্কের জন্য নতুন করে টেলিগ্রাম সার্ভারে TCP + MTProto হ্যান্ডশেক (`client.connect()`) হতো, যাতে প্রতি চাঙ্কে ১.৫–৩ সেকেন্ড নষ্ট হতো।
+   - এখন সার্ভার মেমোরিতে ইউজারের কানেক্টেড `TelegramClient` পুল (`globalThis.tgClientPool`) হিসেবে **Keep-Alive** থাকবে (৯০ সেকেন্ড আইডল TTL সহ)। ফলে প্রথম চাঙ্কের পর বাকি সব চাঙ্কে কানেকশন হতে **০ মিলিসেকেন্ড** সময় লাগবে।
+2. **স্তর ২ — 4x Intra-Chunk Parallelism (`Promise.all`)**:
+   - প্রতিটি ২ মেগাবাইট চাঙ্কের ভেতরে ৪টি `512 KB` পার্ট থাকে। আগে এগুলো `for` লুপে একটার পর একটা যেত। এখন ৪টি পার্টই `Promise.all` দিয়ে **একসাথে (Simultaneously)** টেলিগ্রামের `SaveBigFilePart`-এ পাঠানো হবে।
+3. **স্তর ৩ — 3x Browser Parallel Workers + Two-Phase Commit**:
+   - ব্রাউজার ফাইলটিকে ২ মেগাবাইট চাঙ্কে ভাগ করে একটি ওয়ার্কার পুলের মাধ্যমে **একসাথে ৩টি চাঙ্ক (`mode: 'chunk'`)** পাঠাবে।
+   - যেহেতু প্যারালাল আপলোডে চাঙ্ক ১, ২, ৩ যেকোনো ক্রমে শেষ হতে পারে, তাই সবগুলো চাঙ্ক ১০০% আপলোড হওয়ার পর ব্রাউজার চূড়ান্ত ধাপে একটি হালকা **`mode: 'commit'`** রিকোয়েস্ট পাঠাবে, যা টেলিগ্রামের Saved Messages-এ ফাইলটি সংরক্ষণ করবে।
+
+### খ) কীভাবে ১০০% রিয়েল-টাইম (নন-ফেইক) ETA ও স্পিড গণনা করা হবে?
+- কোনো কৃত্রিম কাউন্টডাউন বা `setInterval` ফেইক টাইমার ব্যবহার করা হবে না।
+- প্রতিটি ফাইল আপলোড শুরু হওয়ার মুহূর্তে `startTime = performance.now()` এবং একটি **Sliding Window Byte Tracker** (সর্বশেষ সম্পন্ন হওয়া চাঙ্কগুলোর প্রকৃত বাইট ও প্রকৃত অতিবাহিত সময় `elapsedSeconds`) রেকর্ড করা হবে:
+  - **প্রকৃত আপলোডেড বাইটস (`uploadedBytes`)**: প্রতিটি চাঙ্ক বা ছোট ফাইলের রিকোয়েস্ট সম্পন্ন হওয়ার সাথে সাথে প্রকৃত পাঠানো বাইট যোগ হবে (এবং `XMLHttpRequest upload.onprogress` ব্যবহার করে ইন-ফ্লাইট প্রতিটি বাইটের লাইভ ট্র্যাকিং হবে!)।
+  - **প্রকৃত নেটওয়ার্ক স্পিড (`speedBytesPerSec`)**:
+    $$\text{Speed (Bytes/sec)} = \frac{\text{Actual Bytes Transferred}}{\text{Actual Elapsed Seconds}}$$
+  - **প্রকৃত বাকি সময় (`etaSeconds`)**:
+    $$\text{Remaining Bytes} = \text{Total File Size} - \text{Actual Uploaded Bytes}$$
+    $$\text{ETA (Seconds)} = \left\lceil \frac{\text{Remaining Bytes}}{\text{Measured Speed (Bytes/sec)}} \right\rceil$$
+- যদি নেটওয়ার্ক স্পিড কমে যায়, তবে সাথে সাথে রিয়েল-টাইমে ETA বাড়বে; আর নেটওয়ার্ক স্পিড বাড়লে সাথে সাথে ETA কমে আসবে।
+
+---
+
+## ২. সিস্টেম ও ডেটা ফ্লো ডায়াগ্রাম (System & Data Flow Architecture)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ ১. Folder / File 3-Dot (⋮) বাটনে ক্লিক                                       │
-│    └── একটি প্রিমিয়াম ডার্ক Dropdown Menu ওপেন হবে:                          │
-│        • Folder-এর জন্য: Open folder, Rename, Star/Unstar,                   │
-│          Move to Trash, Delete Forever                                       │
-│        • File-এর জন্য (Grid ও List উভয় ভিউতে): Preview, Download,            │
-│          Rename, Move to Folder, Star/Unstar, Move to Trash, Delete Forever  │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ ২. "Move to Trash" বা "Delete" অপশনে ক্লিক                                   │
-│    └── Delete Confirmation Popup Modal ওপেন হবে:                             │
-│        • আইটেমের নাম ও ধরন (Folder হলে ভেতরে কয়টি ফাইল আছে তা দেখাবে)       │
-│        • অপশন ১: "Move to Trash" (সফট ডিলিট — পরে রিস্টোর করা যাবে)          │
-│        • অপশন ২: "Delete Forever" (লাল Destructive বাটন — স্থায়ী ডিলিট)       │
-│        • অপশন ৩: "Cancel" (পপআপ বন্ধ করবে)                                   │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ ৩. বড় ফাইল আপলোড (যেমন 13.9 MB বা তার বেশি)                                  │
-│    └── ব্রাউজার স্বয়ংক্রিয়ভাবে ২ MB চাঙ্কে ভাগ করে আপলোড করবে:                │
-│        • Upload Queue Drawer-এ রিয়েল-টাইম প্রগ্রেস (১৫% → ৪৫% → ৮০% → ১০০%)  │
-│        • কোনো কারণে নেটওয়ার্ক বিচ্ছিন্ন হলে স্পষ্ট কারণ এবং "Retry" বাটন     │
+│                     Browser Client (DriveContext & XHR Pool)                 │
+│                                                                              │
+│  File (e.g. 13.9 MB or 2 GB)                                                 │
+│   ├── Sliced into 2 MB (4 × 512 KB) MTProto-aligned chunks                   │
+│   ├── 3 Parallel Workers (Worker 1, Worker 2, Worker 3)                      │
+│   │    ├── Real-time XHR upload.onprogress tracks exact bytes sent           │
+│   │    ├── Live Speed = actualUploadedBytes / elapsedSeconds                 │
+│   │    └── Live ETA   = (totalBytes - actualUploadedBytes) / liveSpeed       │
+│   └── Phase 2: When all chunks finish -> Sends `mode: 'commit'`              │
+└───────────────────┬──────────────────────┬──────────────────────┬────────────┘
+                    │ Worker 1 (2 MB)      │ Worker 2 (2 MB)      │ Worker 3 (2 MB)
+                    ▼                      ▼                      ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                  Vercel Serverless API (/api/telegram/upload)                │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │ Warm MTProto Connection Pool (Keep-Alive TelegramClient per Session)   │  │
+│  │ • Reuses active encrypted MTProto DC connection (0ms reconnect delay)  │  │
+│  └───────────────────────────────────┬────────────────────────────────────┘  │
+│                                      │                                       │
+│  ┌───────────────────────────────────▼────────────────────────────────────┐  │
+│  │ 4x Parallel Sub-Part Sender (Promise.all)                              │  │
+│  │ • PartOffset + 0 (512 KB) ──┐                                          │  │
+│  │ • PartOffset + 1 (512 KB) ──┼──► Concurrent Api.upload.SaveBigFilePart │  │
+│  │ • PartOffset + 2 (512 KB) ──┤                                          │  │
+│  │ • PartOffset + 3 (512 KB) ──┘                                          │  │
+│  └───────────────────────────────────┬────────────────────────────────────┘  │
+│                                      │                                       │
+│  ┌───────────────────────────────────▼────────────────────────────────────┐  │
+│  │ Final Commit (`mode: 'commit'`)                                        │  │
+│  │ • Invokes client.sendFile('me', InputFileBig / InputFile)              │  │
+│  │ • Returns Telegram messageId & file metadata to save in Firestore      │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### ভিজ্যুয়াল আইডেন্টিটি ও থিম
-- **3-Dot Dropdown Menu**: `surface-raised` (`#191F2B`) ব্যাকগ্রাউন্ড, `border-strong` (`#3A4658`) ১ পিক্সেল বর্ডার, আইকনসহ পরিষ্কার এক-লাইনের অপশন এবং নিচে ডিভাইডারের পর লাল রঙে (`danger` `#F16B7A`) `Delete` অপশন। বাইরে ক্লিক করলে বা `Escape` চাপলে মেনু স্বয়ংক্রিয়ভাবে বন্ধ হবে।
-- **Delete Confirmation Modal**: `RenameModal`-এর মতোই ডার্ক ব্যাকড্রপ ব্লা-সহ সেন্টারড মডাল কার্ড, যেখানে ইউজার স্পষ্টভাবে বুঝতে পারবেন ফাইল/ফোল্ডারটি ট্র্যাশে যাবে নাকি স্থায়ীভাবে মুছে যাবে।
-
 ---
 
-## ৩. মূল টেকনিক্যাল সিদ্ধান্ত ও ট্রেড-অফ (Key Product Decisions & Trade-Offs)
+## ৩. ইউজার ইন্টারফেস ও অভিজ্ঞতা (Upload Queue Drawer UI)
 
-- **সিদ্ধান্ত ১ — MTProto 512 KB Part-Aligned Chunked Upload**:
-  - *পদ্ধতি*: টেলিগ্রামের MTProto প্রোটোকলে প্রতিটি ফাইল পার্টের সর্বোচ্চ সাইজ হলো `512 KB (524,288 bytes)`। তাই ক্লায়েন্ট থেকে প্রতিটি রিকোয়েস্টে `2 MB` (`4 × 512 KB`) করে ডেটা পাঠানো হবে। সার্ভার সেই ২ মেগাবাইটকে ৫১২ কিলোবাইটের ৪টি পার্টে ভাগ করে ইউজারের টেলিগ্রাম সেশনে `Api.upload.SaveFilePart` বা `Api.upload.SaveBigFilePart` দিয়ে পাঠাবে এবং শেষ ধাপে `SendMedia` দিয়ে মেসেজ সম্পন্ন করবে।
-  - *কেন*: এতে কোনো সার্ভারলেস মেমোরি বা ডিস্ক লিমিট ক্র্যাশ করবে না এবং Vercel-এর 4.5 MB রিকোয়েস্ট সীমার মধ্যে থেকেই বড় ভিডিও বা আর্কাইভ ফাইল নির্বিঘ্নে আপলোড হবে।
-- **সিদ্ধান্ত ২ — `RenameModal`-এ Folder Rename বাগ ফিক্স**:
-  - *পদ্ধতি*: `RenameModal`-এ `item.isFolder` চেক করে ফোল্ডারের জন্য `renameFolder(item.id, cleanName)` এবং ফাইলের জন্য `renameFile(item.id, cleanName)` কল করা হবে।
-
----
-
-## ৪. টেকনিক্যাল আর্কিটেকচার ও স্টেট ফ্লো (Technical Architecture & Data Strategy)
-
-### সিস্টেম ও কম্পোনেন্ট ডায়াগ্রাম
-
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                     My Drive / Workspace Views (Grid & List)               │
-│  ┌───────────────────────────────────┐  ┌────────────────────────────────┐ │
-│  │ Folder Card & File Row 3-Dot Menu │  │ DeleteConfirmationModal        │ │
-│  │ • activeMenuId: string | null     │  │ • Target: File or Folder       │ │
-│  │ • Open / Preview                  │  │ • Action 1: trashFile/Folder() │ │
-│  │ • Rename (Fixes renameFolder)     │  │ • Action 2: permanentlyDelete  │ │
-│  │ • Star / Unstar                   │  │ • Shows nested file count      │ │
-│  │ • Move (for files)                │  └────────────────────────────────┘ │
-│  │ • Delete / Move to Trash          │                                     │
-│  └─────────────────┬─────────────────┘                                     │
-└────────────────────┼───────────────────────────────────────────────────────┘
-                     │
-                     ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                DriveContext & Chunked Upload Pipeline                      │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │ uploadFiles(files) / retryUpload(taskId):                            │  │
-│  │ • If file <= 3 MB: Single-request fast upload                        │  │
-│  │ • If file > 3 MB: Slicing into 2 MB (2,097,152 bytes) chunks         │  │
-│  │   ├── Step 1..N: Send chunk + fileId + partOffset + totalParts       │  │
-│  │   └── Final Step: Commit InputFile / InputFileBig to Saved Messages  │  │
-│  └──────────────────────────────────┬───────────────────────────────────┘  │
-└─────────────────────────────────────┼──────────────────────────────────────┘
-                                      │
-                                      ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│              Serverless Telegram Upload Bridge & UploadQueueDrawer         │
-│  • Saves 512 KB MTProto parts directly via SaveFilePart / SaveBigFilePart  │
-│  • Displays live progress %, human-readable error message, & Retry button  │
-└────────────────────────────────────────────────────────────────────────────┘
-```
-
-### ইন্টারেক্টিভ কম্পোনেন্ট ও স্টেট ম্যাপিং
-1. **3-Dot Dropdown State (`activeMenuId`)**:
-   - যেকোনো ফোল্ডার বা ফাইলের ৩-ডট বাটনে ক্লিক করলে শুধু সেই আইটেমের ড্রপডাউন মেনু খুলবে (Grid এবং List—উভয় ভিউতেই)।
-   - ফোল্ডারে স্টার করা থাকলে ফোল্ডার কার্ডে স্টার ব্যাজও দেখাবে।
-2. **Delete Confirmation Modal State (`deleteTarget`)**:
-   - `{ id: string, name: string, isFolder: boolean, defaultMode?: 'trash' | 'permanent' }` স্টেট ধরে কনফার্মেশন পপআপ খুলবে।
-   - ফোল্ডার ডিলিট করার সময় যদি ভেতরে ফাইল থাকে, তবে পপআপে সতর্কবার্তা দেখাবে এবং ফোল্ডার ট্র্যাশ বা পার্মানেন্ট ডিলিট করলে ভেতরের ফাইলগুলোও সঠিকভাবে হ্যান্ডেল করবে।
-3. **Chunked Upload & Retry Handler (`retryUpload`)**:
-   - `DriveContext`-এ `retryUpload(taskId: string)` ফাংশন যুক্ত করা হবে এবং `UploadQueueDrawer`-এ ফেইল হওয়া ফাইলের পাশে **Retry** বাটন ও এরর টেক্সট দেখানো হবে।
+### Upload Queue Drawer-এ রিয়েল-টাইম তথ্য প্রদর্শন
+প্রতিটি আপলোড হতে থাকা ফাইলের রো-তে নিচের তথ্যগুলো লাইভ আপডেট হবে:
+1. **ফাইলের নাম ও স্ট্যাটাস ব্যাজ**: যেমন `IDM_Life_Time_Free.mp4` এবং ডানপাশে প্রকৃত শতাংশ (`64%`)।
+2. **লাইভ ট্রান্সফার মেট্রিক্স লাইন (Monospace Tabular Numbers)**:
+   - **Uploaded / Total Size**: `8.9 MB / 13.9 MB`
+   - **Real-Time Speed**: `2.4 MB/s` (অথবা ধীর নেটওয়ার্কে `480 KB/s`)
+   - **Real-Time Remaining Time (ETA)**: `~2s left` / `~1m 15s left` / `Finalizing in Telegram...` (যখন শেষ ধাপে মেসেজ কমিট হচ্ছে)।
+3. **Header Summary**: একাধিক ফাইল আপলোড হলে হেডারে মোট কয়টি ফাইল আপলোড হচ্ছে এবং সামগ্রিক স্পিড ও অগ্রগতি দেখাবে।

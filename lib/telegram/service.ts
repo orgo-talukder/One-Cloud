@@ -16,15 +16,30 @@ interface PendingQrSession {
   needs2FA?: boolean;
 }
 
+interface PooledTelegramClient {
+  client: TelegramClient;
+  session: TelegramSessionPayload;
+  connectPromise: Promise<TelegramClient> | null;
+  lastUsedAt: number;
+  idleTimer?: ReturnType<typeof setTimeout>;
+}
+
+const CLIENT_IDLE_TTL_MS = 90_000; // Keep MTProto connection warm for 90s across parallel chunks
+
 const globalForQr = globalThis as unknown as {
   qrSessions?: Map<string, PendingQrSession>;
+  tgClientPool?: Map<string, PooledTelegramClient>;
 };
 
 if (!globalForQr.qrSessions) {
   globalForQr.qrSessions = new Map<string, PendingQrSession>();
 }
+if (!globalForQr.tgClientPool) {
+  globalForQr.tgClientPool = new Map<string, PooledTelegramClient>();
+}
 
 const qrStore = globalForQr.qrSessions;
+const clientPool = globalForQr.tgClientPool;
 
 export class TelegramService {
   /**
@@ -551,7 +566,9 @@ export class TelegramService {
   }
 
   /**
-   * Helper to parse and connect client from session token
+   * Helper to get or reuse a warm connected TelegramClient from the keep-alive pool.
+   * Prevents 2-3s TCP+MTProto handshake overhead on every parallel chunk and ensures
+   * concurrent workers never disconnect each other mid-upload.
    */
   private static async getConnectedClient(sessionToken: string): Promise<{
     client: TelegramClient;
@@ -567,10 +584,107 @@ export class TelegramService {
     }
 
     const session: TelegramSessionPayload = JSON.parse(decrypted);
-    const client = this.createClient(session.sessionString, session.apiId, session.apiHash);
-    await client.connect();
+    const poolKey = `${session.apiId}:${session.sessionString.slice(-32)}`;
 
-    return { client, session };
+    const scheduleIdleCleanup = (entry: PooledTelegramClient) => {
+      if (entry.idleTimer) {
+        clearTimeout(entry.idleTimer);
+      }
+      entry.idleTimer = setTimeout(() => {
+        const current = clientPool.get(poolKey);
+        if (current && Date.now() - current.lastUsedAt >= CLIENT_IDLE_TTL_MS - 1000) {
+          clientPool.delete(poolKey);
+          current.client.disconnect().catch(() => {});
+        }
+      }, CLIENT_IDLE_TTL_MS);
+    };
+
+    const existing = clientPool.get(poolKey);
+    if (existing) {
+      existing.lastUsedAt = Date.now();
+      scheduleIdleCleanup(existing);
+
+      if (existing.connectPromise) {
+        await existing.connectPromise;
+      }
+
+      if (existing.client.connected) {
+        return { client: existing.client, session: existing.session };
+      }
+
+      // Reconnect if socket dropped
+      existing.connectPromise = existing.client.connect().then(() => existing.client);
+      try {
+        await existing.connectPromise;
+        existing.connectPromise = null;
+        return { client: existing.client, session: existing.session };
+      } catch (err) {
+        clientPool.delete(poolKey);
+        throw err;
+      }
+    }
+
+    const client = this.createClient(session.sessionString, session.apiId, session.apiHash);
+    const connectPromise = client.connect().then(() => client);
+
+    const newEntry: PooledTelegramClient = {
+      client,
+      session,
+      connectPromise,
+      lastUsedAt: Date.now(),
+    };
+    clientPool.set(poolKey, newEntry);
+    scheduleIdleCleanup(newEntry);
+
+    try {
+      await connectPromise;
+      newEntry.connectPromise = null;
+      return { client, session };
+    } catch (err) {
+      if (newEntry.idleTimer) clearTimeout(newEntry.idleTimer);
+      clientPool.delete(poolKey);
+      throw err;
+    }
+  }
+
+  /**
+   * Helper to invoke an MTProto request with automatic per-part retry on transient errors
+   */
+  private static async invokeWithRetry<T>(
+    client: TelegramClient,
+    requestFactory: () => Api.AnyRequest,
+    maxAttempts = 3
+  ): Promise<T> {
+    let attempt = 0;
+    let lastErr: unknown = null;
+
+    while (attempt < maxAttempts) {
+      try {
+        if (!client.connected) {
+          await client.connect();
+        }
+        return (await client.invoke(requestFactory())) as T;
+      } catch (err: unknown) {
+        lastErr = err;
+        attempt++;
+        const msg = err instanceof Error ? err.message : String(err);
+
+        // Respect Telegram FLOOD_WAIT if present
+        if (msg.includes('FLOOD_WAIT_')) {
+          const waitSec = Number(msg.split('FLOOD_WAIT_')[1]?.split(/[^0-9]/)[0] || 2);
+          if (waitSec <= 15 && attempt < maxAttempts) {
+            await new Promise((r) => setTimeout(r, waitSec * 1000 + 250));
+            continue;
+          }
+        }
+
+        if (attempt < maxAttempts) {
+          await new Promise((r) => setTimeout(r, 400 * attempt));
+        }
+      }
+    }
+
+    throw lastErr;
   }
 
   /**
@@ -590,7 +704,7 @@ export class TelegramService {
 
       const uploadedFileHandle = await client.uploadFile({
         file: customFile,
-        workers: 1,
+        workers: 4,
       });
 
       const sentMessage = await client.sendFile('me', {
@@ -598,8 +712,6 @@ export class TelegramService {
         caption: fileName,
         forceDocument: true,
       });
-
-      await client.disconnect().catch(() => {});
 
       return {
         messageId: sentMessage.id,
@@ -610,15 +722,14 @@ export class TelegramService {
         uploadedAt: new Date().toISOString(),
       };
     } catch (err: unknown) {
-      await client.disconnect().catch(() => {});
       console.error('Upload to Telegram failed:', err);
       throw new Error(this.parseTelegramError(err));
     }
   }
 
   /**
-   * Upload a 2MB chunk (up to four 512KB MTProto parts) to Telegram Saved Messages ('me').
-   * When isLastChunk is true, finalizes the InputFile / InputFileBig message in 'me'.
+   * Upload a high-speed MTProto-aligned chunk (up to 8 × 512KB = 4.2MB) to Telegram.
+   * Uses 4x sub-part concurrency (Promise.all) and warm connection pooling.
    */
   static async uploadChunkToSavedMessages(params: {
     sessionToken: string;
@@ -649,47 +760,96 @@ export class TelegramService {
 
     const { client } = await this.getConnectedClient(sessionToken);
     const PART_SIZE = 512 * 1024; // 524,288 bytes (MTProto max part size)
+    const SUB_PART_CONCURRENCY = 4; // Send 4 × 512KB parts simultaneously
     const isLarge = totalSize > 10 * 1024 * 1024;
     const fileIdBigInt = returnBigInt(telegramFileId);
 
     try {
       const numSubParts = Math.max(1, Math.ceil(chunkBuffer.length / PART_SIZE));
 
-      for (let i = 0; i < numSubParts; i++) {
-        const start = i * PART_SIZE;
-        const end = Math.min(start + PART_SIZE, chunkBuffer.length);
-        const partBytes = Buffer.from(chunkBuffer.subarray(start, end));
-        const currentPartIndex = partOffset + i;
+      // Dispatch 512KB sub-parts in parallel batches of 4
+      for (let batchStart = 0; batchStart < numSubParts; batchStart += SUB_PART_CONCURRENCY) {
+        const batchEnd = Math.min(batchStart + SUB_PART_CONCURRENCY, numSubParts);
+        const batchPromises: Promise<unknown>[] = [];
 
-        if (isLarge) {
-          await client.invoke(
-            new Api.upload.SaveBigFilePart({
-              fileId: fileIdBigInt,
-              filePart: currentPartIndex,
-              fileTotalParts: totalParts,
-              bytes: partBytes,
-            })
-          );
-        } else {
-          await client.invoke(
-            new Api.upload.SaveFilePart({
-              fileId: fileIdBigInt,
-              filePart: currentPartIndex,
-              bytes: partBytes,
-            })
-          );
+        for (let i = batchStart; i < batchEnd; i++) {
+          const start = i * PART_SIZE;
+          const end = Math.min(start + PART_SIZE, chunkBuffer.length);
+          const partBytes = Buffer.from(chunkBuffer.subarray(start, end));
+          const currentPartIndex = partOffset + i;
+
+          if (isLarge) {
+            batchPromises.push(
+              this.invokeWithRetry(client, () =>
+                new Api.upload.SaveBigFilePart({
+                  fileId: fileIdBigInt,
+                  filePart: currentPartIndex,
+                  fileTotalParts: totalParts,
+                  bytes: partBytes,
+                })
+              )
+            );
+          } else {
+            batchPromises.push(
+              this.invokeWithRetry(client, () =>
+                new Api.upload.SaveFilePart({
+                  fileId: fileIdBigInt,
+                  filePart: currentPartIndex,
+                  bytes: partBytes,
+                })
+              )
+            );
+          }
         }
+
+        await Promise.all(batchPromises);
       }
 
       if (!isLastChunk) {
-        await client.disconnect().catch(() => {});
         return {
           completed: false,
           uploadedParts: partOffset + numSubParts,
         };
       }
 
-      // Final chunk: commit the uploaded MTProto file parts to Saved Messages ('me')
+      // If sequential mode explicitly requested finalization on last chunk:
+      const uploaded = await this.commitChunkedUploadToSavedMessages({
+        sessionToken,
+        telegramFileId,
+        fileName,
+        mimeType,
+        totalSize,
+        totalParts,
+      });
+
+      return {
+        completed: true,
+        uploadedParts: totalParts,
+        uploaded,
+      };
+    } catch (err: unknown) {
+      console.error('Chunked upload to Telegram failed:', err);
+      throw new Error(this.parseTelegramError(err));
+    }
+  }
+
+  /**
+   * Phase 2 of Parallel Upload: Commits all uploaded MTProto file parts as a document in Saved Messages ('me').
+   */
+  static async commitChunkedUploadToSavedMessages(params: {
+    sessionToken: string;
+    telegramFileId: string;
+    fileName: string;
+    mimeType: string;
+    totalSize: number;
+    totalParts: number;
+  }): Promise<TelegramUploadedFile> {
+    const { sessionToken, telegramFileId, fileName, mimeType, totalSize, totalParts } = params;
+    const { client } = await this.getConnectedClient(sessionToken);
+    const isLarge = totalSize > 10 * 1024 * 1024;
+    const fileIdBigInt = returnBigInt(telegramFileId);
+
+    try {
       const inputFile = isLarge
         ? new Api.InputFileBig({
             id: fileIdBigInt,
@@ -709,23 +869,16 @@ export class TelegramService {
         forceDocument: true,
       });
 
-      await client.disconnect().catch(() => {});
-
       return {
-        completed: true,
-        uploadedParts: totalParts,
-        uploaded: {
-          messageId: sentMessage.id,
-          chatId: 'me',
-          fileName,
-          mimeType,
-          fileSizeBytes: totalSize,
-          uploadedAt: new Date().toISOString(),
-        },
+        messageId: sentMessage.id,
+        chatId: 'me',
+        fileName,
+        mimeType,
+        fileSizeBytes: totalSize,
+        uploadedAt: new Date().toISOString(),
       };
     } catch (err: unknown) {
-      await client.disconnect().catch(() => {});
-      console.error('Chunked upload to Telegram failed:', err);
+      console.error('Commit chunked upload to Telegram failed:', err);
       throw new Error(this.parseTelegramError(err));
     }
   }
@@ -746,14 +899,11 @@ export class TelegramService {
       });
 
       if (!messages || messages.length === 0 || !messages[0]) {
-        await client.disconnect().catch(() => {});
         return null;
       }
 
       const message = messages[0];
       const downloaded = await client.downloadMedia(message);
-
-      await client.disconnect().catch(() => {});
 
       if (!downloaded) {
         return null;
@@ -787,7 +937,6 @@ export class TelegramService {
         mimeType: resolvedMime,
       };
     } catch (err: unknown) {
-      await client.disconnect().catch(() => {});
       console.error('Download from Telegram failed:', err);
       throw new Error(this.parseTelegramError(err));
     }
@@ -807,10 +956,8 @@ export class TelegramService {
       await client.deleteMessages('me', [messageId], {
         revoke: true,
       });
-      await client.disconnect().catch(() => {});
       return true;
     } catch (err: unknown) {
-      await client.disconnect().catch(() => {});
       console.error('Delete from Telegram failed:', err);
       return false;
     }
