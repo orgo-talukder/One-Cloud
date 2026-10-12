@@ -40,7 +40,7 @@ export default function DriveAppLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
+    <div className="flex h-screen bg-canvas text-text-primary overflow-hidden">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <AppSidebar />
@@ -48,8 +48,8 @@ export default function DriveAppLayout({ children }: { children: React.ReactNode
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden bg-slate-900/50 backdrop-blur-xs">
-          <div className="relative flex flex-col w-72 max-w-xs bg-white h-full shadow-2xl">
+        <div className="fixed inset-0 z-50 flex md:hidden bg-black/60 backdrop-blur-xs">
+          <div className="relative flex flex-col w-[248px] max-w-xs bg-sidebar h-full shadow-2xl">
             <AppSidebar />
           </div>
           <div className="flex-1" onClick={() => setMobileMenuOpen(false)} />

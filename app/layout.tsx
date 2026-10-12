@@ -20,8 +20,8 @@ import { Providers } from '@/components/providers';
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning className="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-sky-500 selection:text-white min-h-screen">
+    <html lang="en" className="dark">
+      <body suppressHydrationWarning className="bg-canvas text-text-primary antialiased selection:bg-brand-subtle selection:text-primary min-h-screen">
         <Providers>{children}</Providers>
       </body>
     </html>

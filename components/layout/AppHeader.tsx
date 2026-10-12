@@ -145,12 +145,12 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
 
   return (
     <>
-      <header className="h-16 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between px-4 sm:px-6 z-20 transition-colors">
+      <header className="h-[68px] shrink-0 border-b border-border bg-canvas flex items-center justify-between px-4 sm:px-6 z-20 transition-colors">
         <div className="flex items-center gap-3 flex-1 max-w-xl my-auto">
           {onToggleMobileMenu && (
             <button
               onClick={onToggleMobileMenu}
-              className="md:hidden p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="md:hidden p-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface-hover"
               aria-label="Toggle Navigation"
             >
               <Menu className="h-5 w-5" />
@@ -159,7 +159,7 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
 
           {/* YouTube / Google Drive Style Live Auto-Suggest Search Bar */}
           <div ref={searchContainerRef} className="relative w-full flex items-center">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -171,8 +171,8 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
               }}
               onFocus={() => setIsSearchFocused(true)}
               onKeyDown={handleKeyDown}
-              placeholder="Search files and folders in your drive..."
-              className="w-full h-10 pl-9 pr-14 bg-slate-100/90 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl border border-transparent focus:border-slate-300 dark:focus:border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all shadow-2xs"
+              placeholder="Search files and folders"
+              className="w-full h-10 pl-9 pr-14 bg-surface hover:bg-surface/90 focus:bg-surface text-xs sm:text-sm text-text-primary placeholder:text-text-muted rounded-[10px] border border-border focus:border-focus-ring focus:outline-none transition-colors"
             />
             {searchQuery && (
               <button
@@ -283,27 +283,35 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
 
         {/* Header Actions */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-4">
+          {/* Synced with Telegram Pill */}
+          {telegramConnected && (
+            <div className="hidden sm:flex items-center gap-1.5 text-tertiary text-xs px-2.5 py-1 rounded-full bg-tertiary/10 border border-tertiary/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
+              <span>All files synced</span>
+            </div>
+          )}
+
           {/* Theme Switcher in Header (Light / Dark / System) */}
           <div className="relative">
             <button
               onClick={() => setThemeMenuOpen(!themeMenuOpen)}
-              className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
               title={`Current Theme: ${theme}`}
               aria-label="Toggle theme"
             >
               {resolvedTheme === 'dark' ? (
-                <Moon className="h-4 w-4 text-sky-400" />
+                <Moon className="h-4 w-4 text-primary" />
               ) : (
-                <Sun className="h-4 w-4 text-amber-500" />
+                <Sun className="h-4 w-4 text-warning" />
               )}
             </button>
 
             {themeMenuOpen && (
               <div
-                className="absolute right-0 top-11 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1.5 z-50 animate-in fade-in duration-100"
+                className="absolute right-0 top-11 w-40 bg-surface-raised border border-border rounded-xl shadow-xl p-1.5 z-50 animate-in fade-in duration-100"
                 onMouseLeave={() => setThemeMenuOpen(false)}
               >
-                <div className="px-2 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                <div className="px-2 py-1 text-[10px] font-bold text-text-muted uppercase">
                   Theme Mode
                 </div>
                 <button
@@ -311,14 +319,14 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                     setTheme('light');
                     setThemeMenuOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left cursor-pointer ${
                     theme === 'light'
-                      ? 'bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 font-semibold'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-brand-subtle text-primary font-medium'
+                      : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Sun className="h-3.5 w-3.5 text-amber-500" />
+                    <Sun className="h-3.5 w-3.5 text-warning" />
                     <span>Light</span>
                   </span>
                   {theme === 'light' && <Check className="h-3.5 w-3.5" />}
@@ -328,14 +336,14 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                     setTheme('dark');
                     setThemeMenuOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left cursor-pointer ${
                     theme === 'dark'
-                      ? 'bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 font-semibold'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-brand-subtle text-primary font-medium'
+                      : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Moon className="h-3.5 w-3.5 text-sky-400" />
+                    <Moon className="h-3.5 w-3.5 text-primary" />
                     <span>Dark</span>
                   </span>
                   {theme === 'dark' && <Check className="h-3.5 w-3.5" />}
@@ -345,14 +353,14 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                     setTheme('system');
                     setThemeMenuOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left cursor-pointer ${
                     theme === 'system'
-                      ? 'bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 font-semibold'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-brand-subtle text-primary font-medium'
+                      : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Laptop className="h-3.5 w-3.5 text-slate-400" />
+                    <Laptop className="h-3.5 w-3.5 text-text-muted" />
                     <span>System</span>
                   </span>
                   {theme === 'system' && <Check className="h-3.5 w-3.5" />}
@@ -367,11 +375,11 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
               onClick={syncTelegram}
               disabled={telegramSyncing}
               title="Reconcile metadata with Telegram Saved Messages"
-              className="inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 h-9 px-3 text-xs font-medium text-text-secondary hover:text-text-primary bg-surface hover:bg-surface-hover border border-border rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw
-                className={`h-3.5 w-3.5 text-slate-500 dark:text-slate-400 ${
-                  telegramSyncing ? 'animate-spin text-sky-600 dark:text-sky-400' : ''
+                className={`h-3.5 w-3.5 text-text-muted ${
+                  telegramSyncing ? 'animate-spin text-primary' : ''
                 }`}
               />
               <span className="hidden sm:inline">
@@ -384,30 +392,31 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
           <div className="relative">
             <button
               onClick={() => setProfileOpen(!profileOpen)}
-              className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="relative p-0.5 rounded-full hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer"
             >
-              <div className="h-8 w-8 rounded-full bg-sky-100 dark:bg-sky-900 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-200 flex items-center justify-center font-bold text-xs uppercase shadow-2xs">
+              <div className="h-8 w-8 rounded-full bg-primary-container border border-primary/40 text-text-primary flex items-center justify-center font-bold text-xs uppercase shadow-xs">
                 {user?.displayName ? user.displayName.charAt(0) : user?.email ? user.email.charAt(0) : 'U'}
               </div>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary border-2 border-canvas" />
             </button>
 
             {profileOpen && (
               <div
-                className="absolute right-0 top-11 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg p-2 z-50 animate-in fade-in duration-100"
+                className="absolute right-0 top-11 w-56 bg-surface-raised border border-border rounded-xl shadow-xl p-2 z-50 animate-in fade-in duration-100"
                 onMouseLeave={() => setProfileOpen(false)}
               >
-                <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+                <div className="px-3 py-2 border-b border-border/50">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <p className="text-xs font-semibold text-text-primary truncate">
                       {user?.displayName || (user ? 'Authenticated User' : 'Guest')}
                     </p>
                     {user && (
                       <span title="Firebase Verified" className="inline-flex items-center">
-                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <ShieldCheck className="h-3.5 w-3.5 text-tertiary shrink-0" />
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  <p className="text-[11px] text-text-muted truncate mt-0.5">
                     {user?.email || (user?.isAnonymous ? 'Guest Firebase Session' : 'Not signed in')}
                   </p>
                 </div>
@@ -416,9 +425,9 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                   <Link
                     href="/app/settings"
                     onClick={() => setProfileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
                   >
-                    <User className="h-3.5 w-3.5 text-slate-400" />
+                    <User className="h-3.5 w-3.5 text-text-muted" />
                     <span>Account & Settings</span>
                   </Link>
 
@@ -426,10 +435,10 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                     <Link
                       href="/login"
                       onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-xs text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/60 rounded-lg transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 text-xs text-primary hover:bg-brand-subtle rounded-lg transition-colors"
                     >
                       <LogIn className="h-3.5 w-3.5" />
-                      <span>Sign In to Firebase</span>
+                      <span>Sign In</span>
                     </Link>
                   ) : (
                     <button
@@ -437,9 +446,9 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                         signOut();
                         setProfileOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors text-left cursor-pointer"
                     >
-                      <LogOut className="h-3.5 w-3.5 text-rose-500" />
+                      <LogOut className="h-3.5 w-3.5 text-danger" />
                       <span>Sign Out</span>
                     </button>
                   )}

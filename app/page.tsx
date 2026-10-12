@@ -1,31 +1,28 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Cloud,
   ArrowRight,
   HardDrive,
-  FolderTree,
-  Upload,
+  Folder,
   Search,
-  Eye,
-  Trash2,
-  Send,
-  ShieldCheck,
-  CheckCircle2,
+  Star,
+  Upload,
   Lock,
-  Layers,
-  Sparkles,
-  Music,
+  ShieldCheck,
+  CheckCircle,
+  FileText,
   Image as ImageIcon,
   Video as VideoIcon,
-  FileText,
-  Check,
+  PlayCircle,
+  Keyboard,
+  Bookmark,
+  MoreVertical,
   HelpCircle,
-  Folder,
-  Star,
-  RefreshCw,
+  Check,
+  ChevronDown,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -33,481 +30,708 @@ import { useAuth } from '@/lib/firebase/auth-context';
 
 export default function LandingPage() {
   const { user } = useAuth();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const faqs = [
+    {
+      q: 'Where are my actual files stored?',
+      a: 'Your files are stored directly inside your personal Telegram account under your Saved Messages channel via official Telegram MTProto protocols. One Cloud does not operate any centralized storage servers or rent storage hard drives.',
+    },
+    {
+      q: 'Is there a limit on file size?',
+      a: 'Single file upload limits are determined by Telegram: standard Telegram accounts support files up to 2 GB each, while Telegram Premium users can upload files up to 4 GB each. There is no artificial restriction added by One Cloud.',
+    },
+    {
+      q: 'What happens to my files if I stop using One Cloud?',
+      a: 'All your files remain permanently preserved in your personal Telegram Saved Messages. You can download and access them at any time directly through the official Telegram mobile or desktop applications.',
+    },
+    {
+      q: 'Can One Cloud staff or other users see my files?',
+      a: 'No. File contents are transferred directly between your browser and Telegram. Your session credentials stay securely tied to your authenticated Firebase session and Telegram authentication token.',
+    },
+    {
+      q: 'How does folder organization and search work?',
+      a: 'We use Google Cloud Firestore to maintain a virtual hierarchical file system (folders, subfolders, custom tags, starred bookmarks, and instant search index). This provides instant navigation while keeping the underlying files safely housed in Telegram.',
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen bg-canvas text-text-primary antialiased selection:bg-brand-subtle selection:text-primary">
       <Navbar />
 
-      {/* 1. Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-20 sm:pt-24 sm:pb-28 border-b border-slate-100 bg-linear-to-b from-slate-50/70 via-white to-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          {/* Unboxed Brand Kicker */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-100 text-sky-700 text-xs font-semibold mb-6">
-            <Send className="h-3.5 w-3.5 text-sky-500" />
-            <span>Turn Telegram into Your Unlimited Google Drive</span>
-          </div>
+      <main className="w-full pt-16 bg-canvas">
+        <div className="flex flex-col w-full">
+          {/* Hero Section */}
+          <section className="relative w-full overflow-hidden px-6 lg:px-12 pt-16 pb-20 md:pt-20 md:pb-28">
+            {/* Subtle glow backdrop */}
+            <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[720px] h-[380px] bg-primary-container/10 blur-[130px] rounded-full" />
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 max-w-4xl mx-auto leading-tight text-balance">
-            Unlimited Cloud Storage.
-            <br />
-            <span className="text-sky-600">Organized Like Google Drive.</span>
-          </h1>
-
-          <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Telegram Saved Messages offers unlimited cloud storage, but lacks folders and organization.
-            One Cloud gives you a beautiful web drive with nested folders, storage analytics, and instant media streaming.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href={user ? '/app' : '/login'}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shadow-md transition-all active:scale-[0.98]"
-            >
-              <span>{user ? 'Open Your Drive' : 'Get Started Free'}</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-
-            <Link
-              href="#how-it-works"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm transition-colors"
-            >
-              <span>How It Works</span>
-            </Link>
-          </div>
-
-          {/* Genuine Trust Markers */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs text-slate-500 font-medium">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>Unlimited Telegram Cloud Storage</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>Up to 2GB Single File Uploads</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>100% Free · No Subscription Caps</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-sky-600" />
-              <span>Stored in Your Private Saved Messages</span>
-            </div>
-          </div>
-
-          {/* Interactive UI Showcase Frame */}
-          <div className="mt-14 max-w-5xl mx-auto rounded-2xl border border-slate-200/90 shadow-2xl bg-white overflow-hidden text-left">
-            <div className="h-11 bg-slate-100/90 border-b border-slate-200 px-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-slate-300" />
-                <div className="h-3 w-3 rounded-full bg-slate-300" />
-                <div className="h-3 w-3 rounded-full bg-slate-300" />
+            <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
+              {/* Trust Badge Chip */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-subtle text-primary border border-primary/20 shadow-xs mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
+                <span className="text-xs font-medium tracking-wide">
+                  Telegram-Powered Personal Cloud • MTProto Encrypted
+                </span>
               </div>
-              <span className="text-[11px] font-mono text-slate-500">
-                one-cloud.app/app · Cloud Command Dashboard
-              </span>
-              <div className="w-10" />
-            </div>
 
-            <div className="p-6 sm:p-8 bg-slate-50/50 space-y-6">
-              {/* Top Drive Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+              {/* Main Headline */}
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[46px] font-bold text-text-primary tracking-tight max-w-4xl leading-tight sm:leading-tight">
+                Your Telegram, Transformed Into a Premium Personal Cloud Drive.
+              </h1>
+
+              {/* Subtitle */}
+              <p className="text-base sm:text-lg text-text-secondary max-w-2xl mt-5 leading-relaxed">
+                One Cloud delivers a clean, high-performance file management workspace. Store,
+                organize, and preview files seamlessly using Telegram&apos;s infrastructure and Firestore
+                metadata.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
+                {user ? (
+                  <Link
+                    href="/app"
+                    className="inline-flex items-center justify-center gap-2 px-6 h-11 rounded-lg text-sm font-semibold bg-primary-container text-text-primary hover:bg-brand-hover transition-colors shadow-md active:scale-[0.99]"
+                  >
+                    <HardDrive className="w-4 h-4" />
+                    <span>Open Your Drive</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/signup"
+                      className="inline-flex items-center justify-center gap-2 px-6 h-11 rounded-lg text-sm font-semibold bg-primary-container text-text-primary hover:bg-brand-hover transition-colors shadow-md active:scale-[0.99]"
+                    >
+                      <span>Get Started</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                    <Link
+                      href="/how-it-works"
+                      className="inline-flex items-center justify-center gap-2 px-6 h-11 rounded-lg text-sm font-medium bg-surface text-text-primary border border-border hover:bg-surface-hover transition-colors shadow-xs active:scale-[0.99]"
+                    >
+                      <PlayCircle className="w-4 h-4 text-text-secondary" />
+                      <span>See How It Works</span>
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              {/* Interactive Desktop Drive Mockup (1080px Container) */}
+              <div className="w-full max-w-[1080px] mt-14 rounded-xl bg-surface border border-border shadow-2xl overflow-hidden text-left relative">
+                {/* Mockup Window Bar */}
+                <div className="h-12 bg-surface-raised px-4 flex items-center justify-between border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-danger/80" />
+                    <span className="w-3 h-3 rounded-full bg-warning/80" />
+                    <span className="w-3 h-3 rounded-full bg-tertiary/80" />
+                    <span className="ml-4 text-xs text-text-muted hidden sm:inline-block font-mono">
+                      workspace.onecloud.io/drive
+                    </span>
+                  </div>
+                  {/* Live status badge */}
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-hover text-tertiary text-xs border border-border/50">
+                    <span className="w-2 h-2 rounded-full bg-tertiary animate-ping" />
+                    <span>Synced with Telegram</span>
+                  </div>
+                </div>
+
+                {/* Mockup Workspace Body */}
+                <div className="grid grid-cols-12 min-h-[460px]">
+                  {/* Mock Sidebar */}
+                  <div className="hidden md:flex md:col-span-3 bg-sidebar p-4 flex-col justify-between border-r border-border">
+                    <div className="flex flex-col gap-5">
+                      <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-surface-hover text-text-primary text-xs font-semibold">
+                        <Folder className="w-4 h-4 text-primary" />
+                        <span>All Drive Files</span>
+                      </div>
+                      <div className="flex flex-col gap-1 px-1 text-xs">
+                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer">
+                          <span className="flex items-center gap-2">
+                            <Star className="w-3.5 h-3.5 text-warning" /> Starred
+                          </span>
+                          <span className="text-[11px] text-text-muted">14</span>
+                        </div>
+                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer">
+                          <span className="flex items-center gap-2">
+                            <Clock className="w-3.5 h-3.5" /> Recent
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer">
+                          <span className="flex items-center gap-2">
+                            <Cloud className="w-3.5 h-3.5" /> Telegram Saved
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Storage progress indicator */}
+                    <div className="bg-surface-raised p-3 rounded-xl flex flex-col gap-2 border border-border">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-text-secondary">Telegram Vault</span>
+                        <span className="text-primary font-semibold">42.8 GB</span>
+                      </div>
+                      <div className="w-full bg-canvas h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-primary-container h-full w-[44%] rounded-full" />
+                      </div>
+                      <span className="text-[10px] text-text-muted">
+                        Saved in Telegram Saved Messages
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Mock File Canvas Area */}
+                  <div className="col-span-12 md:col-span-9 bg-canvas p-4 sm:p-6 flex flex-col gap-6">
+                    {/* Mock Header Bar with Search */}
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 max-w-md bg-surface border border-border rounded-lg px-3 py-2 flex items-center gap-2.5 text-text-muted">
+                        <Search className="w-4 h-4 text-text-muted" />
+                        <span className="text-xs text-text-muted">
+                          Search files, archives, media...
+                        </span>
+                        <kbd className="ml-auto px-1.5 py-0.5 text-[10px] bg-canvas text-text-secondary rounded border border-border font-mono">
+                          ⌘K
+                        </kbd>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-3 py-2 rounded-lg bg-primary-container text-text-primary text-xs font-semibold flex items-center gap-1.5 shadow-xs">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Upload</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Folder tiles */}
+                    <div>
+                      <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">
+                        Folders
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2.5">
+                        <div className="h-16 bg-surface hover:bg-surface-hover border border-border transition-colors rounded-lg px-3.5 flex items-center gap-3 cursor-pointer shadow-xs">
+                          <Folder className="w-5 h-5 text-primary shrink-0" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-semibold text-text-primary truncate">
+                              Product Design
+                            </span>
+                            <span className="text-[10px] text-text-muted">128 items • 1.4 GB</span>
+                          </div>
+                        </div>
+                        <div className="h-16 bg-surface hover:bg-surface-hover border border-border transition-colors rounded-lg px-3.5 flex items-center gap-3 cursor-pointer shadow-xs">
+                          <Folder className="w-5 h-5 text-tertiary shrink-0" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-semibold text-text-primary truncate">
+                              Legal & Contracts
+                            </span>
+                            <span className="text-[10px] text-text-muted">34 items • 82 MB</span>
+                          </div>
+                        </div>
+                        <div className="h-16 bg-surface hover:bg-surface-hover border border-border transition-colors rounded-lg px-3.5 hidden sm:flex items-center gap-3 cursor-pointer shadow-xs">
+                          <Folder className="w-5 h-5 text-file-audio shrink-0" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-semibold text-text-primary truncate">
+                              Master Audio Takes
+                            </span>
+                            <span className="text-[10px] text-text-muted">19 items • 8.9 GB</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Standard 56px File Rows Table */}
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">
+                        Files
+                      </span>
+                      <div className="flex flex-col rounded-lg overflow-hidden bg-surface border border-border">
+                        {/* Header Labels */}
+                        <div className="h-9 px-4 bg-surface-raised flex items-center text-text-muted text-[11px] font-semibold uppercase tracking-wider border-b border-border">
+                          <span className="w-8" />
+                          <span className="flex-1">Name</span>
+                          <span className="w-28 hidden sm:inline-block">Date Modified</span>
+                          <span className="w-20 text-right">Size</span>
+                          <span className="w-10" />
+                        </div>
+
+                        {/* Row 1: PDF */}
+                        <div className="h-14 px-4 flex items-center justify-between hover:bg-surface-hover transition-colors group cursor-pointer border-b border-border/50">
+                          <div className="w-8 flex items-center text-file-document">
+                            <FileText className="w-5 h-5 text-file-document" />
+                          </div>
+                          <div className="flex-1 flex items-center gap-2 min-w-0 pr-4">
+                            <span className="text-xs sm:text-sm font-medium text-text-primary truncate">
+                              Q3_Security_Audit_Report.pdf
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-brand-subtle text-file-document font-medium hidden md:inline">
+                              PDF
+                            </span>
+                          </div>
+                          <span className="w-28 text-xs text-text-secondary hidden sm:inline-block">
+                            Today, 14:20
+                          </span>
+                          <span className="w-20 text-xs text-text-secondary text-right">4.2 MB</span>
+                          <div className="w-10 flex items-center justify-end text-text-muted group-hover:text-text-primary">
+                            <MoreVertical className="w-4 h-4" />
+                          </div>
+                        </div>
+
+                        {/* Row 2: MP4 */}
+                        <div className="h-14 px-4 flex items-center justify-between bg-brand-subtle transition-colors group cursor-pointer border-b border-border/50">
+                          <div className="w-8 flex items-center text-file-video">
+                            <VideoIcon className="w-5 h-5 text-file-video" />
+                          </div>
+                          <div className="flex-1 flex items-center gap-2 min-w-0 pr-4">
+                            <span className="text-xs sm:text-sm font-medium text-text-primary truncate">
+                              Mobile_Release_V2_Demo.mp4
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-surface text-file-video font-medium hidden md:inline">
+                              MP4
+                            </span>
+                          </div>
+                          <span className="w-28 text-xs text-text-secondary hidden sm:inline-block">
+                            Yesterday
+                          </span>
+                          <span className="w-20 text-xs text-text-secondary text-right">
+                            184.6 MB
+                          </span>
+                          <div className="w-10 flex items-center justify-end text-text-primary">
+                            <MoreVertical className="w-4 h-4" />
+                          </div>
+                        </div>
+
+                        {/* Row 3: SVG */}
+                        <div className="h-14 px-4 flex items-center justify-between hover:bg-surface-hover transition-colors group cursor-pointer">
+                          <div className="w-8 flex items-center text-file-image">
+                            <ImageIcon className="w-5 h-5 text-file-image" />
+                          </div>
+                          <div className="flex-1 flex items-center gap-2 min-w-0 pr-4">
+                            <span className="text-xs sm:text-sm font-medium text-text-primary truncate">
+                              System_Iconography_Master.svg
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-brand-subtle text-file-image font-medium hidden md:inline">
+                              SVG
+                            </span>
+                          </div>
+                          <span className="w-28 text-xs text-text-secondary hidden sm:inline-block">
+                            Aug 24
+                          </span>
+                          <span className="w-20 text-xs text-text-secondary text-right">
+                            920 KB
+                          </span>
+                          <div className="w-10 flex items-center justify-end text-text-muted group-hover:text-text-primary">
+                            <MoreVertical className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Value Pillars / Features Grid Section */}
+          <section className="w-full bg-sidebar py-20 px-6 lg:px-12 border-y border-border">
+            <div className="max-w-7xl mx-auto flex flex-col gap-12">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Personal Cloud Drive</h3>
-                  <p className="text-xs text-slate-500">
-                    Storage Used: <strong className="font-mono text-slate-800">4.2 GB</strong> of{' '}
-                    <span className="text-emerald-600 font-semibold">Unlimited Telegram Storage</span>
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                    Engineered For Fluidity
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-2 tracking-tight">
+                    The power of Telegram. The precision of Linear.
+                  </h2>
+                </div>
+                <p className="text-sm text-text-secondary max-w-md">
+                  A high-density workspace crafted for technical users who demand fast directory
+                  structures, instant search, and zero bloat.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Feature Card 1 */}
+                <div className="bg-surface border border-border rounded-xl p-6 flex flex-col justify-between hover:bg-surface-hover transition-colors shadow-xs group">
+                  <div className="flex flex-col gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border flex items-center justify-center text-primary transition-colors">
+                      <Folder className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="text-base font-semibold text-text-primary">
+                      Effortless File Organization
+                    </h3>
+                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                      Virtual folders, nested directory paths, instant sorting, and multi-select
+                      batch actions designed for pure keyboard-first velocity.
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-border/50 flex items-center gap-2 text-text-muted text-xs">
+                    <CheckCircle className="w-4 h-4 text-tertiary" />
+                    <span>Nested path support</span>
+                  </div>
+                </div>
+
+                {/* Feature Card 2 */}
+                <div className="bg-surface border border-border rounded-xl p-6 flex flex-col justify-between hover:bg-surface-hover transition-colors shadow-xs group">
+                  <div className="flex flex-col gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border flex items-center justify-center text-primary transition-colors">
+                      <Search className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="text-base font-semibold text-text-primary">
+                      Fast Global Search & Filters
+                    </h3>
+                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                      Real-time instant search by filename, extension, or category with instant
+                      keyboard shortcut (⌘K) and blazing Firestore response times.
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-border/50 flex items-center gap-2 text-text-muted text-xs">
+                    <Keyboard className="w-4 h-4 text-primary" />
+                    <span>Instant ⌘K launcher</span>
+                  </div>
+                </div>
+
+                {/* Feature Card 3 */}
+                <div className="bg-surface border border-border rounded-xl p-6 flex flex-col justify-between hover:bg-surface-hover transition-colors shadow-xs group">
+                  <div className="flex flex-col gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border flex items-center justify-center text-warning transition-colors">
+                      <Star className="w-5 h-5 text-warning" />
+                    </div>
+                    <h3 className="text-base font-semibold text-text-primary">
+                      Starred & Priority Access
+                    </h3>
+                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                      Star vital documents, key videos, and assets for instant one-click retrieval
+                      without having to navigate through deep directories.
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-border/50 flex items-center gap-2 text-text-muted text-xs">
+                    <Bookmark className="w-4 h-4 text-warning" />
+                    <span>Quick-drawer retrieval</span>
+                  </div>
+                </div>
+
+                {/* Feature Card 4 */}
+                <div className="bg-surface border border-border rounded-xl p-6 flex flex-col justify-between hover:bg-surface-hover transition-colors shadow-xs group">
+                  <div className="flex flex-col gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border flex items-center justify-center text-tertiary transition-colors">
+                      <Lock className="w-5 h-5 text-tertiary" />
+                    </div>
+                    <h3 className="text-base font-semibold text-text-primary">
+                      Telegram-Backed Reliability
+                    </h3>
+                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                      File bytes stored directly in your private Telegram Saved Messages channel
+                      with zero third-party data lock-in or surprise billings.
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-border/50 flex items-center gap-2 text-text-muted text-xs">
+                    <ShieldCheck className="w-4 h-4 text-tertiary" />
+                    <span>Direct Saved Messages sync</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Telegram-Powered Storage Deep Dive Section */}
+          <section className="w-full bg-canvas py-24 px-6 lg:px-12">
+            <div className="max-w-7xl mx-auto flex flex-col gap-12">
+              <div>
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                  Decoupled Architecture
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-2 tracking-tight">
+                  How One Cloud redefines personal cloud infrastructure
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                {/* Visual architectural split card: Left Side Explanation */}
+                <div className="lg:col-span-7 bg-surface border border-border rounded-xl p-8 sm:p-10 flex flex-col justify-between shadow-xs">
+                  <div className="flex flex-col gap-6">
+                    <div className="flex items-center gap-3">
+                      <span className="px-2.5 py-1 rounded bg-brand-subtle text-primary text-xs font-semibold">
+                        Dual-Tier Pipeline
+                      </span>
+                      <span className="text-text-muted text-xs">Zero File Byte Renting</span>
+                    </div>
+
+                    <h3 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight">
+                      Separating high-speed directory metadata from secure encrypted payload
+                      storage.
+                    </h3>
+
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Traditional cloud providers charge heavy markups for simple storage and force
+                      closed ecosystems. One Cloud utilizes an intelligent hybrid architecture: your
+                      folder trees, stars, tags, and searchable indexes are managed in
+                      lightning-fast Google Cloud Firestore, while the encrypted binary data stays
+                      safely inside your personal Telegram account via MTProto.
+                    </p>
+
+                    {/* Architecture Diagram Illustration */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                      <div className="bg-surface-raised border border-border/60 p-4 rounded-xl flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-primary font-semibold text-sm">
+                          <Dataset className="w-4 h-4" />
+                          <span>1. Metadata Tier</span>
+                        </div>
+                        <p className="text-xs text-text-secondary leading-relaxed">
+                          Instant folder lookups, sub-second search querying, and quick tags indexed
+                          directly via Cloud Firestore.
+                        </p>
+                      </div>
+
+                      <div className="bg-surface-raised border border-border/60 p-4 rounded-xl flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-tertiary font-semibold text-sm">
+                          <Lock className="w-4 h-4" />
+                          <span>2. Payload Vault</span>
+                        </div>
+                        <p className="text-xs text-text-secondary leading-relaxed">
+                          Chunked binary transfers stored directly in your private Telegram Saved
+                          Messages via official MTProto protocols.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-border/60 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="text-tertiary w-4 h-4" />
+                      <span className="text-xs text-text-secondary">
+                        Storage strictly respects Telegram platform limits
+                      </span>
+                    </div>
+                    <span className="text-xs text-text-muted">No bogus &quot;infinite storage&quot; claims</span>
+                  </div>
+                </div>
+
+                {/* Right Side: Technical Specs & Metrics Card */}
+                <div className="lg:col-span-5 bg-sidebar border border-border rounded-xl p-8 sm:p-10 flex flex-col justify-between shadow-xs">
+                  <div className="flex flex-col gap-6">
+                    <h4 className="text-base font-semibold text-text-primary">
+                      Operational Parameters
+                    </h4>
+                    <div className="flex flex-col gap-5">
+                      <div className="flex items-start gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center text-primary shrink-0">
+                          <Cloud className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-text-primary">
+                            Direct MTProto Transfer
+                          </span>
+                          <span className="text-xs text-text-secondary mt-0.5 leading-relaxed">
+                            Files stream straight from Telegram nodes directly to your browser
+                            viewport with zero intermediary storage proxying.
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center text-primary shrink-0">
+                          <HardDrive className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-text-primary">
+                            Tracked Storage Usage
+                          </span>
+                          <span className="text-xs text-text-secondary mt-0.5 leading-relaxed">
+                            Real-time bytes monitoring so you always know your exact footprint in
+                            your Telegram chat channel.
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center text-primary shrink-0">
+                          <Lock className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-text-primary">
+                            Telegram Native File Capacities
+                          </span>
+                          <span className="text-xs text-text-secondary mt-0.5 leading-relaxed">
+                            Upload files up to standard Telegram allowances (up to 2GB per file, or
+                            4GB for Telegram Premium subscribers).
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 bg-surface border border-border p-4 rounded-xl flex items-center justify-between">
+                    <span className="text-xs text-text-secondary">Platform Status</span>
+                    <span className="text-xs text-tertiary flex items-center gap-1.5 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
+                      100% Operational
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Security & Privacy Overview Section */}
+          <section className="w-full bg-sidebar py-20 px-6 lg:px-12 border-t border-border">
+            <div className="max-w-7xl mx-auto">
+              <div className="bg-surface border border-border rounded-xl p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xs relative overflow-hidden">
+                <div className="absolute -right-24 -bottom-24 w-80 h-80 rounded-full bg-brand-subtle/40 pointer-events-none blur-3xl" />
+                <div className="flex flex-col gap-4 max-w-2xl relative z-10">
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-surface-raised text-tertiary text-xs font-semibold w-max border border-border/50">
+                    <ShieldCheck className="w-4 h-4 text-tertiary" />
+                    <span>Zero Data Monopolization</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">
+                    Your files remain yours in Telegram. Always.
+                  </h2>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    One Cloud is strictly a presentation and organization layer. We never monetize
+                    personal data, insert intrusive trackers, or retain proprietary decryption keys
+                    over your documents. If you ever stop using One Cloud, every file remains intact
+                    inside your private Telegram Saved Messages channel.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 rounded-lg border border-emerald-200">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>Telegram Saved Messages Connected</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Real Storage Breakdown Meter Simulation */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
-                  <span>Storage by File Type</span>
-                  <span className="font-mono text-[11px]">Videos · Images · Documents · Audio</span>
-                </div>
-                <div className="h-3.5 w-full bg-slate-200/70 rounded-full overflow-hidden flex gap-0.5 p-0.5">
-                  <div style={{ width: '42%' }} className="h-full bg-purple-500 rounded-sm" title="Videos: 1.8 GB" />
-                  <div style={{ width: '28%' }} className="h-full bg-sky-500 rounded-sm" title="Images: 1.2 GB" />
-                  <div style={{ width: '18%' }} className="h-full bg-emerald-500 rounded-sm" title="Documents: 780 MB" />
-                  <div style={{ width: '12%' }} className="h-full bg-pink-500 rounded-sm" title="Audio: 450 MB" />
-                </div>
-                <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 pt-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-purple-500" />
-                    <span>Videos (1.8 GB)</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-sky-500" />
-                    <span>Images (1.2 GB)</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span>Documents (780 MB)</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-pink-500" />
-                    <span>Audio (450 MB)</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Sample Files Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3.5 bg-white rounded-xl border border-slate-200 flex items-center gap-3 shadow-2xs">
-                  <div className="h-9 w-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                    <Folder className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">Projects & Work</p>
-                    <p className="text-[10px] text-slate-400">18 files · Folder</p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 bg-white rounded-xl border border-slate-200 flex items-center gap-3 shadow-2xs">
-                  <div className="h-9 w-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                    <VideoIcon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">Vacation_4K.mp4</p>
-                    <p className="text-[10px] text-slate-400 font-mono">1.2 GB · Video</p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 bg-white rounded-xl border border-slate-200 flex items-center gap-3 shadow-2xs">
-                  <div className="h-9 w-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">Design_System.png</p>
-                    <p className="text-[10px] text-slate-400 font-mono">4.8 MB · Image</p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 bg-white rounded-xl border border-slate-200 flex items-center gap-3 shadow-2xs">
-                  <div className="h-9 w-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">Report_2026.pdf</p>
-                    <p className="text-[10px] text-slate-400 font-mono">2.4 MB · Document</p>
-                  </div>
+                <div className="flex flex-col gap-4 shrink-0 relative z-10">
+                  <Link
+                    href="/security"
+                    className="inline-flex items-center justify-center gap-2 px-6 h-11 rounded-lg text-xs font-semibold bg-surface-raised text-text-primary hover:bg-surface-hover border border-border transition-colors shadow-xs"
+                  >
+                    <span>Learn more in our Security architecture</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
+
+          {/* Frequently Asked Questions (FAQ) */}
+          <section className="w-full bg-canvas py-20 px-6 lg:px-12">
+            <div className="max-w-3xl mx-auto flex flex-col gap-8">
+              <div className="text-center">
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                  Transparent Answers
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mt-2 tracking-tight">
+                  Frequently Asked Questions
+                </h2>
+                <p className="text-xs sm:text-sm text-text-secondary mt-2">
+                  Clear, honest information about how One Cloud handles your storage and data.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {faqs.map((faq, index) => {
+                  const isOpen = openFaq === index;
+                  return (
+                    <div
+                      key={index}
+                      className="bg-surface border border-border rounded-xl overflow-hidden transition-colors"
+                    >
+                      <button
+                        onClick={() => toggleFaq(index)}
+                        className="w-full p-4 sm:p-5 flex items-center justify-between text-left gap-4 cursor-pointer hover:bg-surface-hover transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-text-primary">
+                          {faq.q}
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 text-text-muted transition-transform shrink-0 ${
+                            isOpen ? 'rotate-180 text-primary' : ''
+                          }`}
+                        />
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-5 sm:px-5 sm:pb-5 pt-0 text-xs sm:text-sm text-text-secondary leading-relaxed border-t border-border/40">
+                          {faq.a}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* Final Call-to-Action Banner */}
+          <section className="w-full bg-sidebar py-24 px-6 lg:px-12 border-t border-border">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-surface-raised border border-border rounded-2xl p-10 sm:p-14 flex flex-col items-center text-center gap-6 shadow-2xl relative overflow-hidden">
+                <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary-container/15 rounded-full blur-[100px] pointer-events-none" />
+
+                <div className="w-12 h-12 rounded-xl bg-surface border border-border flex items-center justify-center text-primary shadow-xs relative z-10">
+                  <Cloud className="w-6 h-6 text-primary" />
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-bold text-text-primary max-w-xl relative z-10 tracking-tight">
+                  Start organizing your cloud files today.
+                </h2>
+
+                <p className="text-sm text-text-secondary max-w-md relative z-10">
+                  Connect your Telegram account in under two minutes and enjoy an organized,
+                  searchable workspace.
+                </p>
+
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-2 relative z-10">
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center justify-center px-6 h-11 rounded-lg text-xs font-semibold bg-primary-container text-text-primary hover:bg-brand-hover transition-colors shadow-md"
+                  >
+                    Create Free Account
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center justify-center px-6 h-11 rounded-lg text-xs font-medium bg-surface text-text-primary border border-border hover:bg-surface-hover transition-colors shadow-xs"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
-
-      {/* 2. The Problem & Solution: Why One Cloud? */}
-      <section className="py-20 border-b border-slate-100 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-sky-600">
-              The Real Problem
-            </h2>
-            <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Telegram gives you free storage.
-              <br />
-              One Cloud gives you an actual Drive.
-            </p>
-            <p className="mt-3 text-sm text-slate-600">
-              Anyone using Telegram Saved Messages knows the pain: thousands of files buried in an endless chat thread with zero folder organization.
-            </p>
-          </div>
-
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Telegram Alone Card */}
-            <div className="p-8 rounded-2xl border border-rose-200 bg-rose-50/30 space-y-4">
-              <div className="inline-flex items-center gap-2 text-xs font-bold text-rose-700 bg-rose-100/70 px-2.5 py-1 rounded-md">
-                <span>Telegram Alone (Without One Cloud)</span>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">
-                An Endless, Messy Chat Stream
-              </h3>
-              <ul className="space-y-3 text-xs sm:text-sm text-slate-600">
-                <li className="flex items-start gap-2.5">
-                  <span className="text-rose-500 font-bold shrink-0">✕</span>
-                  <span>No folders or subfolders — all files sit in a single chaotic timeline.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-rose-500 font-bold shrink-0">✕</span>
-                  <span>No storage analytics — you cannot see how many GBs of videos or images you have.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-rose-500 font-bold shrink-0">✕</span>
-                  <span>Hard to browse on desktop browsers without opening the full desktop chat app.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-rose-500 font-bold shrink-0">✕</span>
-                  <span>No Trash protection — deleted messages are immediately gone forever.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* One Cloud Solution Card */}
-            <div className="p-8 rounded-2xl border border-emerald-200 bg-emerald-50/30 space-y-4">
-              <div className="inline-flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-1 rounded-md">
-                <span>With One Cloud Drive</span>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Full Google Drive Organization & Power
-              </h3>
-              <ul className="space-y-3 text-xs sm:text-sm text-slate-700">
-                <li className="flex items-start gap-2.5">
-                  <Check className="h-4 w-4 text-emerald-600 font-bold shrink-0 mt-0.5" />
-                  <span>Unlimited nested folders, path breadcrumbs, move, and rename.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="h-4 w-4 text-emerald-600 font-bold shrink-0 mt-0.5" />
-                  <span>Live storage breakdown: see exact GB used by Videos, Photos, and Documents.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="h-4 w-4 text-emerald-600 font-bold shrink-0 mt-0.5" />
-                  <span>Stream video, play audio, and preview documents directly in your browser.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="h-4 w-4 text-emerald-600 font-bold shrink-0 mt-0.5" />
-                  <span>Two-stage Trash: restore accidentally deleted files anytime.</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Real Platform Features Showcase */}
-      <section id="features" className="py-20 border-b border-slate-100 bg-slate-50/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-sky-600">
-              Core Capabilities
-            </h2>
-            <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Engineered for Speed, Capacity, and Privacy
-            </p>
-          </div>
-
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Feature 1 */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4">
-                <HardDrive className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Unlimited Cloud Storage</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                No 15GB quotas or monthly paid tiers. Your storage capacity is powered by Telegram Saved Messages, which imposes no overall storage ceiling.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4">
-                <Upload className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">2GB Single File Limit</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Upload full 4K movies, heavy ZIP archives, large raw photographs, and datasets up to 2,048 MB each via direct streaming.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
-                <FolderTree className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Nested Folders & Hierarchy</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Build deep directory trees just like Google Drive. Organize files into folders, move them seamlessly, and navigate with breadcrumbs.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                <Layers className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Live Storage Breakdown</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Visual analytics show exact byte usage for Videos, Images, Documents, Audio, and Archives. Filter any category with a single click.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
-                <Eye className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">In-Browser Media Player</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Play videos, stream audio playlists, view image galleries, and inspect PDF documents directly in the web browser without downloading first.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-                <Trash2 className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Two-Stage Trash & Recovery</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Accidental deletion protection. Trashing a file preserves it for easy restoration. Permanent deletion purges both the index and Telegram message.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. How It Works (3 Clear, Real Steps) */}
-      <section id="how-it-works" className="py-20 border-b border-slate-100 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-sky-600">
-              Simple Workflow
-            </h2>
-            <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Get Started in Under 60 Seconds
-            </p>
-          </div>
-
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50">
-              <div className="h-8 w-8 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center mb-4">
-                01
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Create Free Account</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Sign up with your email using Firebase Authentication. Your user space is private and strictly isolated.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50">
-              <div className="h-8 w-8 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center mb-4">
-                02
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Connect Telegram Account</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Provide your Telegram bot token or chat ID. One Cloud links directly to your personal Saved Messages chat.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50">
-              <div className="h-8 w-8 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center mb-4">
-                03
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Upload & Organize</h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Drag and drop files. Binary data is stored inside Telegram Saved Messages, while One Cloud indexes and displays your folders.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Trust, Privacy & Data Custody */}
-      <section className="py-20 border-b border-slate-100 bg-slate-50/50">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            <span>Complete Data Sovereignty</span>
-          </div>
-
-          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-            You Own Your Files. Always.
-          </h2>
-
-          <p className="text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            Unlike commercial cloud providers that lock your data into proprietary walled gardens, One Cloud acts as an organizational layer over your Telegram account. Your actual files reside safely inside your own Telegram chat. Even if you stop using One Cloud, your files remain forever accessible in your Telegram app.
-          </p>
-        </div>
-      </section>
-
-      {/* 6. Frequently Asked Questions (FAQ) */}
-      <section id="faq" className="py-20 border-b border-slate-100 bg-white">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 text-center mb-10">
-            Frequently Asked Questions
-          </h2>
-
-          <div className="space-y-4">
-            <div className="p-5 bg-slate-50/60 rounded-xl border border-slate-200">
-              <h3 className="text-sm font-bold text-slate-900">
-                Where are my uploaded files stored?
-              </h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                All uploaded files are sent directly to your own Telegram account inside your personal <strong>Saved Messages</strong> chat. One Cloud only stores the directory hierarchy, folder names, and file sizes in Cloud Firestore so you can view them as a structured drive.
-              </p>
-            </div>
-
-            <div className="p-5 bg-slate-50/60 rounded-xl border border-slate-200">
-              <h3 className="text-sm font-bold text-slate-900">
-                Is the storage really unlimited?
-              </h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Yes. Telegram Saved Messages does not impose an overall account storage quota limit. You can upload thousands of files without hitting a 15GB or 100GB subscription wall.
-              </p>
-            </div>
-
-            <div className="p-5 bg-slate-50/60 rounded-xl border border-slate-200">
-              <h3 className="text-sm font-bold text-slate-900">
-                What is the maximum file size I can upload?
-              </h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                You can upload single files up to <strong>2,048 MB (2 GB)</strong> each, which is the official maximum document size supported by Telegram Bot API.
-              </p>
-            </div>
-
-            <div className="p-5 bg-slate-50/60 rounded-xl border border-slate-200">
-              <h3 className="text-sm font-bold text-slate-900">
-                Can other users or One Cloud see my files?
-              </h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                No. All user accounts are strictly isolated using Firebase Authentication. Every database query enforces per-user ownership rules, and file bytes reside in your private Telegram chat.
-              </p>
-            </div>
-
-            <div className="p-5 bg-slate-50/60 rounded-xl border border-slate-200">
-              <h3 className="text-sm font-bold text-slate-900">
-                What happens if I stop using One Cloud?
-              </h3>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Nothing happens to your files! Because your files are stored in Telegram Saved Messages, they remain available in your official Telegram mobile, desktop, and web apps forever.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. Final High-Impact CTA Banner */}
-      <section className="py-20 bg-slate-900 text-white text-center">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-balance">
-            Ready to organize your Telegram storage?
-          </h2>
-          <p className="mt-4 text-sm text-slate-400">
-            Enjoy the familiar convenience of Google Drive powered by unlimited Telegram cloud storage.
-          </p>
-
-          <div className="mt-8">
-            <Link
-              href={user ? '/app' : '/login'}
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm shadow-lg transition-all active:scale-[0.98]"
-            >
-              <span>{user ? 'Open Your Drive' : 'Get Started Free'}</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      </main>
 
       <Footer />
     </div>
+  );
+}
+
+// Custom Dataset icon component for clean outline styling
+function Dataset(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M9 21V9" />
+    </svg>
+  );
+}
+// Helper Clock icon alias
+function Clock(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
   );
 }

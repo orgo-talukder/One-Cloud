@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-background":"#e1e2ea","border-strong":"#3A4658","surface":"#141A24","surface-bright":"#36393f","tertiary-container":"#00a56d","on-secondary-fixed-variant":"#004c6c","primary":"#afc6ff","on-tertiary-fixed":"#002112","surface-raised":"#191F2B","on-tertiary-container":"#00311d","file-archive":"#E99A64","text-primary":"#F3F6FB","surface-dim":"#111319","surface-container-low":"#191c21","outline-variant":"#424753","warning":"#F2B84B","file-document":"#6FA2FF","on-primary-container":"#00275f","error-container":"#93000a","on-tertiary":"#003822","primary-fixed-dim":"#afc6ff","brand-subtle":"#172B49","tertiary":"#53de9e","file-audio":"#F2B84B","focus-ring":"#82B0FF","on-tertiary-fixed-variant":"#005234","primary-fixed":"#d9e2ff","on-primary-fixed":"#001a43","surface-container-highest":"#32353b","surface-container-high":"#272a30","on-error":"#690005","on-surface-variant":"#c2c6d6","surface-variant":"#32353b","on-primary-fixed-variant":"#004398","primary-container":"#528dff","brand-hover":"#3D79EF","on-secondary-fixed":"#001e2e","outline":"#8c909f","tertiary-fixed-dim":"#53de9e","canvas":"#0B0E13","border":"#293241","secondary-fixed-dim":"#83cfff","surface-container":"#1d2025","error":"#ffb4ab","on-secondary":"#00344b","on-primary":"#002d6c","sidebar":"#0F131B","file-image":"#45C89A","danger":"#F16B7A","secondary-container":"#089ad5","on-surface":"#e1e2ea","text-muted":"#758195","surface-container-lowest":"#0b0e13","tertiary-fixed":"#72fbb9","inverse-on-surface":"#2e3036","on-error-container":"#ffdad6","on-secondary-container":"#002d42","inverse-surface":"#e1e2ea","file-video":"#A88BFF","surface-tint":"#afc6ff","secondary":"#83cfff","secondary-fixed":"#c6e7ff","surface-hover":"#202938","background":"#111319","text-secondary":"#A4AFBF","inverse-primary":"#0059c6"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"margin-mobile":"1rem","space-md":"0.75rem","gutter-sm":"0.75rem","margin":"2rem","gutter-lg":"1.5rem","space-xs":"0.25rem","space-sm":"0.5rem","space-lg":"1rem","gutter":"1rem","margin-tablet":"1.5rem","space-xl":"1.5rem"},fontFamily:{"body-sm":["Inter"],"headline-md":["Inter"],"label-md":["Inter"],"label-sm":["Inter"],"body-md":["Inter"],"metric-display":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"headline-lg":["Inter"],"headline-lg-mobile":["Inter"]},fontSize:{"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-md":["14px",{"lineHeight":"20px","fontWeight":"500"}],"label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"metric-display":["28px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-sm":["16px",{"lineHeight":"22px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-lg":["15px",{"lineHeight":"22px","fontWeight":"400"}],"headline-lg":["30px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["24px",{"lineHeight":"30px","letterSpacing":"-0.015em","fontWeight":"700"}]}}}};</script></head><body class="bg-canvas text-text-primary font-body-md text-body-md antialiased min-h-screen"><aside class="fixed left-0 top-0 bottom-0 w-[248px] bg-sidebar border-r border-border z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="h-[68px] px-space-lg flex items-center border-b border-border/40 gap-space-sm"><img alt="One Cloud Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WnDbC8HC1Y3Jzo4Ry761Xp4nGkiZ-D2Ex_YkyldHFYla_bz6NVBc7FjOCBtJNns899JzWOkDJpk3Np56ZSVtbivRAkeptjTmlGHnxsst9HqmbMhPk8Ljk4t8e5DK1nw3bhJRKwYyahlSXNc8JecSJkz01ZmI3wtEd6VW0vAzEfgU36BloIePRANPSISsqklm7XjFUysWzs-sAmzw7xvHHitwhcqJWeCCwBS52RrzqaHM8MgkC9Qq4NR_Ph"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-text-primary tracking-tight leading-none truncate">One Cloud</span><span class="font-label-sm text-label-sm text-text-muted leading-tight truncate mt-0.5">Telegram Drive</span></div></div><div class="p-space-lg"><button class="w-full h-10 px-space-md bg-primary-container hover:bg-brand-hover text-text-primary font-label-md text-label-md rounded-[10px] transition-colors flex items-center justify-between shadow-sm cursor-pointer" type="button"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[20px]">add</span><span>New</span></div><span class="material-symbols-outlined text-[18px] opacity-80">expand_more</span></button></div><nav class="flex flex-col gap-1 px-space-md" data-active-classes="bg-brand-subtle text-primary font-label-md"><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="home" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Home</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="my-drive" href="#"><span class="material-symbols-outlined text-[20px]">hard_drive</span><span>My Drive</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md py-2 rounded-lg transition-colors bg-brand-subtle text-primary font-label-md" data-path="recent" href="#"><span class="material-symbols-outlined text-[20px]">schedule</span><span>Recent</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="starred" href="#"><span class="material-symbols-outlined text-[20px]">star</span><span>Starred</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="trash" href="#"><span class="material-symbols-outlined text-[20px]">delete</span><span>Trash</span></a></nav></div><div class="p-space-md flex flex-col gap-space-sm border-t border-border/40"><div class="p-space-md bg-surface border border-border rounded-xl flex flex-col gap-space-xs"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-text-primary font-semibold">42.8 GB used</span><span class="font-label-sm text-label-sm text-text-muted">42%</span></div><div class="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden"><div class="h-full bg-primary-container rounded-full" style="width: 42%;"></div></div><span class="font-label-sm text-label-sm text-text-muted">Saved in Telegram</span></div><div class="flex items-center justify-between px-space-xs py-1.5 text-text-muted font-label-sm text-label-sm"><div class="flex items-center gap-2 min-w-0"><span class="material-symbols-outlined text-[18px] text-[#36AEEA]">send</span><span class="truncate text-text-secondary">@alex_dev</span></div><span class="w-2 h-2 rounded-full bg-tertiary flex-shrink-0"></span></div><div class="flex items-center justify-between pt-1 border-t border-border/30"><a class="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors font-label-sm text-label-sm" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span>Settings</span></a><span class="font-label-sm text-label-sm text-text-muted/60">v1.4</span></div></div></aside><div class="pl-[248px]"><header class="fixed top-0 left-[248px] right-0 h-[68px] bg-canvas border-b border-border z-40 px-margin flex items-center justify-between"><div class="flex-1 max-w-xl"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px] pointer-events-none">search</span><input class="w-full h-10 pl-9 pr-12 bg-surface border border-border rounded-[10px] text-text-primary placeholder:text-text-muted font-body-sm text-body-sm focus:outline-none focus:border-focus-ring" placeholder="Search files and folders" type="text"/><span class="absolute right-3 px-1.5 py-0.5 rounded bg-surface-raised border border-border text-text-muted font-label-sm text-[11px] leading-tight">⌘K</span></div></div><div class="flex items-center gap-space-lg ml-space-lg"><div class="hidden sm:flex items-center gap-1.5 text-tertiary font-label-sm text-label-sm px-2.5 py-1 rounded-full bg-tertiary/10"><span class="material-symbols-outlined text-[16px]">check_circle</span><span>All files synced</span></div><div class="flex items-center gap-1 text-text-secondary"><button aria-label="Theme toggle" class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">dark_mode</span></button><button aria-label="Help" class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">help_outline</span></button></div><div class="relative flex items-center pl-2 border-l border-border"><div class="relative cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-BVUlMppNKVKV0S1YvMUAYkpex6mBe5nfhxWHr_KvHWGvpoUYaG-Yqy98mWBs57OY7EHW6yD7itD2anY5pNnt5aaU_fHDrmGqwhh8J-isdiS72BnSMvOO9WxISjKdPViCfaIUVNghqGbpIOd9JCgxDUitN6XFoZs130dorQWW8MRRDh8G6-gGaZ7nxYxVOdIIFjmEgrzuXYUsvQuuflf2xZIAxb0qi6cJbFQ_r4LN_X06sfKEZBaHvA"/><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary border-2 border-canvas"></span></div></div></div></header><main class="w-full pt-[68px] min-h-screen bg-canvas"><div class="w-full px-margin py-margin max-w-7xl mx-auto"><div class="flex flex-col w-full gap-space-lg">
+<!-- Top Workspace Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-space-sm">
+<h1 class="font-headline-md text-headline-md text-text-primary">Recent files</h1>
+<span class="px-2 py-0.5 rounded-full bg-brand-subtle text-primary font-label-sm text-label-sm">Live sync</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">Files you opened, modified, or uploaded recently in One Cloud.</p>
+</div>
+<!-- Secondary Utilities -->
+<div class="flex items-center gap-space-sm">
+<div class="relative flex items-center min-w-[220px]">
+<span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[17px] pointer-events-none">filter_list</span>
+<input class="w-full h-9 pl-8 pr-3 bg-surface rounded-lg text-text-primary placeholder:text-text-muted font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-focus-ring transition-all" id="recent-search" placeholder="Filter recent files..." type="text"/>
+</div>
+<button class="h-9 px-space-md bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary font-label-sm text-label-sm rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer" id="clear-history-btn" title="Clear cached activity log without deleting original telegram files" type="button">
+<span class="material-symbols-outlined text-[18px]">history_toggle_off</span>
+<span>Clear history</span>
+</button>
+</div>
+</div>
+<!-- Filter Chips Toolbar -->
+<div class="flex items-center justify-between gap-space-md overflow-x-auto pb-1 select-none">
+<div class="flex items-center gap-1.5 min-w-max">
+<button class="recent-pill active px-3 py-1 rounded-full font-label-sm text-label-sm bg-brand-subtle text-primary transition-colors cursor-pointer flex items-center gap-1" type="button">
+<span>All Recent</span>
+<span class="text-[10px] px-1 rounded-full bg-surface-raised font-mono">7</span>
+</button>
+<button class="recent-pill px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer" type="button">
+        Today
+      </button>
+<button class="recent-pill px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer" type="button">
+        This Week
+      </button>
+<button class="recent-pill px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer" type="button">
+        This Month
+      </button>
+<div class="w-px h-4 bg-surface-raised mx-1"></div>
+<button class="recent-type-pill px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[15px] text-file-document">description</span>
+<span>Documents</span>
+</button>
+<button class="recent-type-pill px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[15px] text-file-image">image</span>
+<span>Images</span>
+</button>
+<button class="recent-type-pill px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[15px] text-file-video">movie</span>
+<span>Videos</span>
+</button>
+</div>
+<!-- View Mode Switch -->
+<div class="flex items-center gap-1 p-0.5 bg-surface rounded-lg">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-raised text-primary transition-colors" title="Table View" type="button">
+<span class="material-symbols-outlined text-[18px]">format_list_bulleted</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors" title="Grid View" type="button">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+</button>
+</div>
+</div>
+<!-- SECTION: Today -->
+<div class="flex flex-col gap-2 mt-1">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-label-sm text-text-secondary font-semibold uppercase tracking-wider">Today</span>
+</div>
+<span class="font-label-sm text-label-sm text-text-muted">3 files modified</span>
+</div>
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm">
+<!-- Standardized Table Header -->
+<div class="bg-sidebar px-4 grid grid-cols-12 items-center h-10 select-none">
+<div class="col-span-5 flex items-center gap-2 font-label-sm text-label-sm text-text-muted">
+<span>Name</span>
+</div>
+<div class="col-span-2 hidden md:flex items-center font-label-sm text-label-sm text-text-muted">
+<span>Original Folder</span>
+</div>
+<div class="col-span-3 md:col-span-2 flex items-center font-label-sm text-label-sm text-text-muted">
+<span>Last Opened</span>
+</div>
+<div class="col-span-2 hidden sm:flex items-center justify-end font-label-sm text-label-sm text-text-muted pr-2">
+<span>Size</span>
+</div>
+<div class="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end font-label-sm text-label-sm text-text-muted">
+<span class="sr-only">Actions</span>
+</div>
+</div>
+<!-- File Row 1 -->
+<div class="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer" data-filename="Q3_Product_Roadmap_Final.pdf" data-type="document">
+<div class="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-document">description</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Q3_Product_Roadmap_Final.pdf</span>
+<span class="font-label-sm text-label-sm text-text-muted truncate md:hidden">Projects / Roadmaps</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+<span class="material-symbols-outlined text-[16px] text-text-muted">folder</span>
+<span class="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">Projects / Roadmaps</span>
+</div>
+<div class="col-span-3 md:col-span-2 flex items-center min-w-0">
+<span class="font-body-sm text-body-sm text-text-muted">12 minutes ago</span>
+</div>
+<div class="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+          4.2 MB
+        </div>
+<div class="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
+<button class="star-btn w-8 h-8 rounded-lg flex items-center justify-center text-warning hover:bg-surface-raised transition-colors" title="Starred" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="Download from Telegram CDN" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- File Row 2 -->
+<div class="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer" data-filename="Wireframes_Mobile_Flows_v2.png" data-type="image">
+<div class="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-image">image</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Wireframes_Mobile_Flows_v2.png</span>
+<span class="font-label-sm text-label-sm text-text-muted truncate md:hidden">Product Design Assets</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+<span class="material-symbols-outlined text-[16px] text-text-muted">folder</span>
+<span class="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">Product Design Assets</span>
+</div>
+<div class="col-span-3 md:col-span-2 flex items-center min-w-0">
+<span class="font-body-sm text-body-sm text-text-muted">2 hours ago</span>
+</div>
+<div class="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+          8.6 MB
+        </div>
+<div class="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
+<button class="star-btn w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-warning hover:bg-surface-raised transition-colors" title="Star file" type="button">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="Download from Telegram CDN" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- File Row 3 -->
+<div class="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer" data-filename="Sync_Engine_Stress_Test.mov" data-type="video">
+<div class="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-video">movie</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Sync_Engine_Stress_Test.mov</span>
+<span class="font-label-sm text-label-sm text-text-muted truncate md:hidden">Engineering / QA</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+<span class="material-symbols-outlined text-[16px] text-text-muted">folder</span>
+<span class="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">Engineering / QA</span>
+</div>
+<div class="col-span-3 md:col-span-2 flex items-center min-w-0">
+<span class="font-body-sm text-body-sm text-text-muted">4 hours ago</span>
+</div>
+<div class="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+          124.0 MB
+        </div>
+<div class="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
+<button class="star-btn w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-warning hover:bg-surface-raised transition-colors" title="Star file" type="button">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="Download from Telegram CDN" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION: Yesterday & Earlier this week -->
+<div class="flex flex-col gap-2 mt-4">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-text-muted"></span>
+<span class="font-label-sm text-label-sm text-text-secondary font-semibold uppercase tracking-wider">Yesterday & Earlier this week</span>
+</div>
+<span class="font-label-sm text-label-sm text-text-muted">4 files</span>
+</div>
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm">
+<!-- File Row 4 -->
+<div class="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer" data-filename="Executive_Summary_OneCloud.docx" data-type="document">
+<div class="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-document">description</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Executive_Summary_OneCloud.docx</span>
+<span class="font-label-sm text-label-sm text-text-muted truncate md:hidden">General</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+<span class="material-symbols-outlined text-[16px] text-text-muted">folder</span>
+<span class="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">General</span>
+</div>
+<div class="col-span-3 md:col-span-2 flex items-center min-w-0">
+<span class="font-body-sm text-body-sm text-text-muted">Yesterday, 6:40 PM</span>
+</div>
+<div class="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+          1.1 MB
+        </div>
+<div class="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
+<button class="star-btn w-8 h-8 rounded-lg flex items-center justify-center text-warning hover:bg-surface-raised transition-colors" title="Starred" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="Download from Telegram CDN" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- File Row 5 -->
+<div class="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer" data-filename="Telegram_Session_Dump_encrypted.tar.gz" data-type="archive">
+<div class="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-archive">folder_zip</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Telegram_Session_Dump_encrypted.tar.gz</span>
+<span class="material-symbols-outlined text-[14px] text-tertiary flex-shrink-0" title="Encrypted Payload">lock</span>
+</div>
+<span class="font-label-sm text-label-sm text-text-muted truncate md:hidden">Backups</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+<span class="material-symbols-outlined text-[16px] text-text-muted">folder</span>
+<span class="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">Backups</span>
+</div>
+<div class="col-span-3 md:col-span-2 flex items-center min-w-0">
+<span class="font-body-sm text-body-sm text-text-muted">Yesterday, 1:15 PM</span>
+</div>
+<div class="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+          64.2 MB
+        </div>
+<div class="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
+<button class="star-btn w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-warning hover:bg-surface-raised transition-colors" title="Star file" type="button">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="Download from Telegram CDN" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- File Row 6 -->
+<div class="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer" data-filename="Dark_Mode_Palette_Tokens.svg" data-type="image">
+<div class="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-image">image</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Dark_Mode_Palette_Tokens.svg</span>
+<span class="font-label-sm text-label-sm text-text-muted truncate md:hidden">Product Design Assets</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+<span class="material-symbols-outlined text-[16px] text-text-muted">folder</span>
+<span class="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">Product Design Assets</span>
+</div>
+<div class="col-span-3 md:col-span-2 flex items-center min-w-0">
+<span class="font-body-sm text-body-sm text-text-muted">Oct 23, 2024</span>
+</div>
+<div class="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+          420 KB
+        </div>
+<div class="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
+<button class="star-btn w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-warning hover:bg-surface-raised transition-colors" title="Star file" type="button">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="Download from Telegram CDN" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- File Row 7 -->
+<div class="file-row grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer" data-filename="Standup_Voice_Notes_Oct23.ogg" data-type="audio">
+<div class="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-audio">audio_file</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Standup_Voice_Notes_Oct23.ogg</span>
+<span class="font-label-sm text-label-sm text-text-muted truncate md:hidden">Audio Logs</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:flex items-center gap-1.5 min-w-0 pr-2">
+<span class="material-symbols-outlined text-[16px] text-text-muted">folder</span>
+<span class="font-body-sm text-body-sm text-text-secondary truncate hover:text-text-primary">Audio Logs</span>
+</div>
+<div class="col-span-3 md:col-span-2 flex items-center min-w-0">
+<span class="font-body-sm text-body-sm text-text-muted">Oct 23, 2024</span>
+</div>
+<div class="col-span-2 hidden sm:flex items-center justify-end font-body-sm text-body-sm text-text-secondary pr-2 font-mono">
+          3.8 MB
+        </div>
+<div class="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
+<button class="star-btn w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-warning hover:bg-surface-raised transition-colors" title="Star file" type="button">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="Download from Telegram CDN" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Telegram Sync Informational Reminder / Empty-state preview card -->
+<div class="mt-4 p-4 rounded-xl bg-surface flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#36AEEA]/15 text-[#36AEEA] flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">send</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary font-medium">Automatic Telegram Channel Indexing</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Files modified in Telegram automatically appear at the top of your Recent list.</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<a class="px-3 py-1.5 rounded-lg bg-surface-raised hover:bg-surface-hover text-text-secondary hover:text-text-primary font-label-sm text-label-sm transition-colors flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Force Refresh</span>
+</a>
+<a class="px-3 py-1.5 rounded-lg bg-brand-subtle text-primary hover:bg-primary-container hover:text-text-primary font-label-sm text-label-sm transition-colors flex items-center gap-1" href="#">
+<span>Channel settings</span>
+<span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+<script>
+  // Filter pill toggles
+  document.querySelectorAll('.recent-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.recent-pill').forEach(p => {
+        p.classList.remove('bg-brand-subtle', 'text-primary');
+        p.classList.add('bg-surface', 'text-text-secondary');
+      });
+      pill.classList.remove('bg-surface', 'text-text-secondary');
+      pill.classList.add('bg-brand-subtle', 'text-primary');
+    });
+  });
+
+  // Type filter pills
+  document.querySelectorAll('.recent-type-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      pill.classList.toggle('bg-brand-subtle');
+      pill.classList.toggle('text-primary');
+    });
+  });
+
+  // Star button interactive toggle
+  document.querySelectorAll('.star-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const icon = btn.querySelector('.material-symbols-outlined');
+      const isFilled = icon.style.fontVariationSettings?.includes("'FILL' 1");
+      if (isFilled) {
+        icon.style.fontVariationSettings = "'FILL' 0";
+        btn.classList.remove('text-warning');
+        btn.classList.add('text-text-muted');
+      } else {
+        icon.style.fontVariationSettings = "'FILL' 1";
+        btn.classList.remove('text-text-muted');
+        btn.classList.add('text-warning');
+      }
+    });
+  });
+
+  // Interactive Live Filter input
+  const searchInput = document.getElementById('recent-search');
+  searchInput.addEventListener('input', (e) => {
+    const val = e.target.value.toLowerCase().trim();
+    document.querySelectorAll('.file-row').forEach(row => {
+      const filename = row.getAttribute('data-filename')?.toLowerCase() || '';
+      if (!val || filename.includes(val)) {
+        row.style.display = 'grid';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  });
+</script></div></main></div></body></html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-background":"#e1e2ea","border-strong":"#3A4658","surface":"#141A24","surface-bright":"#36393f","tertiary-container":"#00a56d","on-secondary-fixed-variant":"#004c6c","primary":"#afc6ff","on-tertiary-fixed":"#002112","surface-raised":"#191F2B","on-tertiary-container":"#00311d","file-archive":"#E99A64","text-primary":"#F3F6FB","surface-dim":"#111319","surface-container-low":"#191c21","outline-variant":"#424753","warning":"#F2B84B","file-document":"#6FA2FF","on-primary-container":"#00275f","error-container":"#93000a","on-tertiary":"#003822","primary-fixed-dim":"#afc6ff","brand-subtle":"#172B49","tertiary":"#53de9e","file-audio":"#F2B84B","focus-ring":"#82B0FF","on-tertiary-fixed-variant":"#005234","primary-fixed":"#d9e2ff","on-primary-fixed":"#001a43","surface-container-highest":"#32353b","surface-container-high":"#272a30","on-error":"#690005","on-surface-variant":"#c2c6d6","surface-variant":"#32353b","on-primary-fixed-variant":"#004398","primary-container":"#528dff","brand-hover":"#3D79EF","on-secondary-fixed":"#001e2e","outline":"#8c909f","tertiary-fixed-dim":"#53de9e","canvas":"#0B0E13","border":"#293241","secondary-fixed-dim":"#83cfff","surface-container":"#1d2025","error":"#ffb4ab","on-secondary":"#00344b","on-primary":"#002d6c","sidebar":"#0F131B","file-image":"#45C89A","danger":"#F16B7A","secondary-container":"#089ad5","on-surface":"#e1e2ea","text-muted":"#758195","surface-container-lowest":"#0b0e13","tertiary-fixed":"#72fbb9","inverse-on-surface":"#2e3036","on-error-container":"#ffdad6","on-secondary-container":"#002d42","inverse-surface":"#e1e2ea","file-video":"#A88BFF","surface-tint":"#afc6ff","secondary":"#83cfff","secondary-fixed":"#c6e7ff","surface-hover":"#202938","background":"#111319","text-secondary":"#A4AFBF","inverse-primary":"#0059c6"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"margin-mobile":"1rem","space-md":"0.75rem","gutter-sm":"0.75rem","margin":"2rem","gutter-lg":"1.5rem","space-xs":"0.25rem","space-sm":"0.5rem","space-lg":"1rem","gutter":"1rem","margin-tablet":"1.5rem","space-xl":"1.5rem"},fontFamily:{"body-sm":["Inter"],"headline-md":["Inter"],"label-md":["Inter"],"label-sm":["Inter"],"body-md":["Inter"],"metric-display":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"headline-lg":["Inter"],"headline-lg-mobile":["Inter"]},fontSize:{"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-md":["14px",{"lineHeight":"20px","fontWeight":"500"}],"label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"metric-display":["28px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-sm":["16px",{"lineHeight":"22px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-lg":["15px",{"lineHeight":"22px","fontWeight":"400"}],"headline-lg":["30px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["24px",{"lineHeight":"30px","letterSpacing":"-0.015em","fontWeight":"700"}]}}}};</script></head><body class="bg-canvas text-text-primary font-body-md text-body-md antialiased min-h-screen"><aside class="fixed left-0 top-0 bottom-0 w-[248px] bg-sidebar border-r border-border z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="h-[68px] px-space-lg flex items-center border-b border-border/40 gap-space-sm"><img alt="One Cloud Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WnDbC8HC1Y3Jzo4Ry761Xp4nGkiZ-D2Ex_YkyldHFYla_bz6NVBc7FjOCBtJNns899JzWOkDJpk3Np56ZSVtbivRAkeptjTmlGHnxsst9HqmbMhPk8Ljk4t8e5DK1nw3bhJRKwYyahlSXNc8JecSJkz01ZmI3wtEd6VW0vAzEfgU36BloIePRANPSISsqklm7XjFUysWzs-sAmzw7xvHHitwhcqJWeCCwBS52RrzqaHM8MgkC9Qq4NR_Ph"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-text-primary tracking-tight leading-none truncate">One Cloud</span><span class="font-label-sm text-label-sm text-text-muted leading-tight truncate mt-0.5">Telegram Drive</span></div></div><div class="p-space-lg"><button class="w-full h-10 px-space-md bg-primary-container hover:bg-brand-hover text-text-primary font-label-md text-label-md rounded-[10px] transition-colors flex items-center justify-between shadow-sm cursor-pointer" type="button"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[20px]">add</span><span>New</span></div><span class="material-symbols-outlined text-[18px] opacity-80">expand_more</span></button></div><nav class="flex flex-col gap-1 px-space-md" data-active-classes="bg-brand-subtle text-primary font-label-md"><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="home" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Home</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md py-2 rounded-lg transition-colors bg-brand-subtle text-primary font-label-md" data-path="my-drive" href="#"><span class="material-symbols-outlined text-[20px]">hard_drive</span><span>My Drive</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="recent" href="#"><span class="material-symbols-outlined text-[20px]">schedule</span><span>Recent</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="starred" href="#"><span class="material-symbols-outlined text-[20px]">star</span><span>Starred</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="trash" href="#"><span class="material-symbols-outlined text-[20px]">delete</span><span>Trash</span></a></nav></div><div class="p-space-md flex flex-col gap-space-sm border-t border-border/40"><div class="p-space-md bg-surface border border-border rounded-xl flex flex-col gap-space-xs"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-text-primary font-semibold">42.8 GB used</span><span class="font-label-sm text-label-sm text-text-muted">42%</span></div><div class="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden"><div class="h-full bg-primary-container rounded-full" style="width: 42%;"></div></div><span class="font-label-sm text-label-sm text-text-muted">Saved in Telegram</span></div><div class="flex items-center justify-between px-space-xs py-1.5 text-text-muted font-label-sm text-label-sm"><div class="flex items-center gap-2 min-w-0"><span class="material-symbols-outlined text-[18px] text-[#36AEEA]">send</span><span class="truncate text-text-secondary">@alex_dev</span></div><span class="w-2 h-2 rounded-full bg-tertiary flex-shrink-0"></span></div><div class="flex items-center justify-between pt-1 border-t border-border/30"><a class="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors font-label-sm text-label-sm" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span>Settings</span></a><span class="font-label-sm text-label-sm text-text-muted/60">v1.4</span></div></div></aside><div class="pl-[248px]"><header class="fixed top-0 left-[248px] right-0 h-[68px] bg-canvas border-b border-border z-40 px-margin flex items-center justify-between"><div class="flex-1 max-w-xl"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px] pointer-events-none">search</span><input class="w-full h-10 pl-9 pr-12 bg-surface border border-border rounded-[10px] text-text-primary placeholder:text-text-muted font-body-sm text-body-sm focus:outline-none focus:border-focus-ring" placeholder="Search files and folders" type="text"/><span class="absolute right-3 px-1.5 py-0.5 rounded bg-surface-raised border border-border text-text-muted font-label-sm text-[11px] leading-tight">⌘K</span></div></div><div class="flex items-center gap-space-lg ml-space-lg"><div class="hidden sm:flex items-center gap-1.5 text-tertiary font-label-sm text-label-sm px-2.5 py-1 rounded-full bg-tertiary/10"><span class="material-symbols-outlined text-[16px]">check_circle</span><span>All files synced</span></div><div class="flex items-center gap-1 text-text-secondary"><button aria-label="Theme toggle" class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">dark_mode</span></button><button aria-label="Help" class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">help_outline</span></button></div><div class="relative flex items-center pl-2 border-l border-border"><div class="relative cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-BVUlMppNKVKV0S1YvMUAYkpex6mBe5nfhxWHr_KvHWGvpoUYaG-Yqy98mWBs57OY7EHW6yD7itD2anY5pNnt5aaU_fHDrmGqwhh8J-isdiS72BnSMvOO9WxISjKdPViCfaIUVNghqGbpIOd9JCgxDUitN6XFoZs130dorQWW8MRRDh8G6-gGaZ7nxYxVOdIIFjmEgrzuXYUsvQuuflf2xZIAxb0qi6cJbFQ_r4LN_X06sfKEZBaHvA"/><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary border-2 border-canvas"></span></div></div></div></header><main class="w-full pt-[68px] min-h-screen bg-canvas"><div class="w-full px-margin py-margin max-w-7xl mx-auto"><div class="flex flex-col w-full relative pb-24">
+<!-- Top Workspace Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-6">
+<div class="flex flex-col">
+<h1 class="font-headline-md text-headline-md text-text-primary tracking-tight">My Drive</h1>
+<p class="font-body-sm text-body-sm text-text-secondary mt-0.5">Manage and organize all your files backed by Telegram.</p>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="h-10 px-space-md bg-surface hover:bg-surface-hover text-text-primary border border-border rounded-[10px] font-label-md text-label-md flex items-center gap-space-xs transition-colors cursor-pointer shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-text-secondary">create_new_folder</span>
+<span>New folder</span>
+</button>
+<button class="h-10 px-space-md bg-primary-container hover:bg-brand-hover text-text-primary rounded-[10px] font-label-md text-label-md flex items-center gap-space-xs transition-colors cursor-pointer shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+<span>Upload</span>
+</button>
+</div>
+</div>
+<!-- Breadcrumbs & Navigation Path -->
+<div class="flex items-center justify-between py-2 px-space-md bg-surface rounded-lg border border-border/60 mb-6">
+<div class="flex items-center gap-1.5 font-label-md text-label-md min-w-0">
+<a class="flex items-center gap-1 text-primary-container hover:underline" href="#">
+<span class="material-symbols-outlined text-[18px]">home</span>
+<span>My Drive</span>
+</a>
+<span class="material-symbols-outlined text-[16px] text-text-muted">chevron_right</span>
+<span class="text-text-primary font-semibold truncate">Projects</span>
+<span class="font-label-sm text-label-sm text-text-muted ml-1 font-normal">(8 items)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-brand-subtle text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+<span>Telegram Private Storage</span>
+</div>
+</div>
+</div>
+<!-- Action & Filter Toolbar -->
+<div class="h-11 flex items-center justify-between gap-4 mb-6 flex-wrap">
+<!-- Left Pill Filters -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+<button class="h-8 px-3 rounded-full font-label-sm text-label-sm flex items-center gap-1.5 bg-brand-subtle text-primary border border-primary-container/30 transition-colors" type="button">
+<span>All files</span>
+<span class="text-[11px] opacity-75">14</span>
+</button>
+<button class="h-8 px-3 rounded-full font-label-sm text-label-sm flex items-center gap-1.5 bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px] text-file-document">description</span>
+<span>Documents</span>
+</button>
+<button class="h-8 px-3 rounded-full font-label-sm text-label-sm flex items-center gap-1.5 bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px] text-file-image">image</span>
+<span>Images</span>
+</button>
+<button class="h-8 px-3 rounded-full font-label-sm text-label-sm flex items-center gap-1.5 bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px] text-file-video">videocam</span>
+<span>Videos</span>
+</button>
+<button class="h-8 px-3 rounded-full font-label-sm text-label-sm flex items-center gap-1.5 bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px] text-file-archive">inventory_2</span>
+<span>Archives</span>
+</button>
+</div>
+<!-- Right Controls: Sort, Layout Toggle, Bulk Select -->
+<div class="flex items-center gap-2.5 ml-auto">
+<div class="relative">
+<button class="h-8 px-2.5 rounded-lg bg-surface border border-border text-text-secondary hover:text-text-primary hover:bg-surface-hover font-label-sm text-label-sm flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+<span class="hidden md:inline">Last modified</span>
+<span class="material-symbols-outlined text-[14px] text-text-muted">expand_more</span>
+</button>
+</div>
+<!-- View Switcher -->
+<div class="flex items-center bg-surface border border-border rounded-lg p-0.5">
+<button aria-label="List view" class="w-7 h-7 flex items-center justify-center rounded bg-brand-subtle text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">view_list</span>
+</button>
+<button aria-label="Grid view" class="w-7 h-7 flex items-center justify-center rounded text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">grid_view</span>
+</button>
+</div>
+<div class="h-4 w-[1px] bg-border mx-0.5"></div>
+<!-- Quick Checkbox Indicator -->
+<label class="flex items-center gap-1.5 cursor-pointer text-text-secondary hover:text-text-primary font-label-sm text-label-sm">
+<input class="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#528dff]" id="master-select" type="checkbox"/>
+<span class="hidden lg:inline text-text-muted">Select all</span>
+</label>
+</div>
+</div>
+<!-- Folders Section -->
+<section class="mb-8">
+<div class="flex items-center justify-between mb-3">
+<h2 class="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-text-muted">Folders</h2>
+<span class="font-label-sm text-label-sm text-text-muted">4 directories</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Folder 1 -->
+<div class="group bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer shadow-sm">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-brand-subtle flex items-center justify-center flex-shrink-0 text-primary-container">
+<span class="material-symbols-outlined text-[24px]">folder</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary font-semibold truncate group-hover:text-primary transition-colors">Product Design Assets</span>
+<span class="font-body-sm text-body-sm text-text-muted truncate">14 files • 240 MB</span>
+</div>
+</div>
+<button aria-label="Folder menu" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors opacity-80 group-hover:opacity-100" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Folder 2 -->
+<div class="group bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer shadow-sm">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-brand-subtle flex items-center justify-center flex-shrink-0 text-primary-container">
+<span class="material-symbols-outlined text-[24px]">folder</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary font-semibold truncate group-hover:text-primary transition-colors">Legal & Contracts</span>
+<span class="font-body-sm text-body-sm text-text-muted truncate">8 files • 32 MB</span>
+</div>
+</div>
+<button aria-label="Folder menu" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors opacity-80 group-hover:opacity-100" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Folder 3 -->
+<div class="group bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer shadow-sm">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-brand-subtle flex items-center justify-center flex-shrink-0 text-primary-container">
+<span class="material-symbols-outlined text-[24px]">folder</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary font-semibold truncate group-hover:text-primary transition-colors">Marketing Collateral</span>
+<span class="font-body-sm text-body-sm text-text-muted truncate">26 files • 1.2 GB</span>
+</div>
+</div>
+<button aria-label="Folder menu" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors opacity-80 group-hover:opacity-100" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Folder 4 -->
+<div class="group bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer shadow-sm">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-brand-subtle flex items-center justify-center flex-shrink-0 text-primary-container">
+<span class="material-symbols-outlined text-[24px]">folder</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary font-semibold truncate group-hover:text-primary transition-colors">Archive 2023</span>
+<span class="font-body-sm text-body-sm text-text-muted truncate">42 files • 3.4 GB</span>
+</div>
+</div>
+<button aria-label="Folder menu" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors opacity-80 group-hover:opacity-100" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Files Table Section -->
+<section class="flex flex-col">
+<div class="flex items-center justify-between mb-3">
+<h2 class="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-text-muted">Files</h2>
+<span class="font-label-sm text-label-sm text-text-muted">5 items in view</span>
+</div>
+<!-- Data Table Container -->
+<div class="bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
+<!-- Table Header -->
+<div class="h-10 bg-sidebar border-b border-border font-label-sm text-label-sm text-text-muted px-4 grid grid-cols-12 items-center select-none">
+<div class="col-span-12 md:col-span-5 flex items-center gap-3">
+<div class="w-4 flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-text-muted">check_box_outline_blank</span>
+</div>
+<div class="flex items-center gap-1 cursor-pointer hover:text-text-primary transition-colors">
+<span>Name</span>
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+</div>
+</div>
+<div class="hidden md:block md:col-span-2">Location</div>
+<div class="hidden md:block md:col-span-2">Modified</div>
+<div class="hidden md:block md:col-span-1 text-right pr-2">Size</div>
+<div class="hidden md:block md:col-span-2 text-right">Actions</div>
+</div>
+<!-- File Rows Container -->
+<div class="divide-y divide-border/60">
+<!-- Row 1: Selected State -->
+<div class="px-4 py-3 bg-brand-subtle/40 border-l-2 border-l-primary-container grid grid-cols-12 items-center text-body-sm font-body-sm transition-colors group">
+<div class="col-span-12 md:col-span-5 flex items-center gap-3 min-w-0">
+<input checked="" class="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#528dff] flex-shrink-0" type="checkbox"/>
+<span class="material-symbols-outlined text-[20px] text-file-document flex-shrink-0">picture_as_pdf</span>
+<span class="text-text-primary font-medium truncate flex-1" title="One_Cloud_Brand_Book_v3.pdf">One_Cloud_Brand_Book_v3.pdf</span>
+<button aria-label="Toggle star" class="text-warning flex-shrink-0 hover:scale-110 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+</div>
+<div class="hidden md:flex md:col-span-2 items-center text-text-secondary truncate pr-2">
+<span class="truncate">Product Design Assets</span>
+</div>
+<div class="hidden md:block md:col-span-2 text-text-secondary truncate">Today, 10:20 AM</div>
+<div class="hidden md:block md:col-span-1 text-right pr-2 text-text-secondary font-mono">14.8 MB</div>
+<div class="col-span-12 md:col-span-2 flex items-center justify-end gap-1 text-text-muted mt-2 md:mt-0">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="Download" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-[#36AEEA] transition-colors" title="Share via Telegram" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Row 2: Standard State -->
+<div class="px-4 py-3 hover:bg-surface-hover grid grid-cols-12 items-center text-body-sm font-body-sm transition-colors group">
+<div class="col-span-12 md:col-span-5 flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#528dff] flex-shrink-0" type="checkbox"/>
+<span class="material-symbols-outlined text-[20px] text-file-image flex-shrink-0">image</span>
+<span class="text-text-primary truncate flex-1 group-hover:text-primary-container transition-colors" title="Hero_Banner_Illustration_Dark.png">Hero_Banner_Illustration_Dark.png</span>
+<button aria-label="Toggle star" class="text-text-muted hover:text-warning flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" type="button">
+<span class="material-symbols-outlined text-[18px]">star_border</span>
+</button>
+</div>
+<div class="hidden md:flex md:col-span-2 items-center text-text-secondary truncate pr-2">
+<span class="truncate">Marketing Collateral</span>
+</div>
+<div class="hidden md:block md:col-span-2 text-text-secondary truncate">Yesterday, 4:15 PM</div>
+<div class="hidden md:block md:col-span-1 text-right pr-2 text-text-secondary font-mono">3.4 MB</div>
+<div class="col-span-12 md:col-span-2 flex items-center justify-end gap-1 text-text-muted mt-2 md:mt-0">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="Download" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-[#36AEEA] transition-colors" title="Share via Telegram" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Row 3: Video File -->
+<div class="px-4 py-3 hover:bg-surface-hover grid grid-cols-12 items-center text-body-sm font-body-sm transition-colors group">
+<div class="col-span-12 md:col-span-5 flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#528dff] flex-shrink-0" type="checkbox"/>
+<span class="material-symbols-outlined text-[20px] text-file-video flex-shrink-0">movie</span>
+<span class="text-text-primary truncate flex-1 group-hover:text-primary-container transition-colors" title="App_Walkthrough_Demo_4K.mp4">App_Walkthrough_Demo_4K.mp4</span>
+<button aria-label="Toggle star" class="text-text-muted hover:text-warning flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" type="button">
+<span class="material-symbols-outlined text-[18px]">star_border</span>
+</button>
+</div>
+<div class="hidden md:flex md:col-span-2 items-center text-text-secondary truncate pr-2">
+<span class="truncate">Marketing Collateral</span>
+</div>
+<div class="hidden md:block md:col-span-2 text-text-secondary truncate">Oct 23, 2024</div>
+<div class="hidden md:block md:col-span-1 text-right pr-2 text-text-secondary font-mono">284.1 MB</div>
+<div class="col-span-12 md:col-span-2 flex items-center justify-end gap-1 text-text-muted mt-2 md:mt-0">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="Download" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-[#36AEEA] transition-colors" title="Share via Telegram" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Row 4: Archive File (Starred) -->
+<div class="px-4 py-3 hover:bg-surface-hover grid grid-cols-12 items-center text-body-sm font-body-sm transition-colors group">
+<div class="col-span-12 md:col-span-5 flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#528dff] flex-shrink-0" type="checkbox"/>
+<span class="material-symbols-outlined text-[20px] text-file-archive flex-shrink-0">folder_zip</span>
+<span class="text-text-primary truncate flex-1 group-hover:text-primary-container transition-colors" title="Client_Deliverables_Signed.zip">Client_Deliverables_Signed.zip</span>
+<button aria-label="Toggle star" class="text-warning flex-shrink-0 hover:scale-110 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+</div>
+<div class="hidden md:flex md:col-span-2 items-center text-text-secondary truncate pr-2">
+<span class="truncate">Legal & Contracts</span>
+</div>
+<div class="hidden md:block md:col-span-2 text-text-secondary truncate">Oct 19, 2024</div>
+<div class="hidden md:block md:col-span-1 text-right pr-2 text-text-secondary font-mono">52.7 MB</div>
+<div class="col-span-12 md:col-span-2 flex items-center justify-end gap-1 text-text-muted mt-2 md:mt-0">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="Download" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-[#36AEEA] transition-colors" title="Share via Telegram" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Row 5: Document File -->
+<div class="px-4 py-3 hover:bg-surface-hover grid grid-cols-12 items-center text-body-sm font-body-sm transition-colors group">
+<div class="col-span-12 md:col-span-5 flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#528dff] flex-shrink-0" type="checkbox"/>
+<span class="material-symbols-outlined text-[20px] text-file-document flex-shrink-0">article</span>
+<span class="text-text-primary truncate flex-1 group-hover:text-primary-container transition-colors" title="Telegram_Bot_API_Architecture.docx">Telegram_Bot_API_Architecture.docx</span>
+<button aria-label="Toggle star" class="text-text-muted hover:text-warning flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" type="button">
+<span class="material-symbols-outlined text-[18px]">star_border</span>
+</button>
+</div>
+<div class="hidden md:flex md:col-span-2 items-center text-text-secondary truncate pr-2">
+<span class="truncate">Product Design Assets</span>
+</div>
+<div class="hidden md:block md:col-span-2 text-text-secondary truncate">Oct 15, 2024</div>
+<div class="hidden md:block md:col-span-1 text-right pr-2 text-text-secondary font-mono">820 KB</div>
+<div class="col-span-12 md:col-span-2 flex items-center justify-end gap-1 text-text-muted mt-2 md:mt-0">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="Download" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-[#36AEEA] transition-colors" title="Share via Telegram" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" title="More options" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Telegram Syncing Status Banner (Minimalist subtle card) -->
+<div class="mt-6 p-4 rounded-xl bg-surface border border-border flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#36AEEA]/15 text-[#36AEEA] flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+</div>
+<div class="flex flex-col">
+<span class="text-text-primary font-medium">Telegram Channel Storage Bot</span>
+<span class="text-text-muted text-xs">Files are encrypted and stored in chunked messages under channel @alex_vault_private</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-xs text-text-secondary font-mono">Connected • 42.8 GB free tier</span>
+</div>
+</div>
+<!-- Floating Selection Action Bar -->
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 ml-[124px] bg-surface-raised border border-border-strong shadow-2xl rounded-2xl px-5 py-3 flex items-center gap-4 z-40 animate-in fade-in slide-in-from-bottom-4 duration-200" id="selection-bar">
+<div class="flex items-center gap-2 pr-4 border-r border-border">
+<div class="w-5 h-5 rounded bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold">1</div>
+<span class="font-label-md text-label-md text-text-primary font-medium">item selected</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="h-8 px-3 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-primary font-label-sm text-label-sm flex items-center gap-1.5 transition-colors cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">download</span>
+<span>Download (14.8 MB)</span>
+</button>
+<button class="h-8 px-3 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-primary font-label-sm text-label-sm flex items-center gap-1.5 transition-colors cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[16px] text-text-secondary">drive_file_move</span>
+<span>Move</span>
+</button>
+<button class="h-8 px-3 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-primary font-label-sm text-label-sm flex items-center gap-1.5 transition-colors cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[16px] text-warning" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>Star</span>
+</button>
+<button class="h-8 px-3 rounded-lg bg-surface hover:bg-surface-hover border border-border text-danger hover:border-danger/40 font-label-sm text-label-sm flex items-center gap-1.5 transition-colors cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+<span>Trash</span>
+</button>
+</div>
+<div class="pl-2 border-l border-border">
+<button aria-label="Clear selection" class="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  // Dynamic interaction for Selection Bar & Master Checkbox
+  const masterSelect = document.getElementById('master-select');
+  const selectionBar = document.getElementById('selection-bar');
+  const rowCheckboxes = document.querySelectorAll('.divide-y input[type="checkbox"]');
+
+  function updateSelectionBar() {
+    const checkedBoxes = Array.from(rowCheckboxes).filter(cb => cb.checked);
+    if (checkedBoxes.length > 0) {
+      selectionBar.classList.remove('hidden');
+      const countEl = selectionBar.querySelector('div.w-5');
+      if (countEl) countEl.textContent = checkedBoxes.length;
+    } else {
+      selectionBar.classList.add('hidden');
+    }
+  }
+
+  if (masterSelect) {
+    masterSelect.addEventListener('change', (e) => {
+      rowCheckboxes.forEach(cb => {
+        cb.checked = e.target.checked;
+        const row = cb.closest('.grid');
+        if (e.target.checked) {
+          row.classList.add('bg-brand-subtle/40', 'border-l-2', 'border-l-primary-container');
+        } else {
+          row.classList.remove('bg-brand-subtle/40', 'border-l-2', 'border-l-primary-container');
+        }
+      });
+      updateSelectionBar();
+    });
+  }
+
+  rowCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const row = cb.closest('.grid');
+      if (cb.checked) {
+        row.classList.add('bg-brand-subtle/40', 'border-l-2', 'border-l-primary-container');
+      } else {
+        row.classList.remove('bg-brand-subtle/40', 'border-l-2', 'border-l-primary-container');
+      }
+      updateSelectionBar();
+    });
+  });
+
+  const deselectBtn = selectionBar.querySelector('button[aria-label="Clear selection"]');
+  if (deselectBtn) {
+    deselectBtn.addEventListener('click', () => {
+      rowCheckboxes.forEach(cb => {
+        cb.checked = false;
+        const row = cb.closest('.grid');
+        row.classList.remove('bg-brand-subtle/40', 'border-l-2', 'border-l-primary-container');
+      });
+      if (masterSelect) masterSelect.checked = false;
+      updateSelectionBar();
+    });
+  }
+</script></div></main></div></body></html>

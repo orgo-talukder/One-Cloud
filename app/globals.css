@@ -2,6 +2,35 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-canvas: #0B0E13;
+  --color-sidebar: #0F131B;
+  --color-surface: #141A24;
+  --color-surface-raised: #191F2B;
+  --color-surface-hover: #202938;
+  --color-border: #293241;
+  --color-border-strong: #3A4658;
+  --color-text-primary: #F3F6FB;
+  --color-text-secondary: #A4AFBF;
+  --color-text-muted: #758195;
+  --color-brand-primary: #4F8CFF;
+  --color-brand-hover: #3D79EF;
+  --color-brand-subtle: #172B49;
+  --color-focus-ring: #82B0FF;
+  --color-success: #38C98B;
+  --color-warning: #F2B84B;
+  --color-danger: #F16B7A;
+  --color-tertiary: #53de9e;
+  --color-telegram-blue: #36AEEA;
+  --color-file-document: #6FA2FF;
+  --color-file-image: #45C89A;
+  --color-file-video: #A88BFF;
+  --color-file-audio: #F2B84B;
+  --color-file-archive: #E99A64;
+  --color-primary-container: #528dff;
+  --color-on-primary-container: #00275f;
+}
+
 /* Smooth transition for theme colors */
 html.dark {
   color-scheme: dark;

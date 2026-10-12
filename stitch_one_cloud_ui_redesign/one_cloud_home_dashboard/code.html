@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-background":"#e1e2ea","border-strong":"#3A4658","surface":"#141A24","surface-bright":"#36393f","tertiary-container":"#00a56d","on-secondary-fixed-variant":"#004c6c","primary":"#afc6ff","on-tertiary-fixed":"#002112","surface-raised":"#191F2B","on-tertiary-container":"#00311d","file-archive":"#E99A64","text-primary":"#F3F6FB","surface-dim":"#111319","surface-container-low":"#191c21","outline-variant":"#424753","warning":"#F2B84B","file-document":"#6FA2FF","on-primary-container":"#00275f","error-container":"#93000a","on-tertiary":"#003822","primary-fixed-dim":"#afc6ff","brand-subtle":"#172B49","tertiary":"#53de9e","file-audio":"#F2B84B","focus-ring":"#82B0FF","on-tertiary-fixed-variant":"#005234","primary-fixed":"#d9e2ff","on-primary-fixed":"#001a43","surface-container-highest":"#32353b","surface-container-high":"#272a30","on-error":"#690005","on-surface-variant":"#c2c6d6","surface-variant":"#32353b","on-primary-fixed-variant":"#004398","primary-container":"#528dff","brand-hover":"#3D79EF","on-secondary-fixed":"#001e2e","outline":"#8c909f","tertiary-fixed-dim":"#53de9e","canvas":"#0B0E13","border":"#293241","secondary-fixed-dim":"#83cfff","surface-container":"#1d2025","error":"#ffb4ab","on-secondary":"#00344b","on-primary":"#002d6c","sidebar":"#0F131B","file-image":"#45C89A","danger":"#F16B7A","secondary-container":"#089ad5","on-surface":"#e1e2ea","text-muted":"#758195","surface-container-lowest":"#0b0e13","tertiary-fixed":"#72fbb9","inverse-on-surface":"#2e3036","on-error-container":"#ffdad6","on-secondary-container":"#002d42","inverse-surface":"#e1e2ea","file-video":"#A88BFF","surface-tint":"#afc6ff","secondary":"#83cfff","secondary-fixed":"#c6e7ff","surface-hover":"#202938","background":"#111319","text-secondary":"#A4AFBF","inverse-primary":"#0059c6"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"margin-mobile":"1rem","space-md":"0.75rem","gutter-sm":"0.75rem","margin":"2rem","gutter-lg":"1.5rem","space-xs":"0.25rem","space-sm":"0.5rem","space-lg":"1rem","gutter":"1rem","margin-tablet":"1.5rem","space-xl":"1.5rem"},fontFamily:{"body-sm":["Inter"],"headline-md":["Inter"],"label-md":["Inter"],"label-sm":["Inter"],"body-md":["Inter"],"metric-display":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"headline-lg":["Inter"],"headline-lg-mobile":["Inter"]},fontSize:{"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-md":["14px",{"lineHeight":"20px","fontWeight":"500"}],"label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"metric-display":["28px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-sm":["16px",{"lineHeight":"22px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-lg":["15px",{"lineHeight":"22px","fontWeight":"400"}],"headline-lg":["30px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["24px",{"lineHeight":"30px","letterSpacing":"-0.015em","fontWeight":"700"}]}}}};</script></head><body class="bg-canvas text-text-primary font-body-md text-body-md antialiased min-h-screen"><aside class="fixed left-0 top-0 bottom-0 w-[248px] bg-sidebar border-r border-border z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="h-[68px] px-space-lg flex items-center border-b border-border/40 gap-space-sm"><img alt="One Cloud Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WnDbC8HC1Y3Jzo4Ry761Xp4nGkiZ-D2Ex_YkyldHFYla_bz6NVBc7FjOCBtJNns899JzWOkDJpk3Np56ZSVtbivRAkeptjTmlGHnxsst9HqmbMhPk8Ljk4t8e5DK1nw3bhJRKwYyahlSXNc8JecSJkz01ZmI3wtEd6VW0vAzEfgU36BloIePRANPSISsqklm7XjFUysWzs-sAmzw7xvHHitwhcqJWeCCwBS52RrzqaHM8MgkC9Qq4NR_Ph"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-text-primary tracking-tight leading-none truncate">One Cloud</span><span class="font-label-sm text-label-sm text-text-muted leading-tight truncate mt-0.5">Telegram Drive</span></div></div><div class="p-space-lg"><button class="w-full h-10 px-space-md bg-primary-container hover:bg-brand-hover text-text-primary font-label-md text-label-md rounded-[10px] transition-colors flex items-center justify-between shadow-sm cursor-pointer" type="button"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[20px]">add</span><span>New</span></div><span class="material-symbols-outlined text-[18px] opacity-80">expand_more</span></button></div><nav class="flex flex-col gap-1 px-space-md" data-active-classes="bg-brand-subtle text-primary font-label-md"><a aria-current="page" class="flex items-center gap-space-md px-space-md py-2 rounded-lg transition-colors bg-brand-subtle text-primary font-label-md" data-path="home" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Home</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="my-drive" href="#"><span class="material-symbols-outlined text-[20px]">hard_drive</span><span>My Drive</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="recent" href="#"><span class="material-symbols-outlined text-[20px]">schedule</span><span>Recent</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="starred" href="#"><span class="material-symbols-outlined text-[20px]">star</span><span>Starred</span></a><a class="flex items-center gap-space-md px-space-md py-2 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors font-label-md text-label-md" data-path="trash" href="#"><span class="material-symbols-outlined text-[20px]">delete</span><span>Trash</span></a></nav></div><div class="p-space-md flex flex-col gap-space-sm border-t border-border/40"><div class="p-space-md bg-surface border border-border rounded-xl flex flex-col gap-space-xs"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-text-primary font-semibold">42.8 GB used</span><span class="font-label-sm text-label-sm text-text-muted">42%</span></div><div class="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden"><div class="h-full bg-primary-container rounded-full" style="width: 42%;"></div></div><span class="font-label-sm text-label-sm text-text-muted">Saved in Telegram</span></div><div class="flex items-center justify-between px-space-xs py-1.5 text-text-muted font-label-sm text-label-sm"><div class="flex items-center gap-2 min-w-0"><span class="material-symbols-outlined text-[18px] text-[#36AEEA]">send</span><span class="truncate text-text-secondary">@alex_dev</span></div><span class="w-2 h-2 rounded-full bg-tertiary flex-shrink-0"></span></div><div class="flex items-center justify-between pt-1 border-t border-border/30"><a class="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors font-label-sm text-label-sm" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span>Settings</span></a><span class="font-label-sm text-label-sm text-text-muted/60">v1.4</span></div></div></aside><div class="pl-[248px]"><header class="fixed top-0 left-[248px] right-0 h-[68px] bg-canvas border-b border-border z-40 px-margin flex items-center justify-between"><div class="flex-1 max-w-xl"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px] pointer-events-none">search</span><input class="w-full h-10 pl-9 pr-12 bg-surface border border-border rounded-[10px] text-text-primary placeholder:text-text-muted font-body-sm text-body-sm focus:outline-none focus:border-focus-ring" placeholder="Search files and folders" type="text"/><span class="absolute right-3 px-1.5 py-0.5 rounded bg-surface-raised border border-border text-text-muted font-label-sm text-[11px] leading-tight">⌘K</span></div></div><div class="flex items-center gap-space-lg ml-space-lg"><div class="hidden sm:flex items-center gap-1.5 text-tertiary font-label-sm text-label-sm px-2.5 py-1 rounded-full bg-tertiary/10"><span class="material-symbols-outlined text-[16px]">check_circle</span><span>All files synced</span></div><div class="flex items-center gap-1 text-text-secondary"><button aria-label="Theme toggle" class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">dark_mode</span></button><button aria-label="Help" class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-hover hover:text-text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">help_outline</span></button></div><div class="relative flex items-center pl-2 border-l border-border"><div class="relative cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-BVUlMppNKVKV0S1YvMUAYkpex6mBe5nfhxWHr_KvHWGvpoUYaG-Yqy98mWBs57OY7EHW6yD7itD2anY5pNnt5aaU_fHDrmGqwhh8J-isdiS72BnSMvOO9WxISjKdPViCfaIUVNghqGbpIOd9JCgxDUitN6XFoZs130dorQWW8MRRDh8G6-gGaZ7nxYxVOdIIFjmEgrzuXYUsvQuuflf2xZIAxb0qi6cJbFQ_r4LN_X06sfKEZBaHvA"/><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary border-2 border-canvas"></span></div></div></div></header><main class="w-full pt-[68px] min-h-screen bg-canvas"><div class="w-full px-margin py-margin max-w-7xl mx-auto"><div class="flex flex-col w-full gap-space-xl">
+<!-- Top Welcome & Actions Header -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-space-lg">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-space-sm mb-1">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-raised font-label-sm text-label-sm text-text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+          Telegram Cloud Active
+        </span>
+<span class="text-text-muted text-body-sm font-body-sm">•</span>
+<span class="font-body-sm text-body-sm text-text-muted">Chat ID #8492041</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">Welcome back, Alex</h1>
+<p class="font-body-md text-body-md text-text-secondary">Your files are synchronized with Telegram Saved Messages via MTProto proxy.</p>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap">
+<button class="h-10 px-4 bg-surface hover:bg-surface-hover text-text-primary font-label-md text-label-md rounded-[10px] transition-colors flex items-center gap-2 cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[18px] text-text-muted">create_new_folder</span>
+<span>New folder</span>
+</button>
+<button class="h-10 px-4 bg-primary-container hover:bg-brand-hover text-text-primary font-label-md text-label-md rounded-[10px] transition-colors flex items-center gap-2 shadow-sm cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[18px]">upload_file</span>
+<span>Upload files</span>
+</button>
+</div>
+</section>
+<!-- Top Metrics Summary Grid (4 Cards) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Card 1: Storage Used -->
+<div class="bg-surface rounded-xl p-space-lg flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-text-secondary">Storage Used</span>
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]">cloud_sync</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="font-metric-display text-metric-display text-text-primary leading-none">42.8 GB</div>
+<div class="font-label-sm text-label-sm text-text-muted mt-1.5">Saved Messages Allocation</div>
+</div>
+<div class="mt-space-md pt-space-sm">
+<div class="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden flex gap-0.5">
+<div class="bg-file-document h-full" style="width: 43%;"></div>
+<div class="bg-file-image h-full" style="width: 33%;"></div>
+<div class="bg-file-video h-full" style="width: 16%;"></div>
+<div class="bg-file-audio h-full" style="width: 5%;"></div>
+<div class="bg-file-archive h-full" style="width: 3%;"></div>
+</div>
+</div>
+</div>
+<!-- Card 2: Total Files -->
+<div class="bg-surface rounded-xl p-space-lg flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-text-secondary">Total Files</span>
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">description</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="font-metric-display text-metric-display text-text-primary leading-none">1,248</div>
+<div class="flex items-center gap-1.5 mt-1.5">
+<span class="material-symbols-outlined text-[15px] text-tertiary">trending_up</span>
+<span class="font-label-sm text-label-sm text-tertiary">+34 added this week</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm font-label-sm text-label-sm text-text-muted truncate">
+        Zero compression loss
+      </div>
+</div>
+<!-- Card 3: Folders -->
+<div class="bg-surface rounded-xl p-space-lg flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-text-secondary">Folders</span>
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-file-audio">
+<span class="material-symbols-outlined text-[18px]">folder</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="font-metric-display text-metric-display text-text-primary leading-none">38</div>
+<div class="font-label-sm text-label-sm text-text-muted mt-1.5">Across 4 virtual roots</div>
+</div>
+<div class="mt-space-md pt-space-sm font-label-sm text-label-sm text-text-secondary truncate">
+        12 shared with bot channels
+      </div>
+</div>
+<!-- Card 4: Telegram Connection -->
+<div class="bg-surface rounded-xl p-space-lg flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-text-secondary">Telegram Connection</span>
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="font-headline-md text-headline-md text-secondary tracking-tight">@alex_dev</div>
+<div class="flex items-center gap-1.5 mt-1.5">
+<span class="material-symbols-outlined text-[15px] text-tertiary">verified_user</span>
+<span class="font-label-sm text-label-sm text-tertiary">Encrypted & Synced</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm font-label-sm text-label-sm text-text-muted truncate">
+        Data center: DC4 (Amsterdam)
+      </div>
+</div>
+</section>
+<!-- Storage Category Breakdown Bento -->
+<section class="bg-surface rounded-xl p-space-lg flex flex-col gap-space-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Storage Breakdown</h2>
+<span class="font-label-sm text-label-sm text-text-secondary bg-surface-raised px-2.5 py-0.5 rounded-full">
+          42.8 GB total
+        </span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted hidden sm:inline">Bot chunk limit: 2,000 MB/file</span>
+</div>
+<!-- Multi-segmented Horizontal Progress Track -->
+<div class="flex flex-col gap-2">
+<div class="h-3 w-full bg-surface-raised rounded-full overflow-hidden flex gap-1 p-0.5">
+<div class="bg-file-document rounded-full h-full transition-all" style="width: 43%;" title="Documents: 18.4 GB"></div>
+<div class="bg-file-image rounded-full h-full transition-all" style="width: 33%;" title="Images: 14.2 GB"></div>
+<div class="bg-file-video rounded-full h-full transition-all" style="width: 16%;" title="Videos: 6.8 GB"></div>
+<div class="bg-file-audio rounded-full h-full transition-all" style="width: 5%;" title="Audio: 2.1 GB"></div>
+<div class="bg-file-archive rounded-full h-full transition-all" style="width: 3%;" title="Archives & Others: 1.3 GB"></div>
+</div>
+</div>
+<!-- 5 Breakdown Category Tiles -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-space-md">
+<!-- Documents -->
+<div class="bg-surface-raised rounded-lg p-space-md flex flex-col gap-1 transition-colors hover:bg-surface-hover">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-file-document"></span>
+<span class="font-label-md text-label-md text-text-primary font-medium">Documents</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-text-muted">article</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="font-headline-sm text-headline-sm text-text-primary">18.4 GB</span>
+<span class="font-body-sm text-body-sm text-text-muted">614 items</span>
+</div>
+</div>
+<!-- Images -->
+<div class="bg-surface-raised rounded-lg p-space-md flex flex-col gap-1 transition-colors hover:bg-surface-hover">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-file-image"></span>
+<span class="font-label-md text-label-md text-text-primary font-medium">Images</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-text-muted">image</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="font-headline-sm text-headline-sm text-text-primary">14.2 GB</span>
+<span class="font-body-sm text-body-sm text-text-muted">422 items</span>
+</div>
+</div>
+<!-- Videos -->
+<div class="bg-surface-raised rounded-lg p-space-md flex flex-col gap-1 transition-colors hover:bg-surface-hover">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-file-video"></span>
+<span class="font-label-md text-label-md text-text-primary font-medium">Videos</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-text-muted">videocam</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="font-headline-sm text-headline-sm text-text-primary">6.8 GB</span>
+<span class="font-body-sm text-body-sm text-text-muted">38 items</span>
+</div>
+</div>
+<!-- Audio -->
+<div class="bg-surface-raised rounded-lg p-space-md flex flex-col gap-1 transition-colors hover:bg-surface-hover">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-file-audio"></span>
+<span class="font-label-md text-label-md text-text-primary font-medium">Audio</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-text-muted">headphones</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="font-headline-sm text-headline-sm text-text-primary">2.1 GB</span>
+<span class="font-body-sm text-body-sm text-text-muted">95 items</span>
+</div>
+</div>
+<!-- Archives -->
+<div class="bg-surface-raised rounded-lg p-space-md flex flex-col gap-1 transition-colors hover:bg-surface-hover col-span-2 sm:col-span-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-file-archive"></span>
+<span class="font-label-md text-label-md text-text-primary font-medium">Archives</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-text-muted">folder_zip</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="font-headline-sm text-headline-sm text-text-primary">1.3 GB</span>
+<span class="font-body-sm text-body-sm text-text-muted">79 items</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Files Section -->
+<section class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Recent Files</h2>
+<span class="text-text-muted font-body-sm text-body-sm">• Synchronized within 48h</span>
+</div>
+<a class="font-label-md text-label-md text-primary-container hover:text-brand-hover flex items-center gap-1 transition-colors" data-path="recent" href="#">
+<span>View all</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+<!-- File Table / Container -->
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm">
+<!-- Table Header -->
+<div class="grid grid-cols-12 items-center px-space-lg py-3 bg-surface-raised font-label-sm text-label-sm text-text-muted uppercase tracking-wider select-none">
+<div class="col-span-6 sm:col-span-5 flex items-center gap-space-md">
+<span class="w-4"></span>
+<span>Name</span>
+</div>
+<div class="hidden sm:block sm:col-span-2">Category</div>
+<div class="col-span-3 sm:col-span-2">Modified</div>
+<div class="col-span-2 sm:col-span-2 text-right sm:text-left">Size</div>
+<div class="col-span-1 text-right">Actions</div>
+</div>
+<!-- File Rows List -->
+<div class="flex flex-col">
+<!-- Row 1: PDF Document -->
+<div class="grid grid-cols-12 items-center px-space-lg h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer">
+<div class="col-span-6 sm:col-span-5 flex items-center gap-space-md min-w-0 pr-2">
+<button aria-label="Toggle favorite" class="text-warning focus:outline-none flex-shrink-0" onclick="event.stopPropagation(); this.classList.toggle('text-warning'); this.classList.toggle('text-text-muted');" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<div class="w-8 h-8 rounded-lg bg-file-document/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-document">picture_as_pdf</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Q3_Product_Roadmap_Final.pdf</span>
+<span class="sm:hidden font-body-sm text-[11px] text-text-muted leading-tight">Document</span>
+</div>
+</div>
+<div class="hidden sm:flex sm:col-span-2 items-center">
+<span class="font-body-sm text-body-sm text-text-secondary">Document</span>
+</div>
+<div class="col-span-3 sm:col-span-2 font-body-sm text-body-sm text-text-muted truncate">
+            Today, 2:45 PM
+          </div>
+<div class="col-span-2 sm:col-span-2 font-body-sm text-body-sm text-text-secondary text-right sm:text-left">
+            4.2 MB
+          </div>
+<div class="col-span-1 flex items-center justify-end gap-1" onclick="event.stopPropagation()">
+<button aria-label="Download" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button aria-label="More options" class="w-8 h-8 rounded-lg hidden sm:flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Row 2: Figma / Vector -->
+<div class="grid grid-cols-12 items-center px-space-lg h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer bg-surface/50">
+<div class="col-span-6 sm:col-span-5 flex items-center gap-space-md min-w-0 pr-2">
+<button aria-label="Toggle favorite" class="text-text-muted focus:outline-none flex-shrink-0" onclick="event.stopPropagation(); this.classList.toggle('text-warning'); this.classList.toggle('text-text-muted');" type="button">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<div class="w-8 h-8 rounded-lg bg-file-image/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-image">draw</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Brand_Identity_Guidelines_v2.fig</span>
+<span class="sm:hidden font-body-sm text-[11px] text-text-muted leading-tight">Image / Vector</span>
+</div>
+</div>
+<div class="hidden sm:flex sm:col-span-2 items-center">
+<span class="font-body-sm text-body-sm text-text-secondary">Image / Vector</span>
+</div>
+<div class="col-span-3 sm:col-span-2 font-body-sm text-body-sm text-text-muted truncate">
+            Yesterday, 11:15 AM
+          </div>
+<div class="col-span-2 sm:col-span-2 font-body-sm text-body-sm text-text-secondary text-right sm:text-left">
+            18.9 MB
+          </div>
+<div class="col-span-1 flex items-center justify-end gap-1" onclick="event.stopPropagation()">
+<button aria-label="Download" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button aria-label="More options" class="w-8 h-8 rounded-lg hidden sm:flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Row 3: Video -->
+<div class="grid grid-cols-12 items-center px-space-lg h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer">
+<div class="col-span-6 sm:col-span-5 flex items-center gap-space-md min-w-0 pr-2">
+<button aria-label="Toggle favorite" class="text-text-muted focus:outline-none flex-shrink-0" onclick="event.stopPropagation(); this.classList.toggle('text-warning'); this.classList.toggle('text-text-muted');" type="button">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<div class="w-8 h-8 rounded-lg bg-file-video/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-video">movie</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">User_Interview_Session_04.mp4</span>
+<span class="sm:hidden font-body-sm text-[11px] text-text-muted leading-tight">Video</span>
+</div>
+</div>
+<div class="hidden sm:flex sm:col-span-2 items-center">
+<span class="font-body-sm text-body-sm text-text-secondary">Video</span>
+</div>
+<div class="col-span-3 sm:col-span-2 font-body-sm text-body-sm text-text-muted truncate">
+            Oct 24, 2024
+          </div>
+<div class="col-span-2 sm:col-span-2 font-body-sm text-body-sm text-text-secondary text-right sm:text-left">
+            142.5 MB
+          </div>
+<div class="col-span-1 flex items-center justify-end gap-1" onclick="event.stopPropagation()">
+<button aria-label="Download" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button aria-label="More options" class="w-8 h-8 rounded-lg hidden sm:flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Row 4: Archive -->
+<div class="grid grid-cols-12 items-center px-space-lg h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer bg-surface/50">
+<div class="col-span-6 sm:col-span-5 flex items-center gap-space-md min-w-0 pr-2">
+<button aria-label="Toggle favorite" class="text-warning focus:outline-none flex-shrink-0" onclick="event.stopPropagation(); this.classList.toggle('text-warning'); this.classList.toggle('text-text-muted');" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<div class="w-8 h-8 rounded-lg bg-file-archive/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-archive">inventory_2</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Design_System_Icons_Export.zip</span>
+<span class="sm:hidden font-body-sm text-[11px] text-text-muted leading-tight">Archive</span>
+</div>
+</div>
+<div class="hidden sm:flex sm:col-span-2 items-center">
+<span class="font-body-sm text-body-sm text-text-secondary">Archive</span>
+</div>
+<div class="col-span-3 sm:col-span-2 font-body-sm text-body-sm text-text-muted truncate">
+            Oct 22, 2024
+          </div>
+<div class="col-span-2 sm:col-span-2 font-body-sm text-body-sm text-text-secondary text-right sm:text-left">
+            28.4 MB
+          </div>
+<div class="col-span-1 flex items-center justify-end gap-1" onclick="event.stopPropagation()">
+<button aria-label="Download" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button aria-label="More options" class="w-8 h-8 rounded-lg hidden sm:flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Row 5: Spreadsheet -->
+<div class="grid grid-cols-12 items-center px-space-lg h-[54px] hover:bg-surface-hover transition-colors group cursor-pointer">
+<div class="col-span-6 sm:col-span-5 flex items-center gap-space-md min-w-0 pr-2">
+<button aria-label="Toggle favorite" class="text-text-muted focus:outline-none flex-shrink-0" onclick="event.stopPropagation(); this.classList.toggle('text-warning'); this.classList.toggle('text-text-muted');" type="button">
+<span class="material-symbols-outlined text-[18px]">star</span>
+</button>
+<div class="w-8 h-8 rounded-lg bg-file-document/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px] text-file-document">table_chart</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors">Q3_Financial_Projections.xlsx</span>
+<span class="sm:hidden font-body-sm text-[11px] text-text-muted leading-tight">Spreadsheet</span>
+</div>
+</div>
+<div class="hidden sm:flex sm:col-span-2 items-center">
+<span class="font-body-sm text-body-sm text-text-secondary">Spreadsheet</span>
+</div>
+<div class="col-span-3 sm:col-span-2 font-body-sm text-body-sm text-text-muted truncate">
+            Oct 20, 2024
+          </div>
+<div class="col-span-2 sm:col-span-2 font-body-sm text-body-sm text-text-secondary text-right sm:text-left">
+            1.8 MB
+          </div>
+<div class="col-span-1 flex items-center justify-end gap-1" onclick="event.stopPropagation()">
+<button aria-label="Download" class="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+<button aria-label="More options" class="w-8 h-8 rounded-lg hidden sm:flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Verification & Telegram Health Banner -->
+<section class="bg-brand-subtle rounded-xl p-space-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-9 h-9 rounded-lg bg-primary-container/20 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[22px]">verified</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary font-medium">Telegram Backup Health</span>
+<span class="font-body-sm text-body-sm text-text-secondary">All 1,248 files verified in Telegram Saved Messages • End-to-end checksum valid</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end sm:self-center">
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-tertiary">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span>Auto-sync enabled</span>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary font-label-sm text-label-sm transition-colors cursor-pointer" type="button">
+        View log
+      </button>
+</div>
+</section>
+</div></div></main></div></body></html>

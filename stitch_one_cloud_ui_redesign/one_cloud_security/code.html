@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"inverse-on-surface":"#2e3036","brand-hover":"#3D79EF","surface-tint":"#afc6ff","secondary-fixed":"#c6e7ff","primary-fixed":"#d9e2ff","error-container":"#93000a","on-primary-container":"#00275f","on-error-container":"#ffdad6","border":"#293241","surface-container-low":"#191c21","file-image":"#45C89A","on-error":"#690005","text-secondary":"#A4AFBF","background":"#111319","file-audio":"#F2B84B","on-surface-variant":"#c2c6d6","surface-container":"#1d2025","surface-container-high":"#272a30","focus-ring":"#82B0FF","on-tertiary":"#003822","border-strong":"#3A4658","sidebar":"#0F131B","on-secondary-fixed":"#001e2e","surface-variant":"#32353b","on-secondary-container":"#002d42","text-primary":"#F3F6FB","tertiary-fixed":"#72fbb9","surface-bright":"#36393f","primary":"#afc6ff","outline":"#8c909f","on-tertiary-fixed-variant":"#005234","on-primary-fixed":"#001a43","on-primary-fixed-variant":"#004398","on-secondary-fixed-variant":"#004c6c","surface-raised":"#191F2B","tertiary-fixed-dim":"#53de9e","danger":"#F16B7A","surface-container-highest":"#32353b","on-primary":"#002d6c","warning":"#F2B84B","inverse-surface":"#e1e2ea","primary-container":"#528dff","on-tertiary-fixed":"#002112","on-background":"#e1e2ea","outline-variant":"#424753","on-tertiary-container":"#00311d","surface-hover":"#202938","brand-subtle":"#172B49","secondary-container":"#089ad5","tertiary-container":"#00a56d","text-muted":"#758195","secondary":"#83cfff","surface":"#141A24","on-secondary":"#00344b","file-archive":"#E99A64","surface-dim":"#111319","file-video":"#A88BFF","file-document":"#6FA2FF","surface-container-lowest":"#0b0e13","secondary-fixed-dim":"#83cfff","inverse-primary":"#0059c6","primary-fixed-dim":"#afc6ff","error":"#ffb4ab","canvas":"#0B0E13","on-surface":"#e1e2ea","tertiary":"#53de9e"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-xs":"0.25rem","gutter-sm":"0.75rem","gutter-lg":"1.5rem","space-xl":"1.5rem","gutter":"1rem","margin":"2rem","space-md":"0.75rem","margin-tablet":"1.5rem","space-sm":"0.5rem","margin-mobile":"1rem","space-lg":"1rem"},fontFamily:{"label-md":["Inter"],"metric-display":["Inter"],"headline-md":["Inter"],"headline-lg":["Inter"],"body-sm":["Inter"],"headline-lg-mobile":["Inter"],"body-lg":["Inter"],"body-md":["Inter"],"label-sm":["Inter"],"headline-sm":["Inter"]},fontSize:{"label-md":["14px",{lineHeight:"20px",fontWeight:"500"}],"metric-display":["28px",{lineHeight:"32px",letterSpacing:"-0.02em",fontWeight:"700"}],"headline-md":["20px",{lineHeight:"26px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg":["30px",{lineHeight:"36px",letterSpacing:"-0.02em",fontWeight:"700"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-lg-mobile":["24px",{lineHeight:"30px",letterSpacing:"-0.015em",fontWeight:"700"}],"body-lg":["15px",{lineHeight:"22px",fontWeight:"400"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"label-sm":["12px",{lineHeight:"16px",fontWeight:"500"}],"headline-sm":["16px",{lineHeight:"22px",letterSpacing:"-0.005em",fontWeight:"600"}]}}}}</script></head><body class="bg-canvas text-on-surface font-body-md text-body-md antialiased min-h-screen flex flex-col"><header class="fixed top-0 left-0 right-0 z-50 bg-canvas/90 backdrop-blur-md border-b border-border"><div class="h-[72px] max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between gap-gutter-lg"><div class="flex items-center gap-space-lg"><a class="flex items-center gap-space-md group" data-path="landing-page" href="#"><div class="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-primary-container group-hover:border-primary transition-colors"><span class="material-symbols-outlined text-[22px]">cloud_done</span></div><div class="flex flex-col leading-none"><span class="font-headline-sm text-headline-sm text-text-primary tracking-tight">One Cloud</span><span class="font-label-sm text-label-sm text-text-muted mt-space-xs">Telegram Drive</span></div></a></div><nav class="hidden md:flex items-center gap-space-xl" data-active-classes="text-text-primary font-label-md"><a class="font-label-md text-label-md text-text-secondary hover:text-text-primary transition-colors" data-path="how-it-works" href="#">How It Works</a><a aria-current="page" class="transition-colors text-text-primary font-label-md" data-path="security" href="#">Security</a><a class="font-label-md text-label-md text-text-secondary hover:text-text-primary transition-colors" data-path="help-center" href="#">Help</a></nav><div class="flex items-center gap-space-md"><a class="hidden sm:inline-flex items-center justify-center px-space-lg py-space-sm rounded-lg font-label-md text-label-md text-text-primary hover:bg-surface-hover hover:text-text-primary transition-colors" data-path="login" href="#">Log in</a><a class="inline-flex items-center justify-center px-space-lg py-space-sm rounded-lg font-label-md text-label-md bg-primary-container text-on-primary font-medium hover:bg-brand-hover hover:text-text-primary transition-colors" data-path="register" href="#">Get Started</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-space-xs"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-[72px] bg-canvas flex-1"><div class="flex flex-col w-full">
+<!-- Subtle ambient illumination accent -->
+<div class="relative w-full overflow-hidden">
+<div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[720px] h-[360px] bg-brand-subtle opacity-30 blur-[120px] pointer-events-none"></div>
+<!-- Header Section -->
+<section class="relative max-w-7xl mx-auto px-6 lg:px-12 pt-16 pb-12 w-full">
+<div class="flex flex-col items-start gap-space-lg max-w-3xl">
+<!-- Badge -->
+<div class="inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-tertiary-container/10 text-tertiary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="tracking-wider uppercase font-semibold">Security & Trust Architecture</span>
+</div>
+<!-- Main Title & Lead -->
+<h1 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">
+          Built for Privacy. Engineered for Trust.
+        </h1>
+<p class="font-body-lg text-body-lg text-text-secondary leading-relaxed">
+          Learn how One Cloud strictly separates file metadata from raw binary storage, ensuring zero custody over your personal files through direct MTProto pipes.
+        </p>
+<!-- Quick Spec Actions -->
+<div class="flex flex-wrap items-center gap-space-md pt-space-xs">
+<a class="inline-flex items-center gap-space-xs px-space-lg py-space-sm rounded-lg bg-surface-raised hover:bg-surface-hover text-text-primary font-label-md text-label-md transition-colors shadow-sm" data-path="documentation" href="#">
+<span class="material-symbols-outlined text-[18px] text-primary">description</span>
+<span>Read Architecture Spec</span>
+</a>
+<a class="inline-flex items-center gap-space-xs px-space-lg py-space-sm rounded-lg bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary font-label-md text-label-md transition-colors shadow-sm" href="https://core.telegram.org/mtproto" rel="noopener noreferrer" target="_blank">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+<span>View MTProto Protocol Specs</span>
+<span class="material-symbols-outlined text-[14px] text-text-muted">open_in_new</span>
+</a>
+</div>
+</div>
+</section>
+</div>
+<!-- Key Architectural Guarantees (3-Column Layout) -->
+<section class="max-w-7xl mx-auto px-6 lg:px-12 py-8 w-full">
+<div class="flex items-center justify-between pb-6">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">account_tree</span>
+<span class="font-label-md text-label-md text-text-secondary uppercase tracking-wider">Zero-Custody Architectural Guarantees</span>
+</div>
+<span class="font-label-sm text-label-sm text-text-muted">Client ↔ MTProto Pipeline</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-lg">
+<!-- Guarantee Card 1 -->
+<div class="bg-surface rounded-xl p-space-xl flex flex-col justify-between shadow-md group hover:bg-surface-raised transition-all">
+<div class="flex flex-col gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-surface-raised flex items-center justify-center text-tertiary group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Zero-Custody File Payloads</h3>
+<p class="font-body-md text-body-md text-text-secondary leading-relaxed">
+            Your binary bytes stream directly between your browser and Telegram Saved Messages via MTProto. One Cloud application servers never inspect, store, or cache your actual files.
+          </p>
+</div>
+<div class="pt-space-lg mt-space-md bg-canvas/40 rounded-lg p-space-md">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-text-muted">
+<span>Payload Pipeline:</span>
+<span class="text-tertiary font-mono">Direct Browser → Telegram DC</span>
+</div>
+</div>
+</div>
+<!-- Guarantee Card 2 -->
+<div class="bg-surface rounded-xl p-space-xl flex flex-col justify-between shadow-md group hover:bg-surface-raised transition-all">
+<div class="flex flex-col gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-surface-raised flex items-center justify-center text-primary-container group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[22px]">database</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Isolated Metadata Index</h3>
+<p class="font-body-md text-body-md text-text-secondary leading-relaxed">
+            Folder hierarchies, custom tags, and file names are stored in secure Firestore metadata nodes protected with strict Firebase Auth security rules mapped directly to authenticated UIDs.
+          </p>
+</div>
+<div class="pt-space-lg mt-space-md bg-canvas/40 rounded-lg p-space-md">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-text-muted">
+<span>Metadata Isolation:</span>
+<span class="text-primary font-mono">UID Partitioned / Rule-Locked</span>
+</div>
+</div>
+</div>
+<!-- Guarantee Card 3 -->
+<div class="bg-surface rounded-xl p-space-xl flex flex-col justify-between shadow-md group hover:bg-surface-raised transition-all">
+<div class="flex flex-col gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-surface-raised flex items-center justify-center text-file-document group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[22px]">devices</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Client-Side Decoupling</h3>
+<p class="font-body-md text-body-md text-text-secondary leading-relaxed">
+            Previews, thumbnails, and streaming transcodes execute entirely client-side in your local browser sandbox, preventing third-party introspection or external analytics exfiltration.
+          </p>
+</div>
+<div class="pt-space-lg mt-space-md bg-canvas/40 rounded-lg p-space-md">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-text-muted">
+<span>Execution Sandbox:</span>
+<span class="text-text-primary font-mono">Local Web Workers & WASM</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Data Flow Diagram & Trust Comparison Bento -->
+<section class="max-w-7xl mx-auto px-6 lg:px-12 py-10 w-full">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-stretch">
+<!-- Architectural Topology Visualizer (7 Columns) -->
+<div class="lg:col-span-7 bg-surface-container rounded-xl p-space-xl shadow-lg flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Live Topology: Decoupled Data Flow</h2>
+</div>
+<span class="font-label-sm text-label-sm text-text-muted font-mono">Zero Middle-Tier Storage</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary mb-6">
+            Unlike legacy cloud storage models that pass raw payloads through central inspection proxies, One Cloud splits control plane routing from the encrypted data plane.
+          </p>
+<!-- SVG Flow Graph -->
+<div class="bg-canvas/80 rounded-lg p-6 flex flex-col items-center justify-center">
+<svg class="w-full h-48 max-w-xl text-text-muted" fill="none" viewbox="0 0 540 160" xmlns="http://www.w3.org/2000/svg">
+<!-- Client Node -->
+<rect class="fill-surface stroke-none" height="70" rx="8" width="100" x="10" y="45"></rect>
+<text class="fill-text-primary font-label-sm font-semibold text-[12px]" text-anchor="middle" x="60" y="77">Client Browser</text>
+<text class="fill-tertiary text-[10px]" text-anchor="middle" x="60" y="95">WASM + MTProto</text>
+<!-- One Cloud Meta Server -->
+<rect class="fill-surface-raised stroke-none" height="60" rx="8" width="110" x="220" y="10"></rect>
+<text class="fill-text-primary font-label-sm font-semibold text-[11px]" text-anchor="middle" x="275" y="38">One Cloud Meta</text>
+<text class="fill-primary text-[10px]" text-anchor="middle" x="275" y="55">Metadata Only (No Files)</text>
+<!-- Telegram DC -->
+<rect class="fill-surface stroke-none" height="70" rx="8" width="110" x="420" y="45"></rect>
+<text class="fill-text-primary font-label-sm font-semibold text-[12px]" text-anchor="middle" x="475" y="77">Telegram DC</text>
+<text class="fill-tertiary text-[10px]" text-anchor="middle" x="475" y="95">Encrypted Payload</text>
+<!-- Arrows -->
+<!-- Browser to Meta (Metadata) -->
+<path class="stroke-primary" d="M 110 70 C 160 50, 180 40, 220 40" stroke="currentColor" stroke-dasharray="3 3" stroke-width="1.5"></path>
+<text class="fill-primary text-[9px]" text-anchor="middle" x="165" y="45">Metadata Sync (JSON)</text>
+<!-- Browser direct to Telegram DC (Binary Stream) -->
+<path class="stroke-tertiary" d="M 110 95 L 420 95" stroke="currentColor" stroke-width="2.5"></path>
+<polygon class="fill-tertiary" points="418,91 426,95 418,99"></polygon>
+<text class="fill-tertiary text-[10px] font-semibold" text-anchor="middle" x="265" y="112">Direct Encrypted MTProto Binary Stream (0 Custody)</text>
+<!-- Blocked Path indicator between Meta and Telegram raw bytes -->
+<line class="stroke-danger" stroke="currentColor" stroke-dasharray="2 2" stroke-width="1.5" x1="275" x2="275" y1="70" y2="88"></line>
+<circle class="fill-canvas" cx="275" cy="80" r="7"></circle>
+<text class="fill-danger text-[10px] font-bold" text-anchor="middle" x="275" y="83">×</text>
+</svg>
+</div>
+</div>
+<div class="mt-6 grid grid-cols-2 gap-space-md pt-4">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[18px]">verified</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Files never touch One Cloud servers</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">lock</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Direct MTProto handshake with DC</span>
+</div>
+</div>
+</div>
+<!-- Realistic Trust Comparison (5 Columns) -->
+<div class="lg:col-span-5 bg-surface-container rounded-xl p-space-xl shadow-lg flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-space-sm mb-4">
+<span class="material-symbols-outlined text-primary text-[20px]">balance</span>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Realistic Trust Model</h2>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary mb-6">
+            We avoid hyperbolic claims like "unbreakable military encryption" or false compliance certifications. Here is an honest appraisal of our technical boundaries:
+          </p>
+<div class="flex flex-col gap-space-md">
+<div class="p-space-md rounded-lg bg-canvas/60">
+<div class="flex items-center gap-space-xs text-tertiary font-label-sm text-label-sm font-semibold mb-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>What We Strictly Guarantee</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+                Zero storage custody of binaries. Even under legal compulsion, One Cloud cannot yield your documents because we simply do not host or proxy them.
+              </p>
+</div>
+<div class="p-space-md rounded-lg bg-canvas/60">
+<div class="flex items-center gap-space-xs text-warning font-label-sm text-label-sm font-semibold mb-1">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span>Telegram Infrastructure Dependency</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted">
+                Payload storage is subject to Telegram’s cloud architecture and terms. Files in Saved Messages are protected by Telegram’s MTProto server-client encryption.
+              </p>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4 flex items-center justify-between text-text-muted font-label-sm text-label-sm">
+<span>Target Architecture</span>
+<span class="font-mono text-text-primary">Client-Side First</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Technical Security Breakdown (Structured Sections A-D) -->
+<section class="max-w-7xl mx-auto px-6 lg:px-12 py-10 w-full">
+<div class="mb-8">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest font-semibold">Deep-Dive Specification</span>
+<h2 class="font-headline-lg text-headline-lg text-text-primary mt-1">Technical Security Breakdown</h2>
+<p class="font-body-md text-body-md text-text-secondary mt-2 max-w-2xl">
+        Transparent technical implementation details covering session tokens, transmission safety, tenant boundaries, and account protection.
+      </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter-lg">
+<!-- Section A -->
+<div class="bg-surface rounded-xl p-space-xl shadow-sm flex flex-col justify-between">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">SPEC // 01</span>
+<span class="px-space-sm py-0.5 rounded bg-brand-subtle text-primary font-mono text-[11px]">RFC 7519 / OIDC</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">vpn_key</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">A. Authentication & Session Handling</h3>
+</div>
+<p class="font-body-md text-body-md text-text-secondary leading-relaxed">
+            One Cloud utilizes Firebase Authentication for secure identity management and JSON Web Token (JWT) exchange. Short-lived session claims are validated against strict security rules on every metadata read or write.
+          </p>
+<ul class="flex flex-col gap-space-sm text-text-secondary font-body-sm text-body-sm pt-2">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>Zero Phone Passwords Stored:</strong> One Cloud never asks for or stores your master Telegram phone password.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>Scoped Bot API Tokens:</strong> Bot tokens operate with restricted privileges limited strictly to document dispatching.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>Isolated Ephemeral Keys:</strong> Temporary credentials expire automatically without leaving persistence footprints.</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Section B -->
+<div class="bg-surface rounded-xl p-space-xl shadow-sm flex flex-col justify-between">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">SPEC // 02</span>
+<span class="px-space-sm py-0.5 rounded bg-brand-subtle text-primary font-mono text-[11px]">MTProto v2.0 / TLS 1.3</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">sync_alt</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">B. MTProto Transmission & Data in Transit</h3>
+</div>
+<p class="font-body-md text-body-md text-text-secondary leading-relaxed">
+            All data streaming between the client browser and Telegram Data Centers relies on MTProto v2.0 over TLS 1.3 tunnels, guarding against passive network eavesdropping and man-in-the-middle attacks.
+          </p>
+<ul class="flex flex-col gap-space-sm text-text-secondary font-body-sm text-body-sm pt-2">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>2,048-bit RSA Handshake:</strong> Cryptographic Diffie-Hellman key exchange directly negotiated with Telegram DCs.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>SHA-256 Chunk Verification:</strong> Chunked binary streams validate block integrity sequentially on client download.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>AES-256-IGE Ciphering:</strong> Telegram's native data channel cipher ensures zero packet inspection in transit.</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Section C -->
+<div class="bg-surface rounded-xl p-space-xl shadow-sm flex flex-col justify-between">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">SPEC // 03</span>
+<span class="px-space-sm py-0.5 rounded bg-brand-subtle text-primary font-mono text-[11px]">Hard Tenant Silos</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">folder_supervised</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">C. Access Control & Tenant Isolation</h3>
+</div>
+<p class="font-body-md text-body-md text-text-secondary leading-relaxed">
+            Multi-tenancy isolation is enforced at the database layer. No user can scan, enumerate, or query metadata nodes belonging to another user.
+          </p>
+<ul class="flex flex-col gap-space-sm text-text-secondary font-body-sm text-body-sm pt-2">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>No Cross-Account Indexing:</strong> No centralized search indexing aggregates files across independent user accounts.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>Row-Level Rule Enforcements:</strong> Firestore security rules reject requests whose token UID does not match node owner.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>Strict Zero Shared Drive Leaks:</strong> Personal storage buckets remain isolated to your Telegram channel destination.</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Section D -->
+<div class="bg-surface rounded-xl p-space-xl shadow-sm flex flex-col justify-between">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">SPEC // 04</span>
+<span class="px-space-sm py-0.5 rounded bg-brand-subtle text-primary font-mono text-[11px]">Shared Responsibility</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">D. User Responsibilities & Hardening</h3>
+</div>
+<p class="font-body-md text-body-md text-text-secondary leading-relaxed">
+            Security in a zero-custody framework is a collaborative contract. Because we do not store your binaries, safeguarding account credentials is vital.
+          </p>
+<ul class="flex flex-col gap-space-sm text-text-secondary font-body-sm text-body-sm pt-2">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-warning text-[16px] shrink-0 mt-0.5">priority_high</span>
+<span><strong>Telegram Two-Step Verification (2FA):</strong> Always configure a secondary cloud password inside your Telegram app settings.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>Active Session Auditing:</strong> Regularly review Telegram → Settings → Devices to audit active bot sessions.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">check</span>
+<span><strong>Local Browser Cleanliness:</strong> Keep web extensions audited, as client-side tokens reside within your secure browser sandbox.</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<!-- Security Verification & Responsible Disclosure Card -->
+<section class="max-w-7xl mx-auto px-6 lg:px-12 py-10 w-full">
+<div class="bg-surface-raised rounded-xl p-space-xl shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-gutter-lg">
+<div class="flex flex-col gap-space-sm max-w-2xl">
+<div class="inline-flex items-center gap-space-xs text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">bug_report</span>
+<span class="uppercase tracking-wider font-semibold">Responsible Disclosure Program</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-text-primary">
+          Commitment to Transparency & Vulnerability Reporting
+        </h3>
+<p class="font-body-md text-body-md text-text-secondary leading-relaxed">
+          We welcome audits and reports from independent security researchers. If you uncover an issue in our client metadata handling or protocol parsing, please report it directly through our encrypted disclosure channel. We respond within 48 hours.
+        </p>
+<div class="flex flex-wrap items-center gap-space-md pt-space-xs">
+<div class="flex items-center gap-space-xs bg-canvas/70 px-space-md py-space-xs rounded font-mono text-[12px] text-text-primary">
+<span class="text-text-muted">PGP:</span>
+<span>4B9E 7712 A860 F502 91C3</span>
+</div>
+<a class="text-primary hover:text-brand-hover font-mono text-[13px] flex items-center gap-1 transition-colors" href="mailto:security@onecloud.dev">
+            security@onecloud.dev
+            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<div class="bg-canvas/90 p-space-lg rounded-xl flex flex-col gap-space-sm w-full lg:w-80 shrink-0">
+<span class="font-label-sm text-label-sm text-text-muted uppercase">Researcher Guidelines</span>
+<div class="flex flex-col gap-space-xs text-body-sm text-text-secondary">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>No user data scraping</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Safe harbor for good-faith audits</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Coordinated disclosure timeline</span>
+</div>
+</div>
+<a class="mt-space-sm inline-flex items-center justify-center w-full px-space-md py-space-xs rounded bg-surface hover:bg-surface-hover text-text-primary font-label-sm text-label-sm transition-colors" data-path="help-center" href="#">
+          View Security Hall of Fame
+        </a>
+</div>
+</div>
+</section>
+<!-- Bottom CTA Banner -->
+<section class="max-w-7xl mx-auto px-6 lg:px-12 pt-8 pb-20 w-full">
+<div class="bg-gradient-to-br from-surface to-surface-container rounded-2xl p-8 lg:p-12 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-gutter-lg">
+<div class="flex flex-col gap-space-xs max-w-xl">
+<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-wider font-semibold">Get Started with Sovereign Drive</span>
+<h2 class="font-headline-lg text-headline-lg text-text-primary">
+          Experience privacy-first cloud storage.
+        </h2>
+<p class="font-body-md text-body-md text-text-secondary">
+          No subscriptions, no server lock-in, and zero third-party custody over your personal archive.
+        </p>
+<div class="flex flex-wrap items-center gap-space-lg pt-space-md text-text-muted font-body-sm text-body-sm">
+<a class="hover:text-text-primary transition-colors underline decoration-border underline-offset-4" data-path="privacy-policy" href="#">Privacy Policy</a>
+<a class="hover:text-text-primary transition-colors underline decoration-border underline-offset-4" data-path="terms-of-service" href="#">Terms of Service</a>
+<a class="hover:text-text-primary transition-colors underline decoration-border underline-offset-4" data-path="documentation" href="#">Architecture Docs</a>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-md shrink-0 w-full sm:w-auto">
+<a class="inline-flex items-center justify-center px-6 py-3 rounded-lg font-label-md text-label-md bg-primary-container text-on-primary font-medium hover:bg-brand-hover hover:text-text-primary transition-all shadow-md" data-path="register" href="#">
+<span>Get Started Now</span>
+<span class="material-symbols-outlined text-[18px] ml-1">arrow_forward</span>
+</a>
+<a class="inline-flex items-center justify-center px-6 py-3 rounded-lg font-label-md text-label-md bg-surface-raised hover:bg-surface-hover text-text-primary transition-colors" data-path="how-it-works" href="#">
+<span>How It Works</span>
+</a>
+</div>
+</div>
+</section>
+</div></main><footer class="w-full bg-surface-container-lowest border-t border-border mt-auto"><div class="max-w-7xl mx-auto px-6 lg:px-12 pt-16 pb-12"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-margin"><div class="lg:col-span-2 flex flex-col items-start gap-space-md"><div class="flex items-center gap-space-md"><div class="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center text-primary-container"><span class="material-symbols-outlined text-[20px]">cloud_done</span></div><span class="font-headline-sm text-headline-sm text-text-primary">One Cloud</span></div><p class="font-body-md text-body-md text-text-secondary max-w-sm">Telegram-powered personal cloud drive. Privacy-first, intuitive file organization with effortless speed.</p><div class="inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-tertiary-container/10 border border-tertiary/20 text-tertiary font-label-sm text-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span><span>Telegram Protected</span></div></div><div class="flex flex-col gap-space-md"><h4 class="font-label-md text-label-md text-text-primary uppercase tracking-wider">Product</h4><div class="flex flex-col gap-space-sm"><a class="font-body-md text-body-md text-text-secondary hover:text-text-primary transition-colors" data-path="how-it-works" href="#">How It Works</a><a class="font-body-md text-body-md text-text-secondary hover:text-text-primary transition-colors" data-path="security" href="#">Security</a><a class="font-body-md text-body-md text-text-secondary hover:text-text-primary transition-colors" data-path="web-app" href="#">Web App</a></div></div><div class="flex flex-col gap-space-md"><h4 class="font-label-md text-label-md text-text-primary uppercase tracking-wider">Resources</h4><div class="flex flex-col gap-space-sm"><a class="font-body-md text-body-md text-text-secondary hover:text-text-primary transition-colors" data-path="help-center" href="#">Help Center</a><a class="font-body-md text-body-md text-text-secondary hover:text-text-primary transition-colors" data-path="documentation" href="#">Documentation</a></div></div><div class="flex flex-col gap-space-md"><h4 class="font-label-md text-label-md text-text-primary uppercase tracking-wider">Legal</h4><div class="flex flex-col gap-space-sm"><a class="font-body-md text-body-md text-text-secondary hover:text-text-primary transition-colors" data-path="privacy-policy" href="#">Privacy Policy</a><a class="font-body-md text-body-md text-text-secondary hover:text-text-primary transition-colors" data-path="terms-of-service" href="#">Terms of Service</a><a class="font-body-md text-body-md text-text-secondary hover:text-text-primary transition-colors" data-path="acceptable-use-policy" href="#">Acceptable Use</a></div></div></div><div class="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-space-md"><p class="font-body-sm text-body-sm text-text-muted text-center sm:text-left">© 2025 One Cloud Inc. Telegram-backed distributed personal drive.</p><div class="flex items-center gap-space-xs font-label-sm text-label-sm text-text-muted"><span class="material-symbols-outlined text-[16px] text-tertiary">verified_user</span><span>256-bit MTProto Encrypted</span></div></div></div></footer></body></html>
