@@ -21,13 +21,13 @@ export default function DriveAppLayout({ children }: { children: React.ReactNode
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-screen items-center justify-center bg-canvas text-text-primary">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-md animate-pulse">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-subtle text-primary border border-primary-container/30 shadow-md animate-pulse">
             <Cloud className="h-6 w-6" />
           </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-            <Loader2 className="h-4 w-4 animate-spin text-sky-600" />
+          <div className="flex items-center gap-2 text-xs font-semibold text-text-muted">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <span>Verifying Drive session...</span>
           </div>
         </div>

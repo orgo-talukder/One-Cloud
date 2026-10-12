@@ -25,16 +25,19 @@ export default function StarredPage() {
   }, [files, searchQuery]);
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-950 transition-colors">
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-500 border border-amber-100 dark:border-amber-800">
-            <Star className="h-4 w-4 fill-amber-400" />
+    <div className="flex flex-col h-full bg-canvas text-text-primary transition-colors">
+      <div className="px-6 py-4 border-b border-border bg-canvas flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-brand-subtle text-warning border border-warning/20 flex items-center justify-center">
+            <Star className="h-4.5 w-4.5 fill-warning text-warning" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Starred</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Quickly access important files and folders</p>
+            <h1 className="text-sm font-semibold text-text-primary">Starred</h1>
+            <p className="text-xs text-text-secondary">Quickly access important files and folders</p>
           </div>
+        </div>
+        <div className="text-xs font-medium text-text-muted">
+          {starredFolders.length + starredFiles.length} starred items
         </div>
       </div>
 
@@ -44,7 +47,7 @@ export default function StarredPage() {
           folders={starredFolders}
           showFolders={true}
           emptyTitle="No starred items"
-          emptySubtitle="Add stars to items you want to easily find later by clicking the star icon in the 3-dot menu."
+          emptySubtitle="Add stars to items you want to easily find later by clicking the star icon in the menu."
         />
       </div>
     </div>

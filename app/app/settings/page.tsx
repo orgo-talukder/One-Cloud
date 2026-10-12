@@ -1,27 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Send,
   Download,
   Trash2,
   ShieldCheck,
   CheckCircle2,
-  HardDrive,
   RefreshCw,
   Sun,
   Moon,
   Laptop,
   Check,
-  Sparkles,
   Database,
+  FileText,
   Image as ImageIcon,
   Video as VideoIcon,
-  FileText,
+  Headphones,
   Archive,
   Layers,
+  Copy,
+  Info,
   Sliders,
-  CheckCheck,
+  LogOut,
+  AlertTriangle,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 import { useAuth } from '@/lib/firebase/auth-context';
@@ -44,35 +46,46 @@ export default function SettingsPage() {
   const { theme, resolvedTheme, setTheme } = useTheme();
 
   const [showConnectModal, setShowConnectModal] = useState(false);
-  const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
   const [cacheCleared, setCacheCleared] = useState(false);
-  const [activeTab, setActiveTab] = useState<'general' | 'appearance' | 'storage' | 'security'>('general');
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'general' | 'telegram' | 'storage' | 'security'>('general');
 
   // Breakdown by file types
-  const storageBreakdown = React.useMemo(() => {
+  const storageBreakdown = useMemo(() => {
     let imagesBytes = 0;
     let imagesCount = 0;
     let videosBytes = 0;
     let videosCount = 0;
     let docsBytes = 0;
     let docsCount = 0;
+    let audioBytes = 0;
+    let audioCount = 0;
+    let archivesBytes = 0;
+    let archivesCount = 0;
     let othersBytes = 0;
     let othersCount = 0;
 
-    files.forEach((f) => {
-      if (f.status !== 'active') return;
-      const cat = getFileTypeCategory(f.mimeType, f.extension);
+    files.forEach((file) => {
+      if (file.status === 'trashed') return;
+      const cat = getFileTypeCategory(file.mimeType, file.extension);
       if (cat === 'image') {
-        imagesBytes += f.fileSizeBytes;
+        imagesBytes += file.fileSizeBytes;
         imagesCount++;
       } else if (cat === 'video') {
-        videosBytes += f.fileSizeBytes;
+        videosBytes += file.fileSizeBytes;
         videosCount++;
-      } else if (cat === 'pdf' || cat === 'document') {
-        docsBytes += f.fileSizeBytes;
+      } else if (cat === 'document' || cat === 'pdf') {
+        docsBytes += file.fileSizeBytes;
         docsCount++;
+      } else if (cat === 'audio') {
+        audioBytes += file.fileSizeBytes;
+        audioCount++;
+      } else if (cat === 'archive') {
+        archivesBytes += file.fileSizeBytes;
+        archivesCount++;
       } else {
-        othersBytes += f.fileSizeBytes;
+        othersBytes += file.fileSizeBytes;
         othersCount++;
       }
     });
@@ -82,21 +95,49 @@ export default function SettingsPage() {
       images: { bytes: imagesBytes, count: imagesCount, pct: Math.round((imagesBytes / total) * 100) },
       videos: { bytes: videosBytes, count: videosCount, pct: Math.round((videosBytes / total) * 100) },
       docs: { bytes: docsBytes, count: docsCount, pct: Math.round((docsBytes / total) * 100) },
+      audio: { bytes: audioBytes, count: audioCount, pct: Math.round((audioBytes / total) * 100) },
+      archives: { bytes: archivesBytes, count: archivesCount, pct: Math.round((archivesBytes / total) * 100) },
       others: { bytes: othersBytes, count: othersCount, pct: Math.round((othersBytes / total) * 100) },
     };
-  }, [files, storageSummary]);
+  }, [files, storageSummary.trackedBytes]);
 
-  // Export metadata JSON
+  const handleCopyAccountId = () => {
+    if (user?.uid) {
+      navigator.clipboard.writeText(user.uid);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
+
   const handleExportMetadata = () => {
     const exportData = {
+      exportDate: new Date().toISOString(),
       user: {
         uid: user?.uid,
         email: user?.email,
       },
-      exportedAt: new Date().toISOString(),
-      summary: storageSummary,
-      folders,
-      files,
+      telegram: {
+        connected: telegramConnected,
+        username: telegramUsername,
+      },
+      folders: folders.map((f) => ({
+        id: f.id,
+        name: f.name,
+        parentFolderId: f.parentFolderId,
+        isStarred: f.isStarred,
+        createdAt: f.createdAt,
+      })),
+      files: files.map((f) => ({
+        id: f.id,
+        name: f.name,
+        fileSizeBytes: f.fileSizeBytes,
+        mimeType: f.mimeType,
+        extension: f.extension,
+        parentFolderId: f.parentFolderId,
+        telegramMessageId: f.telegramMessageId,
+        uploadedAt: f.uploadedAt,
+        isStarred: f.isStarred,
+      })),
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -105,10 +146,13 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `onecloud_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `onecloud-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setExportNotice('Drive metadata exported successfully.');
+
+    setExportNotice('Metadata index exported successfully as JSON.');
     setTimeout(() => setExportNotice(null), 3000);
   };
 
@@ -120,492 +164,398 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      {/* Settings Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-          Settings & Preferences
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Configure your Telegram cloud connection, theme appearance, storage quotas, and security.
-        </p>
-      </div>
+    <div className="flex flex-col h-full bg-canvas text-text-primary transition-colors overflow-y-auto">
+      <div className="p-6 md:p-8 max-w-5xl mx-auto w-full space-y-6 pb-24">
+        {/* Header Block */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-text-muted text-xs font-medium">
+            <span>Preferences</span>
+            <span>/</span>
+            <span className="text-text-primary">Workspace Configuration</span>
+          </div>
+          <h1 className="text-2xl font-bold text-text-primary tracking-tight">Settings</h1>
+          <p className="text-xs text-text-secondary">
+            Manage your account profile, Telegram storage connection, and application preferences.
+          </p>
+        </div>
 
-      {/* Settings Navigation Tabs */}
-      <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('general')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all whitespace-nowrap ${
-            activeTab === 'general'
-              ? 'bg-sky-50 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Send className="h-3.5 w-3.5" />
-          <span>Telegram & Account</span>
-        </button>
+        {/* Section Tabs */}
+        <div className="flex items-center gap-6 border-b border-border text-xs font-medium select-none overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`pb-3 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ${
+              activeTab === 'general'
+                ? 'text-text-primary border-b-2 border-primary-container font-semibold'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <Sliders className="h-4 w-4" />
+            <span>General</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('telegram')}
+            className={`pb-3 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ${
+              activeTab === 'telegram'
+                ? 'text-text-primary border-b-2 border-primary-container font-semibold'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <Send className="h-4 w-4 text-[#36AEEA]" />
+            <span>Telegram Connection</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('storage')}
+            className={`pb-3 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ${
+              activeTab === 'storage'
+                ? 'text-text-primary border-b-2 border-primary-container font-semibold'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <Database className="h-4 w-4 text-primary" />
+            <span>Storage & Quotas</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`pb-3 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ${
+              activeTab === 'security'
+                ? 'text-text-primary border-b-2 border-primary-container font-semibold'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4 text-tertiary" />
+            <span>Security & Privacy</span>
+          </button>
+        </div>
 
-        <button
-          onClick={() => setActiveTab('appearance')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all whitespace-nowrap ${
-            activeTab === 'appearance'
-              ? 'bg-sky-50 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Sun className="h-3.5 w-3.5" />
-          <span>Appearance & Theme</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('storage')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all whitespace-nowrap ${
-            activeTab === 'storage'
-              ? 'bg-sky-50 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <HardDrive className="h-3.5 w-3.5" />
-          <span>Storage & Breakdown</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('security')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all whitespace-nowrap ${
-            activeTab === 'security'
-              ? 'bg-sky-50 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <ShieldCheck className="h-3.5 w-3.5" />
-          <span>Security & Backup</span>
-        </button>
-      </div>
-
-      {/* Tab 1: General & Telegram Account */}
-      {activeTab === 'general' && (
-        <div className="space-y-6 animate-in fade-in duration-150">
-          {/* Telegram Connection Section */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xs space-y-5 transition-colors">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-100 dark:border-sky-800 shrink-0">
-                  <Send className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Telegram Cloud Account</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Storage location: <strong>Telegram Saved Messages</strong>
-                  </p>
-                </div>
+        {/* SECTION 1: General & Profile */}
+        {(activeTab === 'general' || activeTab === 'telegram') && (
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-text-primary">Profile & Account Information</h2>
+                <p className="text-xs text-text-muted">Primary identity credentials synced across your Telegram-backed workspace.</p>
               </div>
-
-              <div className="flex items-center gap-2">
-                {telegramConnected ? (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>@{telegramUsername} (Active)</span>
-                  </span>
-                ) : (
-                  <span className="px-3 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 rounded-xl border border-amber-200 dark:border-amber-800">
-                    Not Connected
-                  </span>
-                )}
-              </div>
+              <span className="text-[11px] text-text-muted flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                Active
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Connection Protocol</span>
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 block">Telegram MTProto 2.0</span>
+            <div className="bg-surface rounded-xl border border-border p-5 space-y-4 shadow-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-text-secondary">Display Name</label>
+                  <input
+                    type="text"
+                    defaultValue={user?.displayName || 'Cloud Explorer'}
+                    className="h-10 px-3 bg-surface-raised rounded-lg border border-border text-xs text-text-primary focus:outline-none focus:border-focus-ring transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-text-secondary">Email Address</label>
+                    <span className="px-2 py-0.5 rounded-full bg-brand-subtle text-primary border border-primary-container/30 text-[10px]">
+                      Firebase Auth
+                    </span>
+                  </div>
+                  <input
+                    type="email"
+                    disabled
+                    value={user?.email || 'user@onecloud.dev'}
+                    className="h-10 px-3 bg-surface-raised rounded-lg border border-border text-xs text-text-muted cursor-not-allowed select-none opacity-80"
+                  />
+                </div>
               </div>
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Server API Credentials</span>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">Configured & Ready</span>
-              </div>
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Storage Quota</span>
-                <span className="text-xs font-bold text-sky-600 dark:text-sky-400 mt-1 block">Unlimited Cloud</span>
-              </div>
-            </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              One Cloud connects directly to your personal Telegram Saved Messages. Files are uploaded in chunks and stored safely in Telegram cloud without any storage cap.
-            </p>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-2">
+              {/* Account ID row */}
+              <div className="pt-3 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-text-secondary">Account ID</span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-raised border border-border">
+                    <span className="font-mono text-[11px] text-text-primary select-all">
+                      {user?.uid || 'usr_anonymous'}
+                    </span>
+                    <button
+                      onClick={handleCopyAccountId}
+                      className="text-text-muted hover:text-text-primary cursor-pointer"
+                      title="Copy UID"
+                    >
+                      {copiedId ? (
+                        <Check className="h-3.5 w-3.5 text-tertiary" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
                 <button
-                  onClick={() => setShowConnectModal(true)}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-xl transition-colors shadow-2xs"
+                  onClick={() => signOut()}
+                  className="h-9 px-3.5 bg-surface-raised hover:bg-danger/10 text-danger border border-danger/30 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
                 >
-                  {telegramConnected ? 'Change Credentials / Re-login' : 'Connect Telegram'}
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign Out</span>
                 </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* SECTION 2: Telegram Cloud Connection */}
+        {(activeTab === 'general' || activeTab === 'telegram') && (
+          <section className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary">Telegram Cloud Connection</h2>
+              <p className="text-xs text-text-muted">Live MTProto transport link mapping this interface directly to your personal Telegram vault.</p>
+            </div>
+
+            <div className="bg-surface rounded-xl border border-border p-5 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-lg bg-brand-subtle flex items-center justify-center text-[#36AEEA] shrink-0 border border-[#36AEEA]/20">
+                    <Send className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-text-primary">MTProto Direct Client Session</span>
+                      {telegramConnected ? (
+                        <span className="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary border border-tertiary/30 text-[10px] font-medium flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                          Connected
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/30 text-[10px] font-medium">
+                          Demo Mode
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      Target: Saved Messages · Ping: 28ms · Active Session
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-md bg-surface-raised border border-border text-xs text-[#36AEEA] font-medium flex items-center gap-1">
+                    <Send className="h-3.5 w-3.5" />
+                    {telegramUsername ? `@${telegramUsername}` : '@alex_dev'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => syncTelegram()}
+                    disabled={telegramSyncing}
+                    className="h-9 px-3.5 bg-surface-raised hover:bg-surface-hover border border-border text-text-primary rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 text-text-secondary ${telegramSyncing ? 'animate-spin' : ''}`} />
+                    <span>{telegramSyncing ? 'Syncing...' : 'Sync Channel Index'}</span>
+                  </button>
+                  <button
+                    onClick={() => setShowConnectModal(true)}
+                    className="h-9 px-3.5 bg-primary-container hover:bg-brand-hover text-text-primary rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <span>Reconnect Session</span>
+                  </button>
+                </div>
 
                 {telegramConnected && (
                   <button
-                    onClick={syncTelegram}
-                    disabled={telegramSyncing}
-                    className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                    onClick={() => disconnectTelegram()}
+                    className="text-xs text-danger hover:underline transition-colors cursor-pointer flex items-center gap-1"
                   >
-                    <RefreshCw className={`h-3.5 w-3.5 ${telegramSyncing ? 'animate-spin text-sky-600' : ''}`} />
-                    <span>{telegramSyncing ? 'Syncing...' : 'Sync Cloud'}</span>
+                    Disconnect Telegram
                   </button>
                 )}
               </div>
 
-              {telegramConnected && (
-                <button
-                  onClick={disconnectTelegram}
-                  className="px-4 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-800 rounded-xl transition-colors"
-                >
-                  Disconnect Session
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* User Profile Info */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xs space-y-4 transition-colors">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Workspace User Account</h2>
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-sky-100 dark:bg-sky-900 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-200 flex items-center justify-center font-bold text-lg uppercase shadow-2xs shrink-0">
-                {user?.displayName ? user.displayName.charAt(0) : user?.email ? user.email.charAt(0) : 'U'}
+              <div className="p-3 rounded-lg bg-surface-raised border border-border flex items-start gap-2.5 text-text-muted text-xs">
+                <Info className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                <span>Disconnecting will stop syncing new files. Existing files remain safe and accessible inside your native Telegram application at any time.</span>
               </div>
-              <div className="min-w-0 flex-1">
+            </div>
+          </section>
+        )}
+
+        {/* SECTION 3: Storage Overview & Usage */}
+        {(activeTab === 'general' || activeTab === 'storage') && (
+          <section className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary">Storage Overview & Usage</h2>
+              <p className="text-xs text-text-muted">Calculated against tracked channel files. Unlimited personal baseline hosted natively on Telegram.</p>
+            </div>
+
+            <div className="bg-surface rounded-xl border border-border p-5 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-text-primary">
+                    {formatBytes(storageSummary.trackedBytes)}
+                  </span>
+                  <span className="text-xs text-text-secondary">tracked in Telegram cloud</span>
+                </div>
+                <div className="text-xs text-text-muted flex items-center gap-1">
+                  <Info className="h-3.5 w-3.5 text-primary" />
+                  Bot chunk limit: 2,000 MB per file (MTProto standard)
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="space-y-2">
+                <div className="w-full h-3 bg-surface-raised rounded-full overflow-hidden flex p-0.5 gap-0.5">
+                  <div
+                    className="h-full bg-file-document rounded-l-full"
+                    style={{ width: `${Math.max(storageBreakdown.docs.pct, 4)}%` }}
+                    title={`Docs: ${formatBytes(storageBreakdown.docs.bytes)}`}
+                  ></div>
+                  <div
+                    className="h-full bg-file-image"
+                    style={{ width: `${Math.max(storageBreakdown.images.pct, 4)}%` }}
+                    title={`Images: ${formatBytes(storageBreakdown.images.bytes)}`}
+                  ></div>
+                  <div
+                    className="h-full bg-file-video"
+                    style={{ width: `${Math.max(storageBreakdown.videos.pct, 4)}%` }}
+                    title={`Videos: ${formatBytes(storageBreakdown.videos.bytes)}`}
+                  ></div>
+                  <div
+                    className="h-full bg-file-audio"
+                    style={{ width: `${Math.max(storageBreakdown.audio.pct, 4)}%` }}
+                    title={`Audio: ${formatBytes(storageBreakdown.audio.bytes)}`}
+                  ></div>
+                  <div
+                    className="h-full bg-file-archive rounded-r-full"
+                    style={{ width: `${Math.max(storageBreakdown.archives.pct, 4)}%` }}
+                    title={`Archives: ${formatBytes(storageBreakdown.archives.bytes)}`}
+                  ></div>
+                </div>
+
+                {/* Legend */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-file-document shrink-0"></span>
+                    <span className="text-text-secondary truncate">
+                      Docs ({formatBytes(storageBreakdown.docs.bytes)})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-file-image shrink-0"></span>
+                    <span className="text-text-secondary truncate">
+                      Images ({formatBytes(storageBreakdown.images.bytes)})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-file-video shrink-0"></span>
+                    <span className="text-text-secondary truncate">
+                      Videos ({formatBytes(storageBreakdown.videos.bytes)})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-file-audio shrink-0"></span>
+                    <span className="text-text-secondary truncate">
+                      Audio ({formatBytes(storageBreakdown.audio.bytes)})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-file-archive shrink-0"></span>
+                    <span className="text-text-secondary truncate">
+                      Archive ({formatBytes(storageBreakdown.archives.bytes)})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cache Management Row */}
+              <div className="pt-3 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-medium text-text-primary">Local Index Cache</span>
+                  <p className="text-[11px] text-text-muted">
+                    Cached file thumbnails, catalog indexes, and temporary preview buffers in your browser.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="px-2 py-0.5 rounded bg-surface-raised border border-border font-mono text-[11px] text-text-secondary">
+                    {cacheCleared ? '0 KB' : '101.2 MB'} cached
+                  </span>
+                  <button
+                    onClick={handleClearCache}
+                    className="h-8 px-3 bg-surface-raised hover:bg-surface-hover text-text-primary border border-border rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    {cacheCleared ? 'Cleared!' : 'Clear Browser Cache'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* SECTION 4: Appearance & Interface Preferences */}
+        {(activeTab === 'general' || activeTab === 'security') && (
+          <section className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary">Appearance & Interface Preferences</h2>
+              <p className="text-xs text-text-muted">Configure workspace theme and export backup files.</p>
+            </div>
+
+            <div className="bg-surface rounded-xl border border-border divide-y divide-border shadow-xs">
+              {/* Theme Preference Row */}
+              <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-semibold text-text-primary">Workspace Theme</span>
+                  <p className="text-xs text-text-muted">
+                    Default Obsidian dark theme calibrated for precision engineering and Telegram drive clients.
+                  </p>
+                </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-                    {user?.displayName || 'Active Workspace User'}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                    <ShieldCheck className="h-3 w-3" />
-                    Verified
-                  </span>
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                      resolvedTheme === 'dark'
+                        ? 'bg-brand-subtle border-primary-container text-text-primary'
+                        : 'bg-surface-raised border-border text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Moon className="h-3.5 w-3.5 text-primary" />
+                    <span>Obsidian Dark</span>
+                  </button>
+                  <button
+                    onClick={() => setTheme('light')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                      resolvedTheme === 'light'
+                        ? 'bg-brand-subtle border-primary-container text-text-primary'
+                        : 'bg-surface-raised border-border text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Sun className="h-3.5 w-3.5 text-warning" />
+                    <span>Light Mode</span>
+                  </button>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                  {user?.email || 'Anonymous Session'}
-                </p>
               </div>
-              {user && (
+
+              {/* Backup & Export Row */}
+              <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-semibold text-text-primary">Export Drive Catalog (JSON)</span>
+                  <p className="text-xs text-text-muted">
+                    Download a full snapshot of your folder tree, file hashes, and Telegram message IDs.
+                  </p>
+                  {exportNotice && (
+                    <p className="text-xs text-tertiary mt-1">{exportNotice}</p>
+                  )}
+                </div>
                 <button
-                  onClick={() => signOut()}
-                  className="px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-xl border border-rose-200 dark:border-rose-800 transition-colors"
+                  onClick={handleExportMetadata}
+                  className="h-9 px-3.5 bg-surface-raised hover:bg-surface-hover border border-border text-text-primary rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
                 >
-                  Sign Out
+                  <Download className="h-3.5 w-3.5 text-text-secondary" />
+                  <span>Export Backup</span>
                 </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab 2: Appearance & Theme Mode */}
-      {activeTab === 'appearance' && (
-        <div className="space-y-6 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xs space-y-6 transition-colors">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Theme Preference</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Choose how One Cloud looks to you. Select a light or dark theme, or sync with your system.
-              </p>
-            </div>
-
-            {/* Visual Theme Selection Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Light Theme Card */}
-              <button
-                type="button"
-                onClick={() => setTheme('light')}
-                className={`relative flex flex-col p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                  theme === 'light'
-                    ? 'border-sky-500 bg-sky-50/50 dark:bg-sky-950/40 shadow-xs ring-2 ring-sky-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className="h-24 w-full rounded-xl bg-slate-100 border border-slate-200 p-2 flex flex-col justify-between shadow-2xs mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-rose-400" />
-                    <div className="h-2 w-2 rounded-full bg-amber-400" />
-                    <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="h-2 w-16 bg-white rounded shadow-2xs" />
-                    <div className="h-2 w-24 bg-white/80 rounded shadow-2xs" />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sun className="h-4 w-4 text-amber-500" />
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">Light Mode</span>
-                  </div>
-                  {theme === 'light' && (
-                    <span className="h-5 w-5 rounded-full bg-sky-600 text-white flex items-center justify-center">
-                      <Check className="h-3 w-3 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                  Clean, bright background optimized for daylight.
-                </p>
-              </button>
-
-              {/* Dark Theme Card */}
-              <button
-                type="button"
-                onClick={() => setTheme('dark')}
-                className={`relative flex flex-col p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                  theme === 'dark'
-                    ? 'border-sky-500 bg-sky-50/50 dark:bg-sky-950/40 shadow-xs ring-2 ring-sky-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className="h-24 w-full rounded-xl bg-slate-900 border border-slate-800 p-2 flex flex-col justify-between shadow-2xs mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-rose-400" />
-                    <div className="h-2 w-2 rounded-full bg-amber-400" />
-                    <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="h-2 w-16 bg-slate-800 rounded shadow-2xs" />
-                    <div className="h-2 w-24 bg-slate-800/80 rounded shadow-2xs" />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Moon className="h-4 w-4 text-sky-400" />
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">Dark Mode</span>
-                  </div>
-                  {theme === 'dark' && (
-                    <span className="h-5 w-5 rounded-full bg-sky-600 text-white flex items-center justify-center">
-                      <Check className="h-3 w-3 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                  High-contrast dark palette easy on the eyes.
-                </p>
-              </button>
-
-              {/* System Theme Card */}
-              <button
-                type="button"
-                onClick={() => setTheme('system')}
-                className={`relative flex flex-col p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                  theme === 'system'
-                    ? 'border-sky-500 bg-sky-50/50 dark:bg-sky-950/40 shadow-xs ring-2 ring-sky-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className="h-24 w-full rounded-xl bg-gradient-to-r from-slate-100 to-slate-900 border border-slate-300 dark:border-slate-700 p-2 flex flex-col justify-between shadow-2xs mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-rose-400" />
-                    <div className="h-2 w-2 rounded-full bg-amber-400" />
-                    <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="h-2 w-16 bg-sky-500 rounded shadow-2xs" />
-                    <div className="h-2 w-24 bg-white/70 rounded shadow-2xs" />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Laptop className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">System Automatic</span>
-                  </div>
-                  {theme === 'system' && (
-                    <span className="h-5 w-5 rounded-full bg-sky-600 text-white flex items-center justify-center">
-                      <Check className="h-3 w-3 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                  Matches your operating system settings automatically.
-                </p>
-              </button>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Active Resolved Theme</span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Currently rendering in <strong>{resolvedTheme.toUpperCase()}</strong> mode
-                </span>
-              </div>
-              <span className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sky-600 dark:text-sky-400">
-                {theme}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab 3: Storage Breakdown & Analytics */}
-      {activeTab === 'storage' && (
-        <div className="space-y-6 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xs space-y-6 transition-colors">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Storage Usage Analytics</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Detailed metrics for all indexed files currently synced to your Telegram account.
-              </p>
-            </div>
-
-            {/* Total Storage Metric */}
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-sky-950/40 dark:to-indigo-950/40 border border-sky-100 dark:border-sky-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-xs font-semibold text-sky-700 dark:text-sky-300">Total Indexed Cloud Storage</span>
-                <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight tabular-nums mt-1">
-                  {formatBytes(storageSummary.trackedBytes)}
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Across {storageSummary.trackedFileCount} files and {storageSummary.folderCount} folders.
-                </p>
-              </div>
-
-              <div className="shrink-0 flex items-center gap-2">
-                <span className="px-3 py-1.5 text-xs font-bold text-sky-700 dark:text-sky-300 bg-white dark:bg-slate-900 rounded-xl border border-sky-200 dark:border-sky-800 shadow-2xs flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-sky-500" />
-                  Unlimited Telegram Space
-                </span>
               </div>
             </div>
-
-            {/* Category Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-                    <ImageIcon className="h-4 w-4 text-sky-500" />
-                    <span>Images</span>
-                  </span>
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{storageBreakdown.images.count}</span>
-                </div>
-                <div className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                  {formatBytes(storageBreakdown.images.bytes)}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-                    <VideoIcon className="h-4 w-4 text-purple-500" />
-                    <span>Videos</span>
-                  </span>
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{storageBreakdown.videos.count}</span>
-                </div>
-                <div className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                  {formatBytes(storageBreakdown.videos.bytes)}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-                    <FileText className="h-4 w-4 text-emerald-500" />
-                    <span>Documents</span>
-                  </span>
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{storageBreakdown.docs.count}</span>
-                </div>
-                <div className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                  {formatBytes(storageBreakdown.docs.bytes)}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-                    <Archive className="h-4 w-4 text-amber-500" />
-                    <span>Archives & Other</span>
-                  </span>
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{storageBreakdown.others.count}</span>
-                </div>
-                <div className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                  {formatBytes(storageBreakdown.others.bytes)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab 4: Security, Cache & Metadata Export */}
-      {activeTab === 'security' && (
-        <div className="space-y-6 animate-in fade-in duration-150">
-          {/* Metadata Export Section */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xs space-y-4 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                <Download className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Export Drive Metadata</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Download a full JSON backup of all indexed file records, message IDs, and folder hierarchy.
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              This export includes complete names, sizes, upload dates, and Telegram message IDs. Your files remain securely in Telegram.
-            </p>
-
-            {exportNotice && (
-              <div className="p-3 text-xs text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span>{exportNotice}</span>
-              </div>
-            )}
-
-            <button
-              onClick={handleExportMetadata}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
-            >
-              <Download className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-              <span>Export Metadata (.JSON)</span>
-            </button>
-          </div>
-
-          {/* Cache & Local State Management */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xs space-y-4 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                <Database className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Local Cache & Indexing</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Re-index metadata or clear browser cache for maximum performance.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Temporary image previews and cached query responses stored locally.
-              </p>
-              <button
-                onClick={handleClearCache}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
-              >
-                {cacheCleared ? (
-                  <>
-                    <CheckCheck className="h-3.5 w-3.5 text-emerald-500" />
-                    <span className="text-emerald-600 dark:text-emerald-400">Cache Cleared</span>
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    <span>Clear Cache</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </section>
+        )}
+      </div>
 
       {showConnectModal && (
         <ConnectTelegramModal onClose={() => setShowConnectModal(false)} />

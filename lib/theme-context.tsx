@@ -36,11 +36,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const applyTheme = () => {
-      let active: ResolvedTheme = 'light';
+      let active: ResolvedTheme = 'dark';
       if (theme === 'system') {
         active = mediaQuery.matches ? 'dark' : 'light';
+      } else if (theme === 'light') {
+        active = 'light';
       } else {
-        active = mediaQuery.matches ? (theme === 'dark' ? 'dark' : 'light') : (theme === 'dark' ? 'dark' : 'light');
+        active = 'dark';
       }
 
       setResolvedTheme(active);

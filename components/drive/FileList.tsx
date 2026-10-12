@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Folder,
   FileText,
   Image as ImageIcon,
   Video as VideoIcon,
-  Music,
+  Headphones,
+  Archive,
   Star,
   Download,
   Trash2,
@@ -18,6 +19,7 @@ import {
   Upload,
   Link as LinkIcon,
   CheckCircle2,
+  File,
 } from 'lucide-react';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
@@ -88,15 +90,18 @@ export function FileList({
     const category = getFileTypeCategory(mimeType, extension);
     switch (category) {
       case 'image':
-        return <ImageIcon className="h-4 w-4 text-sky-500" />;
+        return <ImageIcon className="h-4 w-4 text-file-image" />;
       case 'video':
-        return <VideoIcon className="h-4 w-4 text-purple-500" />;
+        return <VideoIcon className="h-4 w-4 text-file-video" />;
       case 'audio':
-        return <Music className="h-4 w-4 text-emerald-500" />;
+        return <Headphones className="h-4 w-4 text-file-audio" />;
+      case 'archive':
+        return <Archive className="h-4 w-4 text-file-archive" />;
+      case 'document':
       case 'pdf':
-        return <FileText className="h-4 w-4 text-rose-500" />;
+        return <FileText className="h-4 w-4 text-file-document" />;
       default:
-        return <FileText className="h-4 w-4 text-slate-500 dark:text-slate-400" />;
+        return <File className="h-4 w-4 text-text-secondary" />;
     }
   };
 
@@ -112,12 +117,12 @@ export function FileList({
 
   if (!hasContent) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div className="h-16 w-16 rounded-2xl bg-sky-50 dark:bg-sky-950/50 border border-sky-100 dark:border-sky-900 text-sky-600 dark:text-sky-400 flex items-center justify-center mb-4">
-          <Upload className="h-8 w-8 text-sky-500" />
+      <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-canvas">
+        <div className="h-16 w-16 rounded-2xl bg-brand-subtle border border-border text-primary flex items-center justify-center mb-4">
+          <Upload className="h-8 w-8 text-primary" />
         </div>
-        <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{emptyTitle}</h3>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
+        <h3 className="text-base font-semibold text-text-primary tracking-tight">{emptyTitle}</h3>
+        <p className="mt-1.5 text-xs text-text-secondary max-w-sm leading-relaxed">
           {emptySubtitle}
         </p>
       </div>
@@ -126,14 +131,17 @@ export function FileList({
 
   return (
     <>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 bg-canvas">
         {/* Folders Section */}
         {showFolders && folders.length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-              Folders
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Folders
+              </h4>
+              <span className="text-xs text-text-muted">{folders.length} directories</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {folders.map((folder) => {
                 const isMenuOpen = activeMenuId === `folder-${folder.id}`;
 
@@ -141,46 +149,51 @@ export function FileList({
                   <div
                     key={folder.id}
                     onDoubleClick={() => navigateToFolder(folder.id)}
-                    className="group relative flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-xs transition-all cursor-pointer"
+                    className="group relative flex items-center justify-between p-3.5 rounded-xl border border-border bg-surface hover:bg-surface-raised hover:border-primary-container/40 transition-all cursor-pointer shadow-xs"
                   >
                     <div
                       onClick={() => navigateToFolder(folder.id)}
-                      className="flex items-center gap-2.5 min-w-0 flex-1"
+                      className="flex items-center gap-3 min-w-0 flex-1"
                     >
-                      <Folder className="h-5 w-5 text-amber-500 fill-amber-100 dark:fill-amber-950 shrink-0" />
-                      <span
-                        className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate"
-                        title={folder.name}
-                      >
-                        {folder.name}
-                      </span>
+                      <div className="w-9 h-9 rounded-lg bg-brand-subtle flex items-center justify-center shrink-0 text-primary">
+                        <Folder className="h-5 w-5" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span
+                          className="text-xs font-medium text-text-primary group-hover:text-primary transition-colors truncate"
+                          title={folder.name}
+                        >
+                          {folder.name}
+                        </span>
+                        <span className="text-[11px] text-text-muted">Folder</span>
+                      </div>
                     </div>
 
-                    <div className="drive-menu-container relative flex items-center">
+                    <div className="drive-menu-container relative flex items-center shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`);
                         }}
-                        className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 opacity-60 group-hover:opacity-100 transition-opacity"
+                        className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-surface-hover opacity-70 group-hover:opacity-100 transition-opacity cursor-pointer"
                         title="Folder options"
                       >
-                        <MoreVertical className="h-3.5 w-3.5" />
+                        <MoreVertical className="h-4 w-4" />
                       </button>
 
                       {isMenuOpen && (
                         <div
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute right-0 top-7 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1 z-30 animate-in fade-in duration-100 text-left"
+                          className="absolute right-0 top-8 w-44 bg-surface-raised border border-border rounded-xl shadow-xl p-1 z-30 animate-in fade-in duration-100 text-left"
                         >
                           <button
                             onClick={() => {
                               navigateToFolder(folder.id);
                               setActiveMenuId(null);
                             }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                           >
-                            <Folder className="h-3.5 w-3.5 text-amber-500" />
+                            <Folder className="h-3.5 w-3.5 text-primary" />
                             <span>Open Folder</span>
                           </button>
                           <button
@@ -188,13 +201,13 @@ export function FileList({
                               toggleStarFolder(folder.id);
                               setActiveMenuId(null);
                             }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                           >
                             <Star
                               className={`h-3.5 w-3.5 ${
                                 folder.isStarred
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'text-slate-400'
+                                  ? 'fill-warning text-warning'
+                                  : 'text-text-muted'
                               }`}
                             />
                             <span>{folder.isStarred ? 'Remove Star' : 'Add to Starred'}</span>
@@ -204,20 +217,20 @@ export function FileList({
                               setRenameTarget({ id: folder.id, name: folder.name, isFolder: true });
                               setActiveMenuId(null);
                             }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                           >
-                            <Edit2 className="h-3.5 w-3.5 text-slate-400" />
+                            <Edit2 className="h-3.5 w-3.5 text-text-muted" />
                             <span>Rename</span>
                           </button>
-                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                          <div className="my-1 border-t border-border" />
                           <button
                             onClick={() => {
                               trashFolder(folder.id);
                               setActiveMenuId(null);
                             }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors"
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                            <Trash2 className="h-3.5 w-3.5" />
                             <span>Move to Trash</span>
                           </button>
                         </div>
@@ -233,15 +246,16 @@ export function FileList({
         {/* Files Section */}
         {files.length > 0 && (
           <div>
-            {showFolders && folders.length > 0 && (
-              <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                 Files
               </h4>
-            )}
+              <span className="text-xs text-text-muted">{files.length} items</span>
+            </div>
 
             {/* Grid View */}
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
                 {files.map((file) => {
                   const isSelected = selectedFileIds.includes(file.id);
                   const isMenuOpen = activeMenuId === file.id;
@@ -257,14 +271,14 @@ export function FileList({
                       key={file.id}
                       onClick={() => toggleSelectFile(file.id)}
                       onDoubleClick={() => setPreviewFile(file)}
-                      className={`group relative flex flex-col rounded-xl border bg-white dark:bg-slate-900 overflow-hidden transition-all cursor-pointer ${
+                      className={`group relative flex flex-col rounded-xl border bg-surface overflow-hidden transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-sky-500 ring-2 ring-sky-500/20 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs'
+                          ? 'border-focus-ring ring-1 ring-focus-ring shadow-xs'
+                          : 'border-border hover:border-border-strong hover:bg-surface-raised hover:shadow-xs'
                       }`}
                     >
-                      {/* Thumbnail Header Area (Google Drive Style Image Preview) */}
-                      <div className="h-32 bg-slate-100/70 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-center relative overflow-hidden group/thumb">
+                      {/* Thumbnail Header Area */}
+                      <div className="h-28 bg-surface-raised border-b border-border flex items-center justify-center relative overflow-hidden group/thumb">
                         {/* Checkbox indicator */}
                         <div
                           onClick={(e) => {
@@ -273,8 +287,8 @@ export function FileList({
                           }}
                           className={`absolute top-2 left-2 z-10 h-5 w-5 rounded-md border flex items-center justify-center transition-opacity ${
                             isSelected
-                              ? 'bg-sky-600 border-sky-600 text-white opacity-100'
-                              : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 opacity-0 group-hover:opacity-100 shadow-xs'
+                              ? 'bg-primary-container border-primary-container text-text-primary opacity-100'
+                              : 'bg-surface border-border text-text-primary opacity-0 group-hover:opacity-100 shadow-xs'
                           }`}
                         >
                           {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
@@ -286,15 +300,15 @@ export function FileList({
                             e.stopPropagation();
                             toggleStarFile(file.id);
                           }}
-                          className={`absolute top-2 right-2 z-10 p-1 rounded-md transition-all ${
+                          className={`absolute top-2 right-2 z-10 p-1 rounded-md transition-all cursor-pointer ${
                             file.isStarred
-                              ? 'text-amber-500 opacity-100'
-                              : 'text-slate-400 opacity-0 group-hover:opacity-100 hover:text-amber-500 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs'
+                              ? 'text-warning opacity-100'
+                              : 'text-text-muted opacity-0 group-hover:opacity-100 hover:text-warning bg-surface/80 backdrop-blur-xs'
                           }`}
                         >
                           <Star
                             className={`h-3.5 w-3.5 ${
-                              file.isStarred ? 'fill-amber-400 text-amber-400' : ''
+                              file.isStarred ? 'fill-warning' : ''
                             }`}
                           />
                         </button>
@@ -318,44 +332,44 @@ export function FileList({
                                 if (fallback) fallback.style.display = 'flex';
                               }}
                             />
-                            <div className="img-fallback-icon hidden h-12 w-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 items-center justify-center shadow-2xs">
+                            <div className="img-fallback-icon hidden h-11 w-11 rounded-xl bg-brand-subtle border border-border items-center justify-center shadow-xs">
                               {getIcon(file.mimeType, file.extension)}
                             </div>
                           </>
                         ) : (
-                          <div className="h-12 w-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs">
+                          <div className="h-11 w-11 rounded-xl bg-brand-subtle border border-border flex items-center justify-center shadow-xs">
                             {getIcon(file.mimeType, file.extension)}
                           </div>
                         )}
                       </div>
 
-                      {/* File Details & Google Drive 3-Dot Options Button */}
+                      {/* File Details & 3-Dot Options Button */}
                       <div className="p-3 flex items-center justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <p
-                            className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate"
+                            className="text-xs font-semibold text-text-primary truncate"
                             title={file.name}
                           >
                             {file.name}
                           </p>
-                          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+                          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-text-muted tabular-nums">
                             <span>{formatBytes(file.fileSizeBytes)}</span>
-                            <span>·</span>
-                            <span className="text-[10px] uppercase font-sans text-slate-400 dark:text-slate-500">
+                            <span>•</span>
+                            <span className="uppercase text-[10px] text-text-secondary">
                               {file.extension || 'FILE'}
                             </span>
                           </div>
                         </div>
 
-                        {/* Google Drive 3-Dot Options Button */}
+                        {/* 3-Dot Options Button */}
                         <div className="drive-menu-container relative shrink-0">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setActiveMenuId(isMenuOpen ? null : file.id);
                             }}
-                            className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
-                              isMenuOpen ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200' : ''
+                            className={`p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
+                              isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
                             }`}
                             title="More options"
                           >
@@ -366,25 +380,25 @@ export function FileList({
                           {isMenuOpen && (
                             <div
                               onClick={(e) => e.stopPropagation()}
-                              className="absolute right-0 bottom-8 sm:bottom-auto sm:top-8 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1 z-40 animate-in fade-in duration-100 text-left"
+                              className="absolute right-0 bottom-8 sm:bottom-auto sm:top-8 w-48 bg-surface-raised border border-border rounded-xl shadow-xl p-1 z-40 animate-in fade-in duration-100 text-left"
                             >
                               <button
                                 onClick={() => {
                                   setPreviewFile(file);
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                               >
-                                <Eye className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+                                <Eye className="h-3.5 w-3.5 text-primary" />
                                 <span>Preview</span>
                               </button>
                               <a
                                 href={downloadUrl}
                                 download={file.name}
                                 onClick={() => setActiveMenuId(null)}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                               >
-                                <Download className="h-3.5 w-3.5 text-slate-500" />
+                                <Download className="h-3.5 w-3.5 text-text-muted" />
                                 <span>Download</span>
                               </a>
                               <button
@@ -392,13 +406,13 @@ export function FileList({
                                   toggleStarFile(file.id);
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                               >
                                 <Star
                                   className={`h-3.5 w-3.5 ${
                                     file.isStarred
-                                      ? 'fill-amber-400 text-amber-400'
-                                      : 'text-slate-400'
+                                      ? 'fill-warning text-warning'
+                                      : 'text-text-muted'
                                   }`}
                                 />
                                 <span>{file.isStarred ? 'Remove Star' : 'Add to Starred'}</span>
@@ -408,9 +422,9 @@ export function FileList({
                                   setRenameTarget({ id: file.id, name: file.name });
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                               >
-                                <Edit2 className="h-3.5 w-3.5 text-slate-400" />
+                                <Edit2 className="h-3.5 w-3.5 text-text-muted" />
                                 <span>Rename</span>
                               </button>
                               <button
@@ -418,36 +432,36 @@ export function FileList({
                                   setMoveTarget({ id: file.id, name: file.name });
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                               >
-                                <FolderInput className="h-3.5 w-3.5 text-slate-400" />
+                                <FolderInput className="h-3.5 w-3.5 text-text-muted" />
                                 <span>Move</span>
                               </button>
                               <button
                                 onClick={() => handleCopyLink(file)}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                               >
                                 {copiedNotice === file.id ? (
                                   <>
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                                    <span className="text-emerald-600 dark:text-emerald-400">Link Copied!</span>
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-tertiary" />
+                                    <span className="text-tertiary">Link Copied!</span>
                                   </>
                                 ) : (
                                   <>
-                                    <LinkIcon className="h-3.5 w-3.5 text-slate-400" />
+                                    <LinkIcon className="h-3.5 w-3.5 text-text-muted" />
                                     <span>Copy Link</span>
                                   </>
                                 )}
                               </button>
-                              <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                              <div className="my-1 border-t border-border" />
                               <button
                                 onClick={() => {
                                   trashFile(file.id);
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
                               >
-                                <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                <Trash2 className="h-3.5 w-3.5" />
                                 <span>Move to Trash</span>
                               </button>
                             </div>
@@ -459,11 +473,11 @@ export function FileList({
                 })}
               </div>
             ) : (
-              /* List View (Table with Google Drive 3-Dot Menu & Thumbnails) */
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+              /* List View (Table) */
+              <div className="border border-border rounded-xl bg-surface overflow-hidden shadow-xs">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-semibold select-none">
+                    <tr className="border-b border-border bg-surface-raised text-text-muted font-medium select-none">
                       <th className="py-2.5 pl-4 pr-2 w-8">
                         <span className="sr-only">Select</span>
                       </th>
@@ -476,7 +490,7 @@ export function FileList({
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  <tbody className="divide-y divide-border/60">
                     {files.map((file) => {
                       const isSelected = selectedFileIds.includes(file.id);
                       const isMenuOpen = activeMenuId === file.id;
@@ -494,8 +508,8 @@ export function FileList({
                           onDoubleClick={() => setPreviewFile(file)}
                           className={`group transition-colors cursor-pointer ${
                             isSelected
-                              ? 'bg-sky-50/70 dark:bg-sky-950/50'
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                              ? 'bg-brand-subtle/50'
+                              : 'hover:bg-surface-hover/60'
                           }`}
                         >
                           <td className="py-2.5 pl-4 pr-2">
@@ -506,8 +520,8 @@ export function FileList({
                               }}
                               className={`h-4 w-4 rounded border flex items-center justify-center transition-colors ${
                                 isSelected
-                                  ? 'bg-sky-600 border-sky-600 text-white'
-                                  : 'border-slate-300 dark:border-slate-600 group-hover:border-slate-400'
+                                  ? 'bg-primary-container border-primary-container text-text-primary'
+                                  : 'border-border group-hover:border-border-strong bg-surface'
                               }`}
                             >
                               {isSelected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
@@ -516,7 +530,7 @@ export function FileList({
                           <td className="py-2.5 px-3">
                             <div className="flex items-center gap-3">
                               {/* Thumbnail in List View */}
-                              <div className="h-8 w-8 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0">
+                              <div className="h-8 w-8 rounded-lg overflow-hidden bg-brand-subtle border border-border flex items-center justify-center shrink-0">
                                 {isImage ? (
                                   <>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -541,37 +555,36 @@ export function FileList({
                                 )}
                               </div>
                               <span
-                                className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-xs md:max-w-md"
+                                className="font-semibold text-text-primary truncate max-w-xs md:max-w-md group-hover:text-primary transition-colors"
                                 title={file.name}
                               >
                                 {file.name}
                               </span>
                               {file.isStarred && (
-                                <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
+                                <Star className="h-3.5 w-3.5 fill-warning text-warning shrink-0" />
                               )}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                          <td className="py-2.5 px-3 tabular-nums text-text-secondary">
                             {formatBytes(file.fileSizeBytes)}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-400 dark:text-slate-500 uppercase text-[11px]">
+                          <td className="py-2.5 px-3 text-text-muted uppercase text-[11px]">
                             {file.extension || 'FILE'}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-400 dark:text-slate-500">
+                          <td className="py-2.5 px-3 text-text-muted">
                             {new Date(file.uploadedAt).toLocaleDateString()}
                           </td>
                           <td className="py-2.5 pr-4 text-right">
-                            {/* Google Drive 3-Dot Menu */}
                             <div className="drive-menu-container relative inline-block text-left">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setActiveMenuId(isMenuOpen ? null : file.id);
                                 }}
-                                className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
-                                  isMenuOpen ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200' : ''
+                                className={`p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
+                                  isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
                                 }`}
-                                title="More options"
+                                title="File options"
                               >
                                 <MoreVertical className="h-4 w-4" />
                               </button>
@@ -579,25 +592,25 @@ export function FileList({
                               {isMenuOpen && (
                                 <div
                                   onClick={(e) => e.stopPropagation()}
-                                  className="absolute right-0 top-8 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1 z-40 animate-in fade-in duration-100 text-left"
+                                  className="absolute right-0 bottom-6 sm:bottom-auto sm:top-6 w-48 bg-surface-raised border border-border rounded-xl shadow-xl p-1 z-40 animate-in fade-in duration-100 text-left"
                                 >
                                   <button
                                     onClick={() => {
                                       setPreviewFile(file);
                                       setActiveMenuId(null);
                                     }}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                                   >
-                                    <Eye className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+                                    <Eye className="h-3.5 w-3.5 text-primary" />
                                     <span>Preview</span>
                                   </button>
                                   <a
                                     href={downloadUrl}
                                     download={file.name}
                                     onClick={() => setActiveMenuId(null)}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                                   >
-                                    <Download className="h-3.5 w-3.5 text-slate-500" />
+                                    <Download className="h-3.5 w-3.5 text-text-muted" />
                                     <span>Download</span>
                                   </a>
                                   <button
@@ -605,13 +618,13 @@ export function FileList({
                                       toggleStarFile(file.id);
                                       setActiveMenuId(null);
                                     }}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                                   >
                                     <Star
                                       className={`h-3.5 w-3.5 ${
                                         file.isStarred
-                                          ? 'fill-amber-400 text-amber-400'
-                                          : 'text-slate-400'
+                                          ? 'fill-warning text-warning'
+                                          : 'text-text-muted'
                                       }`}
                                     />
                                     <span>{file.isStarred ? 'Remove Star' : 'Add to Starred'}</span>
@@ -621,9 +634,9 @@ export function FileList({
                                       setRenameTarget({ id: file.id, name: file.name });
                                       setActiveMenuId(null);
                                     }}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                                   >
-                                    <Edit2 className="h-3.5 w-3.5 text-slate-400" />
+                                    <Edit2 className="h-3.5 w-3.5 text-text-muted" />
                                     <span>Rename</span>
                                   </button>
                                   <button
@@ -631,36 +644,36 @@ export function FileList({
                                       setMoveTarget({ id: file.id, name: file.name });
                                       setActiveMenuId(null);
                                     }}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                                   >
-                                    <FolderInput className="h-3.5 w-3.5 text-slate-400" />
+                                    <FolderInput className="h-3.5 w-3.5 text-text-muted" />
                                     <span>Move</span>
                                   </button>
                                   <button
                                     onClick={() => handleCopyLink(file)}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                                   >
                                     {copiedNotice === file.id ? (
                                       <>
-                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                                        <span className="text-emerald-600 dark:text-emerald-400">Link Copied!</span>
+                                        <CheckCircle2 className="h-3.5 w-3.5 text-tertiary" />
+                                        <span className="text-tertiary">Link Copied!</span>
                                       </>
                                     ) : (
                                       <>
-                                        <LinkIcon className="h-3.5 w-3.5 text-slate-400" />
+                                        <LinkIcon className="h-3.5 w-3.5 text-text-muted" />
                                         <span>Copy Link</span>
                                       </>
                                     )}
                                   </button>
-                                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                  <div className="my-1 border-t border-border" />
                                   <button
                                     onClick={() => {
                                       trashFile(file.id);
                                       setActiveMenuId(null);
                                     }}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                    <Trash2 className="h-3.5 w-3.5" />
                                     <span>Move to Trash</span>
                                   </button>
                                 </div>
