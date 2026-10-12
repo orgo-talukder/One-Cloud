@@ -18,7 +18,8 @@
     "synopsis": "Ultra-Fast Encrypted Telegram Cloud Storage",
     "description": "High-speed encrypted cloud drive with 16x parallel MTProto file transfers.",
     "maintainer": "One Cloud Team <support@onecloud.app>",
-    "executableName": "one-cloud"
+    "executableName": "one-cloud",
+    "icon": "electron/icon.png"
   },
   "deb": {
     "priority": "optional",
