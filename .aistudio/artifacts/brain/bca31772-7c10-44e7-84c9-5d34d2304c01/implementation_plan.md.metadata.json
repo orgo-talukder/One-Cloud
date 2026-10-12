@@ -1,6 +1,6 @@
 {
-  "summary":  "One Cloud-এর About পেজ রিডিজাইন এবং Founder & Owner (Argo Talukder) ও Product Specification ডকুমেন্ট অনুযায়ী সম্পূর্ণ বাস্তবায়ন পরিকল্পনা (বাংলায়)। এতে কুইক-জাম্প নেভিগেশন বার, স্টাইলাইজড ফাউন্ডার মনোগ্রাম কার্ড, অরিজিন স্টোরি, ওপেন-সোর্স ও ভবিষ্যৎ পরিকল্পনা, ভেরিফায়েড ফিচারসমূহ এবং প্রফেশনাল ডার্ক-থিম UI/UX আর্কিটেকচার অন্তর্ভুক্ত রয়েছে।",
-  "updatedAt":  "2026-10-12T04:11:27.429776669Z",
+  "summary":  "ফোল্ডার ও ফাইলের 3-Dot (⋮) ড্রপডাউন মেনু, Delete Confirmation Popup (Move to Trash বনাম Delete Forever), RenameFolder বাগ ফিক্স এবং Vercel-এর 4.5 MB লিমিট অতিক্রম করে বড় ফাইল (যেমন 13.9 MB ভিডিও) আপলোডের জন্য Chunked MTProto Upload ও Retry বাটনের পূর্ণাঙ্গ বাংলা ইমপ্লিমেন্টেশন প্ল্যান।",
+  "updatedAt":  "2026-10-12T05:04:33.321428688Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   List,
@@ -20,11 +20,16 @@ import {
   ArrowRight,
   Folder,
   History,
-  Lock,
+  Edit2,
+  Eye,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
+import { RenameModal } from '@/components/modals/RenameModal';
+import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
 import type { FileItem } from '@/lib/drive/types';
 
 export default function RecentPage() {
@@ -37,6 +42,24 @@ export default function RecentPage() {
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [isClearing, setIsClearing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [renameTarget, setRenameTarget] = useState<{
+    id: string;
+    name: string;
+    isFolder?: boolean;
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTargetItem | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.drive-menu-container')) {
+        setActiveMenuId(null);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   const activeFiles = useMemo(
     () => files.filter((f) => f.status === 'active'),
@@ -234,7 +257,10 @@ export default function RecentPage() {
           {formatBytes(file.fileSizeBytes)}
         </div>
 
-        <div className="col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1">
+        <div
+          className="drive-menu-container relative col-span-4 sm:col-span-2 md:col-span-1 flex items-center justify-end gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -261,7 +287,7 @@ export default function RecentPage() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setPreviewFile(file);
+              setActiveMenuId(activeMenuId === `recent-${file.id}` ? null : `recent-${file.id}`);
             }}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
             title="More options"
@@ -269,6 +295,81 @@ export default function RecentPage() {
           >
             <MoreVertical className="w-4 h-4" />
           </button>
+
+          {activeMenuId === `recent-${file.id}` && (
+            <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewFile(file);
+                  setActiveMenuId(null);
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+              >
+                <Eye className="w-3.5 h-3.5 text-primary" />
+                <span>Preview</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRenameTarget({ id: file.id, name: file.name, isFolder: false });
+                  setActiveMenuId(null);
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                <span>Rename</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  toggleStarFile(file.id);
+                  setActiveMenuId(null);
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+              >
+                <Star
+                  className={`w-3.5 h-3.5 ${
+                    file.isStarred ? 'fill-warning text-warning' : 'text-text-muted'
+                  }`}
+                />
+                <span>{file.isStarred ? 'Remove Star' : 'Star'}</span>
+              </button>
+              <div className="my-1 border-t border-border" />
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteTarget({
+                    id: file.id,
+                    name: file.name,
+                    isFolder: false,
+                    defaultAction: 'trash',
+                  });
+                  setActiveMenuId(null);
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Move to Trash</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteTarget({
+                    id: file.id,
+                    name: file.name,
+                    isFolder: false,
+                    defaultAction: 'permanent',
+                  });
+                  setActiveMenuId(null);
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -623,6 +724,12 @@ export default function RecentPage() {
       {/* File Preview Modal */}
       {previewFile && (
         <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+      )}
+      {renameTarget && (
+        <RenameModal item={renameTarget} onClose={() => setRenameTarget(null)} />
+      )}
+      {deleteTarget && (
+        <DeleteConfirmModal item={deleteTarget} onClose={() => setDeleteTarget(null)} />
       )}
     </div>
   );

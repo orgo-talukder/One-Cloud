@@ -1,6 +1,7 @@
 import { TelegramClient, Api } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { CustomFile } from 'telegram/client/uploads';
+import { returnBigInt } from 'telegram/Helpers';
 import { computeCheck } from 'telegram/Password';
 import QRCode from 'qrcode';
 import { encryptSession, decryptSession } from './crypto';
@@ -611,6 +612,120 @@ export class TelegramService {
     } catch (err: unknown) {
       await client.disconnect().catch(() => {});
       console.error('Upload to Telegram failed:', err);
+      throw new Error(this.parseTelegramError(err));
+    }
+  }
+
+  /**
+   * Upload a 2MB chunk (up to four 512KB MTProto parts) to Telegram Saved Messages ('me').
+   * When isLastChunk is true, finalizes the InputFile / InputFileBig message in 'me'.
+   */
+  static async uploadChunkToSavedMessages(params: {
+    sessionToken: string;
+    telegramFileId: string;
+    fileName: string;
+    mimeType: string;
+    totalSize: number;
+    totalParts: number;
+    partOffset: number;
+    chunkBuffer: Buffer;
+    isLastChunk: boolean;
+  }): Promise<{
+    completed: boolean;
+    uploadedParts: number;
+    uploaded?: TelegramUploadedFile;
+  }> {
+    const {
+      sessionToken,
+      telegramFileId,
+      fileName,
+      mimeType,
+      totalSize,
+      totalParts,
+      partOffset,
+      chunkBuffer,
+      isLastChunk,
+    } = params;
+
+    const { client } = await this.getConnectedClient(sessionToken);
+    const PART_SIZE = 512 * 1024; // 524,288 bytes (MTProto max part size)
+    const isLarge = totalSize > 10 * 1024 * 1024;
+    const fileIdBigInt = returnBigInt(telegramFileId);
+
+    try {
+      const numSubParts = Math.max(1, Math.ceil(chunkBuffer.length / PART_SIZE));
+
+      for (let i = 0; i < numSubParts; i++) {
+        const start = i * PART_SIZE;
+        const end = Math.min(start + PART_SIZE, chunkBuffer.length);
+        const partBytes = Buffer.from(chunkBuffer.subarray(start, end));
+        const currentPartIndex = partOffset + i;
+
+        if (isLarge) {
+          await client.invoke(
+            new Api.upload.SaveBigFilePart({
+              fileId: fileIdBigInt,
+              filePart: currentPartIndex,
+              fileTotalParts: totalParts,
+              bytes: partBytes,
+            })
+          );
+        } else {
+          await client.invoke(
+            new Api.upload.SaveFilePart({
+              fileId: fileIdBigInt,
+              filePart: currentPartIndex,
+              bytes: partBytes,
+            })
+          );
+        }
+      }
+
+      if (!isLastChunk) {
+        await client.disconnect().catch(() => {});
+        return {
+          completed: false,
+          uploadedParts: partOffset + numSubParts,
+        };
+      }
+
+      // Final chunk: commit the uploaded MTProto file parts to Saved Messages ('me')
+      const inputFile = isLarge
+        ? new Api.InputFileBig({
+            id: fileIdBigInt,
+            parts: totalParts,
+            name: fileName,
+          })
+        : new Api.InputFile({
+            id: fileIdBigInt,
+            parts: totalParts,
+            name: fileName,
+            md5Checksum: '',
+          });
+
+      const sentMessage = await client.sendFile('me', {
+        file: inputFile,
+        caption: fileName,
+        forceDocument: true,
+      });
+
+      await client.disconnect().catch(() => {});
+
+      return {
+        completed: true,
+        uploadedParts: totalParts,
+        uploaded: {
+          messageId: sentMessage.id,
+          chatId: 'me',
+          fileName,
+          mimeType,
+          fileSizeBytes: totalSize,
+          uploadedAt: new Date().toISOString(),
+        },
+      };
+    } catch (err: unknown) {
+      await client.disconnect().catch(() => {});
+      console.error('Chunked upload to Telegram failed:', err);
       throw new Error(this.parseTelegramError(err));
     }
   }

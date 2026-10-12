@@ -1,136 +1,120 @@
-# One Cloud — About Page ও Founder Section প্রফেশনাল UI/UX বাস্তবায়ন পরিকল্পনা (Implementation Plan)
+# One Cloud — Folder/File 3-Dot Menu, Delete Confirmation Popup ও Chunked Upload ফিক্স প্ল্যান
 
-এই পরিকল্পনার মূল লক্ষ্য হলো **One Cloud**-এর About পেজটিকে আপনার দেওয়া **"Founder & Owner Section Specification"**, **"About Page Content & Requirements"** এবং **"One Cloud Design System"** ডকুমেন্ট অনুযায়ী সম্পূর্ণ প্রফেশনাল, স্বচ্ছ এবং ইউজার-ফ্রেন্ডলিভাবে নতুন করে সাজানো—যাতে যেকোনো নতুন ভিজিটর কয়েক সেকেন্ডের মধ্যেই ওয়েবসাইটের মূল কাজ এবং এর প্রতিষ্ঠাতা **Argo Talukder**-এর লক্ষ্য ও ভিশন খুব সহজে বুঝতে পারেন।
+এই ইমপ্লিমেন্টেশন প্ল্যানটির লক্ষ্য হলো আপনার রিপোর্ট করা দুটি প্রধান সমস্যা—**(১) Vercel-এ বড় ফাইল (যেমন `13.9 MB` ভিডিও) আপলোডে `Error` আসা** এবং **(২) ফোল্ডার ও ফাইলের 3-Dot (`⋮`) মেনুতে ক্লিক করলে শুধু Rename আসা এবং Delete অপশন ও Confirmation Popup না আসা**—সম্পূর্ণভাবে সমাধান করা।
 
 ---
 
-## ইউজার রিভিউ ও নিশ্চিতকৃত সিদ্ধান্তসমূহ (User Review & Confirmed Decisions)
+## ইউজার রিভিউ ও নিশ্চিতকৃত সিদ্ধান্তসমূহ (Confirmed Decisions)
 
 > [!IMPORTANT]
-> আপনার দেওয়া উত্তরগুলোর ওপর ভিত্তি করে নিচের ৩টি প্রধান ডিজাইন ও কনটেন্ট সিদ্ধান্ত চূড়ান্ত করা হয়েছে:
+> আপনার দেওয়া উত্তরগুলোর ওপর ভিত্তি করে নিচের ৩টি প্রধান সিদ্ধান্ত চূড়ান্ত করা হয়েছে:
 
-- **সিদ্ধান্ত ১ — ফাউন্ডার প্রোফাইল কার্ড ডিজাইন**: কোনো স্টক বা জেনারেটেড ছবির পরিবর্তে একটি প্রিমিয়াম **Stylized Founder Monogram (`AT`) ও ভেরিফায়েড ব্র্যান্ড ব্যাজ কার্ড** তৈরি করা হবে, যেখানে **Argo Talukder (Founder & Owner, One Cloud)**-এর পরিচয়, মূল অনুপ্রেরণা এবং প্রোডাক্ট ফিলোসফি সুন্দরভাবে ফুটে উঠবে।
-- **সিদ্ধান্ত ২ — কানেক্ট ও সাপোর্ট লিংকসমূহ**: ফাউন্ডার এবং সাপোর্ট সেকশনে ভেরিফায়েড **Help Center** ও **GitHub Repository (`orgo-talukder/One-Cloud`)**-এর কার্যকর লিংক যুক্ত থাকবে, যাতে ইউজাররা সরাসরি ফিডব্যাক দিতে বা প্রজেক্টটি ঘুরে দেখতে পারেন।
-- **সিদ্ধান্ত ৩ — পেজ লেআউট ও নেভিগেশন স্ট্রাকচার**: পেজের উপরিভাগে একটি **Quick-Jump Section Bar (দ্রুত সেকশন নেভিগেশন বার)** এবং নিচে পরিষ্কার **Structured Cards** থাকবে, যাতে নতুন ইউজাররা এক ক্লিকেই *Product Overview*, *Capabilities*, *Meet the Founder*, *Origin & Vision*, কিংবা *Privacy & FAQ*-এ চলে যেতে পারেন।
+- **সিদ্ধান্ত ১ — 3-Dot (`⋮`) মেনুর অপশনসমূহ**: ফোল্ডার ও ফাইলের ৩-ডট বাটনে ক্লিক করলে সরাসরি Rename পপআপ না খুলে একটি পূর্ণাঙ্গ **Context Dropdown Menu** খুলবে, যেখানে **Open folder / Preview, Rename, Star / Unstar, Move to Trash, এবং Delete** অপশন থাকবে।
+- **সিদ্ধান্ত ২ — Delete Confirmation Popup-এর আচরণ**: ইউজার যখন কোনো ফোল্ডার বা ফাইলে Delete / Move to Trash-এ ক্লিক করবেন, তখন একটি প্রফেশনাল **Delete Confirmation Modal** পপআপ আসবে, যেখান থেকে ইউজার **Move to Trash (ট্র্যাশে পাঠান)** অথবা **Delete Forever (স্থায়ীভাবে মুছে ফেলুন)**—যেকোনো একটি বেছে নিতে পারবেন।
+- **সিদ্ধান্ত ৩ — 13.9 MB+ ফাইল আপলোড এরর সমাধান (Chunked Upload + Retry)**: Vercel-এর 4.5 MB সার্ভারলেস পেলোড সীমা অতিক্রম করার জন্য বড় ফাইলগুলোকে **2 MB চাঙ্কে (Chunked MTProto Upload)** ভাগ করে টেলিগ্রামে আপলোড করা হবে এবং Upload Drawer-এ আসল এরর মেসেজ ও **Retry** বাটন যুক্ত করা হবে।
 
 ---
 
-## ১. ওভারভিউ ও মূল কনসেপ্ট (Overview & Core Concept)
+## ১. সমস্যাগুলোর মূল কারণ ও সমাধানের সারসংক্ষেপ (Root Cause & Overview)
 
-- **পেজটি কী কাজ করবে (What It Does)**:
-  1. **প্রোডাক্টের সহজ ও স্পষ্ট পরিচয়**: সাধারণ ও নন-টেকনিক্যাল ভাষায় ব্যাখ্যা করবে যে One Cloud হলো একটি আধুনিক ফাইল-ম্যানেজমেন্ট ওয়ার্কস্পেস, যা ইউজারের ব্যক্তিগত Telegram Saved Messages এবং Firebase মেটাডেটা ইনডেক্সিংয়ের মাধ্যমে ফাইলগুলোকে ফোল্ডার আকারে সাজাতে, দ্রুত খুঁজতে এবং প্রিভিউ করতে সাহায্য করে।
-  2. **ফাউন্ডার ও ওনারের পূর্ণাঙ্গ পরিচিতি**: পূর্বের জেনেরিক "engineering team" টেক্সট পরিবর্তন করে প্রতিষ্ঠাতা **Argo Talukder (Founder & Owner)**-এর প্রকৃত গল্প, কেন তিনি One Cloud শুরু করেছেন, প্রোডাকশন-রেডি করার দীর্ঘমেয়াদী ভিশন, ওপেন-সোর্স রাখার ইচ্ছা এবং ব্যক্তিগত বার্তা (*A Note from Argo*) তুলে ধরা হবে।
-  3. **সততা ও স্বচ্ছতা (Honest & Verified Claims)**: কোনো অতিরঞ্জিত দাবি (যেমন "Unlimited storage" বা "100% রিস্ক-ফ্রি") বা কাল্পনিক পরিসংখ্যান রাখা হবে না। বর্তমানে অ্যাপে যেসব ফিচার সত্যিই কাজ করে শুধুমাত্র সেগুলোই ভেরিফায়েড ফিচার হিসেবে দেখানো হবে এবং ভবিষ্যৎ উন্নয়নগুলোকে স্পষ্টভাবে *"Confirmed Intentions"* ও *"Possible Areas to Explore"* হিসেবে আলাদা করে দেখানো হবে।
-- **টার্গেট অডিয়েন্স (Target Audience)**: আন্তর্জাতিক ভিজিটর, নতুন ইউজার যারা ক্লাউড স্টোরেজের বিকল্প খুঁজছেন, এবং বর্তমান ইউজার যারা প্রোডাক্টের নিরাপত্তা ও প্রতিষ্ঠাতার লক্ষ্য সম্পর্কে জানতে চান।
-- **মূল ভ্যালু (Key Value)**: প্রথমবার আসা একজন ইউজার পেজটি স্ক্রল করলেই যেন প্রোডাক্টের কার্যকারিতা এবং প্রতিষ্ঠাতার সততা ও স্বচ্ছতার ওপর পূর্ণ আস্থা পান।
+### ক) কেন `IDM_Life_Time_Free.mp4 (13.9 MB)` আপলোডে `Error` এসেছিল?
+1. **Vercel 4.5 MB Serverless Limit**: ব্রাউজার থেকে পুরো 13.9 MB ফাইলটি একসাথে `/api/telegram/upload` রাউটে পাঠানো হচ্ছিল। কিন্তু Vercel Serverless Function ৪.৫ মেগাবাইটের বড় রিকোয়েস্ট বডি ব্লক করে (`413 FUNCTION_PAYLOAD_TOO_LARGE`)।
+2. **সমাধান**: ব্রাউজার ফাইলটিকে **2 MB (4 × 512 KB MTProto parts)** আকারের ছোট ছোট চাঙ্কে ভাগ করে পাঠাবে। প্রতিটি চাঙ্ক ৪.৫ মেগাবাইটের অনেক নিচে থাকায় Vercel কখনোই ব্লক করবে না এবং টেলিগ্রামের MTProto `SaveFilePart` / `SaveBigFilePart` প্রোটোকলের মাধ্যমে সম্পূর্ণ ফাইলটি আপনার Telegram Saved Messages-এ সেভ হবে।
+
+### খ) কেন ফোল্ডারের 3-Dot (`⋮`) বাটনে ক্লিক করলে শুধু Rename আসছিল এবং Delete বা Confirmation Popup আসেনি?
+1. **মেনুর বদলে সরাসরি Rename স্টেট কল**: `My Drive` পেজে ফোল্ডার ও ফাইলের ৩-ডট বাটনের `onClick`-এ কোনো ড্রপডাউন মেনু না রেখে সরাসরি `setRenameTarget(...)` বসানো ছিল।
+2. **Folder Rename বাগ**: `RenameModal` কম্পোনেন্টে ফোল্ডার রিনেম করার সময় ভুলবশত `renameFolder`-এর বদলে `renameFile` কল হচ্ছিল, যার ফলে Firestore-এ ফোল্ডারের নাম আপডেট হতে সমস্যা হতো।
+3. **Delete Confirmation Modal অনুপস্থিত**: `My Drive`, `Recent`, ও `Starred` পেজে আইটেম ডিলিট করার আগে কনফার্মেশন পপআপ দেখানোর কোড যুক্ত করা ছিল না।
 
 ---
 
 ## ২. ইউজার এক্সপেরিয়েন্স ও ভিজ্যুয়াল ডিজাইন (User Experience & Visual Design)
 
-### ইউজার ফ্লো ও সেকশন ক্রমবিন্যাস (10-Step Structured Flow)
+### ইউজার ফ্লো (Step-by-Step Interactive Flow)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ 01. Hero Section: "About One Cloud" + Plain-English Value + Primary CTAs     │
+│ ১. Folder / File 3-Dot (⋮) বাটনে ক্লিক                                       │
+│    └── একটি প্রিমিয়াম ডার্ক Dropdown Menu ওপেন হবে:                          │
+│        • Folder-এর জন্য: Open folder, Rename, Star/Unstar,                   │
+│          Move to Trash, Delete Forever                                       │
+│        • File-এর জন্য (Grid ও List উভয় ভিউতে): Preview, Download,            │
+│          Rename, Move to Folder, Star/Unstar, Move to Trash, Delete Forever  │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ 02. Sticky/Interactive Quick-Jump Navigation Bar (Section Anchor Switcher)   │
+│ ২. "Move to Trash" বা "Delete" অপশনে ক্লিক                                   │
+│    └── Delete Confirmation Popup Modal ওপেন হবে:                             │
+│        • আইটেমের নাম ও ধরন (Folder হলে ভেতরে কয়টি ফাইল আছে তা দেখাবে)       │
+│        • অপশন ১: "Move to Trash" (সফট ডিলিট — পরে রিস্টোর করা যাবে)          │
+│        • অপশন ২: "Delete Forever" (লাল Destructive বাটন — স্থায়ী ডিলিট)       │
+│        • অপশন ৩: "Cancel" (পপআপ বন্ধ করবে)                                   │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ 03. What Is One Cloud & The Problem We Solve (3-Column Visual Comparison)    │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 04. Our Mission & Product Principles ("What We Value" — 5 Core Standards)    │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 05. What You Can Do With One Cloud (8 Verified Live Workspace Capabilities)  │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 06. How It Works (4-Step Clear User Journey + Architecture Separation)       │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 07. Meet the Founder: Argo Talukder (Monogram Card + Origin Story + Purpose) │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 08. Founder's Long-Term Vision, Open-Source Intentions & Future Direction    │
-│     └── Includes "A Note from Argo" (Personal Letter Card) & Connect CTA     │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 09. Privacy, Security & Data Custody Boundaries + Interactive FAQ Accordion  │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 10. Contact & Support Channels + Final Conversion CTA + Standard Footer      │
+│ ৩. বড় ফাইল আপলোড (যেমন 13.9 MB বা তার বেশি)                                  │
+│    └── ব্রাউজার স্বয়ংক্রিয়ভাবে ২ MB চাঙ্কে ভাগ করে আপলোড করবে:                │
+│        • Upload Queue Drawer-এ রিয়েল-টাইম প্রগ্রেস (১৫% → ৪৫% → ৮০% → ১০০%)  │
+│        • কোনো কারণে নেটওয়ার্ক বিচ্ছিন্ন হলে স্পষ্ট কারণ এবং "Retry" বাটন     │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### ভিজ্যুয়াল আইডেন্টিটি ও থিম (One Cloud Design System)
-
-- **Aesthetic Direction**: প্রিমিয়াম, শান্ত ও আধুনিক প্রোডাক্টিভিটি ওয়ার্কস্পেস (Linear-এর মতো স্পষ্ট টাইপোগ্রাফিক হায়ারার্কি এবং Google Drive-এর মতো পরিচিত ইউজেবিলিটি)। কোনো অপ্রয়োজনীয় নিওন গ্লো, গ্লাসমরফিজম বা স্টক ছবি ব্যবহার করা হবে না।
-- **Color Palette (Dark Default)**:
-  - `canvas` (`#0B0E13`): মূল ব্যাকগ্রাউন্ড।
-  - `sidebar` (`#0F131B`): অল্টারনেটিং সেকশন ব্যাকগ্রাউন্ড (পড়ার সুবিধার্থে ছন্দ তৈরির জন্য)।
-  - `surface` (`#141A24`) ও `surface-raised` (`#191F2B`): স্ট্রাকচার্ড কার্ড ও ফাউন্ডার লেটার বক্স।
-  - `border` (`#293241`) ও `border-strong` (`#3A4658`): সূক্ষ্ম ১ পিক্সেল বর্ডার ও ডিভাইডার।
-  - `brand-primary` (`#4F8CFF`), `tertiary` (`#53de9e`), `telegram-blue` (`#36AEEA`): অ্যাকশন বাটন, ভেরিফায়েড চেকমার্ক এবং টেলিগ্রাম কানেকশন হাইলাইট।
-- **Typography & Hierarchy**:
-  - পেজ টাইটেল: `32px–44px`, সেকশন হেডিং: `24px–30px`, কার্ড টাইটেল: `16px–18px`, বডি টেক্সট: `14px–16px` (`leading-relaxed`, আরামদায়ক ৬৫–৭৫ ক্যারেক্টার লাইন প্রস্থ যাতে বড় প্যারাগ্রাফ সহজে পড়া যায়)।
-  - সকল সংখ্যা ও মেট্রিক্সে `tabular-nums` ব্যবহৃত হবে।
-- **Founder Section-এর বিশেষ UI/UX ডিজাইন**:
-  - **Founder Profile Card (2-Column Desktop / Stacked Mobile)**: বাম পাশে একটি প্রিমিয়াম আর্কিটেকচারাল কার্ডে `AT` মনোগ্রাম ব্যাজ, **Argo Talukder**, পদবি **Founder & Owner, One Cloud**, এবং মূল ফোকাস পয়েন্টগুলো (*Focus: Usability & Organization*, *Direction: Production Readiness*, *Philosophy: Open & Accessible by Intention*)। ডান পাশে **Meet the Founder** ইন্ট্রোডাকশন এবং **Why I Started One Cloud** (Origin Story)-এর ৩টি ধাপের ভিজ্যুয়াল জার্নি।
-  - **Confirmed Intentions vs. Proposed Exploration Grid**: ইউজার যেন বর্তমান ফিচার এবং ভবিষ্যৎ পরিকল্পনার পার্থক্য পরিষ্কার বুঝতে পারেন, সেজন্য পাশাপাশি দুটি আলাদা কার্ডে *"Confirmed Intentions"* এবং *"Proposed Areas to Explore (Not Fixed Commitments)"* দেখানো হবে।
-  - **"A Note from Argo" Editorial Quote Card**: ফাউন্ডারের ব্যক্তিগত বার্তাটি একটি মার্জিত সিগনেচার ব্লকে (`— Argo Talukder, Founder & Owner, One Cloud`) উপস্থাপন করা হবে, যার নিচে সরাসরি **Share Feedback / Help Center** এবং **GitHub Repository** বাটন থাকবে।
+### ভিজ্যুয়াল আইডেন্টিটি ও থিম
+- **3-Dot Dropdown Menu**: `surface-raised` (`#191F2B`) ব্যাকগ্রাউন্ড, `border-strong` (`#3A4658`) ১ পিক্সেল বর্ডার, আইকনসহ পরিষ্কার এক-লাইনের অপশন এবং নিচে ডিভাইডারের পর লাল রঙে (`danger` `#F16B7A`) `Delete` অপশন। বাইরে ক্লিক করলে বা `Escape` চাপলে মেনু স্বয়ংক্রিয়ভাবে বন্ধ হবে।
+- **Delete Confirmation Modal**: `RenameModal`-এর মতোই ডার্ক ব্যাকড্রপ ব্লা-সহ সেন্টারড মডাল কার্ড, যেখানে ইউজার স্পষ্টভাবে বুঝতে পারবেন ফাইল/ফোল্ডারটি ট্র্যাশে যাবে নাকি স্থায়ীভাবে মুছে যাবে।
 
 ---
 
-## ৩. মূল প্রোডাক্ট সিদ্ধান্ত ও ট্রেড-অফ (Key Product Decisions & Trade-Offs)
+## ৩. মূল টেকনিক্যাল সিদ্ধান্ত ও ট্রেড-অফ (Key Product Decisions & Trade-Offs)
 
-- **সিদ্ধান্ত ১ — প্রোডাক্ট এবং ফাউন্ডার সেকশনের সুস্পষ্ট বিভাজন**:
-  - *পদ্ধতি*: পেজের প্রথম অংশে প্রোডাক্টের পরিচয়, মিশন এবং বর্তমান ভেরিফায়েড ফিচারগুলো থাকবে; এরপর একটি সুস্পষ্ট ভিজ্যুয়াল সেকশন ব্রেকের মাধ্যমে **Meet the Founder (Argo Talukder)**-এর গল্প ও ভবিষ্যৎ লক্ষ্য শুরু হবে।
-  - *কেন*: আপনার ডকুমেন্টের নির্দেশনা অনুযায়ী ভিজিটররা যেন সহজেই বুঝতে পারেন কোনগুলো One Cloud-এর বর্তমান চালু থাকা ফিচার এবং কোনগুলো প্রতিষ্ঠাতার ব্যক্তিগত অনুপ্রেরণা ও ভবিষ্যৎ লক্ষ্য।
-- **সিদ্ধান্ত ২ — ১০০% সত্য ও যাচাইকৃত তথ্য (Zero Fabricated Claims)**:
-  - *পদ্ধতি*: কোনো কাল্পনিক বয়স, ঠিকানা, কোম্পানির রেজিস্ট্রেশন, ইউজার সংখ্যা, কিংবা "Unlimited Free Storage Forever"-এর মতো অযাচাইকৃত গ্যারান্টি রাখা হবে না। ওপেন-সোর্স এবং ফ্রি রাখার বিষয়টি ডকুমেন্টের নিয়ম মেনে *"Open by Intention. Accessible by Design."* হিসেবে সৎভাবে উপস্থাপন করা হবে।
-  - *কেন*: এটি আন্তর্জাতিক ইউজারদের কাছে প্রোডাক্ট ও প্রতিষ্ঠাতার বিশ্বাসযোগ্যতা (Trust & Authenticity) বহুগুণ বাড়িয়ে দেয়।
-- **সিদ্ধান্ত ৩ — SEO ও মেটাডেটা আপডেট**:
-  - *পদ্ধতি*: About পেজের টাইটেল `About One Cloud | Simple File Management & Founder Story` এবং ডিসক্রিপশন ডকুমেন্টের SEO গাইডলাইন অনুযায়ী সংক্ষিপ্ত, নির্ভুল ও কার্যকর করা হবে।
+- **সিদ্ধান্ত ১ — MTProto 512 KB Part-Aligned Chunked Upload**:
+  - *পদ্ধতি*: টেলিগ্রামের MTProto প্রোটোকলে প্রতিটি ফাইল পার্টের সর্বোচ্চ সাইজ হলো `512 KB (524,288 bytes)`। তাই ক্লায়েন্ট থেকে প্রতিটি রিকোয়েস্টে `2 MB` (`4 × 512 KB`) করে ডেটা পাঠানো হবে। সার্ভার সেই ২ মেগাবাইটকে ৫১২ কিলোবাইটের ৪টি পার্টে ভাগ করে ইউজারের টেলিগ্রাম সেশনে `Api.upload.SaveFilePart` বা `Api.upload.SaveBigFilePart` দিয়ে পাঠাবে এবং শেষ ধাপে `SendMedia` দিয়ে মেসেজ সম্পন্ন করবে।
+  - *কেন*: এতে কোনো সার্ভারলেস মেমোরি বা ডিস্ক লিমিট ক্র্যাশ করবে না এবং Vercel-এর 4.5 MB রিকোয়েস্ট সীমার মধ্যে থেকেই বড় ভিডিও বা আর্কাইভ ফাইল নির্বিঘ্নে আপলোড হবে।
+- **সিদ্ধান্ত ২ — `RenameModal`-এ Folder Rename বাগ ফিক্স**:
+  - *পদ্ধতি*: `RenameModal`-এ `item.isFolder` চেক করে ফোল্ডারের জন্য `renameFolder(item.id, cleanName)` এবং ফাইলের জন্য `renameFile(item.id, cleanName)` কল করা হবে।
 
 ---
 
-## ৪. টেকনিক্যাল আর্কিটেকচার ও কম্পোনেন্ট স্ট্রাকচার (Technical Architecture & Data Strategy)
+## ৪. টেকনিক্যাল আর্কিটেকচার ও স্টেট ফ্লো (Technical Architecture & Data Strategy)
 
-### কম্পোনেন্ট ও স্টেট আর্কিটেকচার ডায়াগ্রাম
+### সিস্টেম ও কম্পোনেন্ট ডায়াগ্রাম
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                        About Route Layout & SEO Metadata                   │
-│       Title: "About One Cloud | Simple File Management" + OpenGraph        │
-└─────────────────────────────────────┬──────────────────────────────────────┘
+│                     My Drive / Workspace Views (Grid & List)               │
+│  ┌───────────────────────────────────┐  ┌────────────────────────────────┐ │
+│  │ Folder Card & File Row 3-Dot Menu │  │ DeleteConfirmationModal        │ │
+│  │ • activeMenuId: string | null     │  │ • Target: File or Folder       │ │
+│  │ • Open / Preview                  │  │ • Action 1: trashFile/Folder() │ │
+│  │ • Rename (Fixes renameFolder)     │  │ • Action 2: permanentlyDelete  │ │
+│  │ • Star / Unstar                   │  │ • Shows nested file count      │ │
+│  │ • Move (for files)                │  └────────────────────────────────┘ │
+│  │ • Delete / Move to Trash          │                                     │
+│  └─────────────────┬─────────────────┘                                     │
+└────────────────────┼───────────────────────────────────────────────────────┘
+                     │
+                     ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                DriveContext & Chunked Upload Pipeline                      │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │ uploadFiles(files) / retryUpload(taskId):                            │  │
+│  │ • If file <= 3 MB: Single-request fast upload                        │  │
+│  │ • If file > 3 MB: Slicing into 2 MB (2,097,152 bytes) chunks         │  │
+│  │   ├── Step 1..N: Send chunk + fileId + partOffset + totalParts       │  │
+│  │   └── Final Step: Commit InputFile / InputFileBig to Saved Messages  │  │
+│  └──────────────────────────────────┬───────────────────────────────────┘  │
+└─────────────────────────────────────┼──────────────────────────────────────┘
                                       │
                                       ▼
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                        AboutPage Client View Component                     │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │ Local Interactive UI State:                                          │  │
-│  │ • activeSection: string (Tracks/scrolls Quick-Jump Navigation Bar)   │  │
-│  │ • openFaq: number | null (Controls accessible FAQ accordion items)   │  │
-│  │ • authState: useAuth() (Adapts Primary CTA: "Open Drive" vs "Start") │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
-│                                      │                                     │
-│        ┌─────────────────────────────┼─────────────────────────────┐       │
-│        ▼                             ▼                             ▼       │
-│ ┌──────────────────────┐  ┌────────────────────────┐  ┌──────────────────┐ │
-│ │ Product Overview &   │  │ Founder & Owner Hub    │  │ Trust, Privacy,  │ │
-│ │ Capabilities         │  │ (Argo Talukder)        │  │ FAQ & Support    │ │
-│ │ • Hero + Quick-Jump  │  │ • Stylized AT Monogram │  │ • Honest Privacy │ │
-│ │ • What Is One Cloud  │  │ • Origin Story Steps   │  │   & Data Custody │ │
-│ │ • Problem & Mission  │  │ • Vision & Open Source │  │ • Interactive    │ │
-│ │ • 8 Verified Tools   │  │ • Confirmed vs Future  │  │   FAQ Accordion  │ │
-│ │ • 4-Step Workflow    │  │ • "A Note from Argo"   │  │ • Help & GitHub  │ │
-│ │ • 5 Core Principles  │  │ • Connect & Feedback   │  │   Action Links   │ │
-│ └──────────────────────┘  └────────────────────────┘  └──────────────────┘ │
+│              Serverless Telegram Upload Bridge & UploadQueueDrawer         │
+│  • Saves 512 KB MTProto parts directly via SaveFilePart / SaveBigFilePart  │
+│  • Displays live progress %, human-readable error message, & Retry button  │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### ইন্টারেক্টিভ কম্পোনেন্ট ও স্টেট ম্যাপিং (Interactive Component & State Mapping)
-
-1. **Quick-Jump Section Bar (`scrollToSection` ও `activeSection` স্টেট)**:
-   - পেজের হিরো সেকশনের ঠিক নিচে একটি রেসপনসিভ কুইক-জাম্প বার থাকবে (`Overview`, `What We Solve`, `Capabilities`, `Principles`, `Meet the Founder`, `Vision & Future`, `Privacy & FAQ`)।
-   - যেকোনো বাটনে ক্লিক করলে পেজটি স্মুথলি সেই সেকশনে স্ক্রল করবে এবং ইউজার স্ক্রল করার সাথে সাথে অ্যাক্টিভ সেকশনটি হাইলাইট হবে।
-2. **Auth-Aware Primary Call-to-Actions (`useAuth` ইন্টিগ্রেশন)**:
-   - ইউজার যদি ইতিমধ্যে লগইন করা থাকেন, তবে হিরো এবং ফাইনাল CTA বাটন স্বয়ংক্রিয়ভাবে **"Open Your Drive"** (`/app`) দেখাবে; আর লগইন করা না থাকলে **"Get Started"** (`/signup`) ও **"Explore How It Works"** (`/how-it-works`) দেখাবে।
-3. **Founder Story & Future Direction Interactive Cards**:
-   - **Argo Talukder**-এর পরিচিতি, *Why I Started One Cloud*, *Making File Management Easier*, *Building One Cloud for the Long Term*, *Open by Intention. Accessible by Design.*, *What I Hope to Improve Next*, এবং *A Note from Argo*—এই প্রতিটি অংশ আপনার দেওয়া ডকুমেন্টের ভেরিফায়েড ইংরেজি কপি অনুসরণ করে সাজানো হবে।
-   - Connect ব্লকে **Share Feedback / Help Center** (`/help`) এবং **GitHub Project** (`https://github.com/orgo-talukder/One-Cloud`)-এর কার্যকর বাটন যুক্ত থাকবে।
-4. **Interactive FAQ Accordion (`openFaq` স্টেট)**:
-   - প্রোডাক্টের কাজের ধরন, টেলিগ্রামের ভূমিকা, ফাইল সাইজ লিমিট (২ জিবি), এবং প্রাইভেসি সংক্রান্ত প্রশ্নগুলোর উত্তর অ্যাকর্ডিয়ন আকারে খোলা ও বন্ধ করা যাবে।
+### ইন্টারেক্টিভ কম্পোনেন্ট ও স্টেট ম্যাপিং
+1. **3-Dot Dropdown State (`activeMenuId`)**:
+   - যেকোনো ফোল্ডার বা ফাইলের ৩-ডট বাটনে ক্লিক করলে শুধু সেই আইটেমের ড্রপডাউন মেনু খুলবে (Grid এবং List—উভয় ভিউতেই)।
+   - ফোল্ডারে স্টার করা থাকলে ফোল্ডার কার্ডে স্টার ব্যাজও দেখাবে।
+2. **Delete Confirmation Modal State (`deleteTarget`)**:
+   - `{ id: string, name: string, isFolder: boolean, defaultMode?: 'trash' | 'permanent' }` স্টেট ধরে কনফার্মেশন পপআপ খুলবে।
+   - ফোল্ডার ডিলিট করার সময় যদি ভেতরে ফাইল থাকে, তবে পপআপে সতর্কবার্তা দেখাবে এবং ফোল্ডার ট্র্যাশ বা পার্মানেন্ট ডিলিট করলে ভেতরের ফাইলগুলোও সঠিকভাবে হ্যান্ডেল করবে।
+3. **Chunked Upload & Retry Handler (`retryUpload`)**:
+   - `DriveContext`-এ `retryUpload(taskId: string)` ফাংশন যুক্ত করা হবে এবং `UploadQueueDrawer`-এ ফেইল হওয়া ফাইলের পাশে **Retry** বাটন ও এরর টেক্সট দেখানো হবে।

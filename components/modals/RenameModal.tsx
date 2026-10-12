@@ -12,27 +12,38 @@ interface RenameModalProps {
 }
 
 export function RenameModal({ currentName, item, onRename, onClose }: RenameModalProps) {
-  const { renameFile } = useDrive();
+  const { renameFile, renameFolder } = useDrive();
   const initialName = item ? item.name : currentName || '';
   const [name, setName] = useState(initialName);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = name.trim();
     if (cleanName) {
       if (onRename) {
         onRename(cleanName);
       } else if (item) {
-        renameFile(item.id, cleanName);
+        if (item.isFolder) {
+          await renameFolder(item.id, cleanName);
+        } else {
+          await renameFile(item.id, cleanName);
+        }
       }
       onClose();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="relative w-full max-w-sm rounded-2xl bg-surface p-5 shadow-2xl border border-border text-text-primary transition-colors">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm rounded-2xl bg-surface p-5 shadow-2xl border border-border text-text-primary transition-colors"
+      >
         <button
+          type="button"
           onClick={onClose}
           className="absolute right-4 top-4 text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-surface-hover transition-colors cursor-pointer"
         >
@@ -44,8 +55,14 @@ export function RenameModal({ currentName, item, onRename, onClose }: RenameModa
             <Edit2 className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-text-primary">Rename</h3>
-            <p className="text-[11px] text-text-muted">Update display name in Drive metadata</p>
+            <h3 className="text-sm font-semibold text-text-primary">
+              Rename {item?.isFolder ? 'Folder' : 'File'}
+            </h3>
+            <p className="text-[11px] text-text-muted">
+              {item?.isFolder
+                ? 'Update folder name in your Drive workspace'
+                : 'Update display name in Drive metadata'}
+            </p>
           </div>
         </div>
 

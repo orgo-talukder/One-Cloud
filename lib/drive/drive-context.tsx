@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
 import {
   collection,
   doc,
@@ -54,6 +54,8 @@ interface DriveContextType {
   uploadTasks: UploadTask[];
   clearCompletedUploads: () => void;
   cancelUpload: (taskId: string) => void;
+  retryUpload: (taskId: string) => Promise<void>;
+  dismissUpload: (taskId: string) => void;
 
   // Real Drive operations
   navigateToFolder: (folderId: string | null) => void;
@@ -90,6 +92,9 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const [telegramSyncing, setTelegramSyncing] = useState(false);
+
+  // Track cancelled task IDs so in-flight chunk loops abort immediately
+  const cancelledTasksRef = useRef<Set<string>>(new Set());
 
   // Saved Telegram sessions mapped by User UID
   const [savedSessions, setSavedSessions] = useState<
@@ -251,6 +256,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
   const renameFolder = async (folderId: string, newName: string) => {
     const cleanName = newName.trim();
+    if (!cleanName) return;
     if (user) {
       try {
         await updateDoc(doc(db, 'users', user.uid, 'folders', folderId), {
@@ -271,6 +277,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
   const renameFile = async (fileId: string, newName: string) => {
     const cleanName = newName.trim();
+    if (!cleanName) return;
     if (user) {
       try {
         await updateDoc(doc(db, 'users', user.uid, 'files', fileId), {
@@ -374,6 +381,14 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   };
 
   const trashFolder = async (folderId: string) => {
+    // Also move active files inside this folder to Trash so everything stays consistent
+    const nestedFiles = activeFiles.filter(
+      (f) => f.parentFolderId === folderId && f.status === 'active'
+    );
+    for (const f of nestedFiles) {
+      await trashFile(f.id);
+    }
+
     if (user) {
       try {
         await updateDoc(doc(db, 'users', user.uid, 'folders', folderId), {
@@ -387,6 +402,10 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
       setFolders((prev) =>
         prev.map((f) => (f.id === folderId ? { ...f, status: 'trashed' } : f))
       );
+    }
+
+    if (currentFolderId === folderId) {
+      setCurrentFolderId(null);
     }
   };
 
@@ -422,6 +441,14 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
       setFolders((prev) =>
         prev.map((f) => (f.id === folderId ? { ...f, status: 'active' } : f))
       );
+    }
+
+    // Restore files inside this folder that were trashed with it
+    const nestedTrashedFiles = activeFiles.filter(
+      (f) => f.parentFolderId === folderId && f.status === 'trashed'
+    );
+    for (const f of nestedTrashedFiles) {
+      await restoreFile(f.id);
     }
   };
 
@@ -470,6 +497,10 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     } else {
       setFolders((prev) => prev.filter((f) => f.id !== folderId));
     }
+
+    if (currentFolderId === folderId) {
+      setCurrentFolderId(null);
+    }
   };
 
   const emptyTrash = async () => {
@@ -484,16 +515,220 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Helper to persist an uploaded FileItem to Firestore or local state
+  const saveUploadedFileMetadata = async (uploadedFileItem: FileItem) => {
+    if (user) {
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid, 'files', uploadedFileItem.id),
+          uploadedFileItem
+        );
+      } catch (err) {
+        handleFirestoreError(
+          err,
+          OperationType.CREATE,
+          `users/${user.uid}/files/${uploadedFileItem.id}`
+        );
+      }
+    } else {
+      setFiles((prev) => [uploadedFileItem, ...prev]);
+    }
+  };
+
+  // Core upload runner for a single task (supports 2MB chunked MTProto uploads for large files)
+  const executeTaskUpload = async (task: UploadTask, targetFolderId: string | null) => {
+    cancelledTasksRef.current.delete(task.id);
+
+    setUploadTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id ? { ...t, status: 'uploading', progress: 5, error: undefined } : t
+      )
+    );
+
+    const PART_SIZE = 512 * 1024; // 512 KB MTProto part size
+    const PARTS_PER_CHUNK = 4; // 4 * 512 KB = 2 MB per HTTP request (well below Vercel's 4.5 MB limit)
+    const CHUNK_SIZE = PART_SIZE * PARTS_PER_CHUNK; // 2,097,152 bytes (2 MB)
+
+    try {
+      const file = task.file;
+
+      // Small files (<= 2 MB): fast single-request upload
+      if (file.size <= CHUNK_SIZE) {
+        const formData = new FormData();
+        formData.append('mode', 'single');
+        formData.append('file', file);
+        formData.append('sessionToken', sessionToken);
+        if (targetFolderId) {
+          formData.append('parentFolderId', targetFolderId);
+        }
+
+        setUploadTasks((prev) =>
+          prev.map((t) => (t.id === task.id ? { ...t, progress: 45 } : t))
+        );
+
+        const res = await fetch('/api/telegram/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (res.status === 413) {
+          throw new Error('File chunk exceeded serverless payload limit (413).');
+        }
+
+        const rawText = await res.text();
+        let data: { success?: boolean; file?: FileItem; error?: string };
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          throw new Error(
+            res.ok
+              ? 'Unexpected response from upload server.'
+              : `Upload server error (${res.status}). Please retry.`
+          );
+        }
+
+        if (data.success && data.file) {
+          await saveUploadedFileMetadata(data.file);
+          setUploadTasks((prev) =>
+            prev.map((t) => (t.id === task.id ? { ...t, status: 'completed', progress: 100 } : t))
+          );
+        } else {
+          throw new Error(data.error || 'Upload to Telegram failed.');
+        }
+        return;
+      }
+
+      // Large files (> 2 MB, e.g. 13.9 MB+): 2 MB chunked MTProto upload
+      const totalParts = Math.ceil(file.size / PART_SIZE);
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const telegramFileId =
+        String(Math.floor(Math.random() * 900000000000000) + 100000000000000) +
+        String(Math.floor(Math.random() * 9000) + 1000);
+
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        if (cancelledTasksRef.current.has(task.id)) {
+          return;
+        }
+
+        const startByte = chunkIndex * CHUNK_SIZE;
+        const endByte = Math.min(startByte + CHUNK_SIZE, file.size);
+        const chunkBlob = file.slice(startByte, endByte);
+        const partOffset = chunkIndex * PARTS_PER_CHUNK;
+        const isLastChunk = chunkIndex === totalChunks - 1;
+
+        let attempt = 0;
+        let lastError: Error | null = null;
+        let chunkData: {
+          success?: boolean;
+          completed?: boolean;
+          file?: FileItem;
+          error?: string;
+        } | null = null;
+
+        while (attempt < 3) {
+          try {
+            const formData = new FormData();
+            formData.append('mode', 'chunk');
+            formData.append('chunk', chunkBlob, file.name);
+            formData.append('sessionToken', sessionToken);
+            formData.append('telegramFileId', telegramFileId);
+            formData.append('fileName', file.name);
+            formData.append('mimeType', file.type || 'application/octet-stream');
+            formData.append('totalSize', String(file.size));
+            formData.append('totalParts', String(totalParts));
+            formData.append('partOffset', String(partOffset));
+            formData.append('isLastChunk', isLastChunk ? 'true' : 'false');
+            if (targetFolderId) {
+              formData.append('parentFolderId', targetFolderId);
+            }
+
+            const res = await fetch('/api/telegram/upload', {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (res.status === 413) {
+              throw new Error('Chunk payload too large for serverless function (413).');
+            }
+
+            const rawText = await res.text();
+            let parsed: {
+              success?: boolean;
+              completed?: boolean;
+              file?: FileItem;
+              error?: string;
+            };
+            try {
+              parsed = JSON.parse(rawText);
+            } catch {
+              throw new Error(`Server returned invalid response (${res.status}).`);
+            }
+
+            if (!res.ok || !parsed.success) {
+              throw new Error(parsed.error || `Chunk ${chunkIndex + 1}/${totalChunks} failed.`);
+            }
+
+            chunkData = parsed;
+            lastError = null;
+            break;
+          } catch (err: unknown) {
+            lastError = err instanceof Error ? err : new Error(String(err));
+            attempt++;
+            if (attempt < 3) {
+              await new Promise((r) => setTimeout(r, 800 * attempt));
+            }
+          }
+        }
+
+        if (lastError || !chunkData) {
+          throw lastError || new Error('Failed to upload file chunk.');
+        }
+
+        if (cancelledTasksRef.current.has(task.id)) {
+          return;
+        }
+
+        if (isLastChunk && chunkData.completed && chunkData.file) {
+          await saveUploadedFileMetadata(chunkData.file);
+          setUploadTasks((prev) =>
+            prev.map((t) => (t.id === task.id ? { ...t, status: 'completed', progress: 100 } : t))
+          );
+        } else {
+          const pct = Math.min(95, Math.max(10, Math.round(((chunkIndex + 1) / totalChunks) * 95)));
+          setUploadTasks((prev) =>
+            prev.map((t) => (t.id === task.id ? { ...t, progress: pct } : t))
+          );
+        }
+      }
+    } catch (err: unknown) {
+      if (cancelledTasksRef.current.has(task.id)) return;
+      const msg = err instanceof Error ? err.message : 'Network error during upload';
+      setUploadTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, status: 'failed', error: msg } : t))
+      );
+    }
+  };
+
   // Upload file pipeline into real Telegram Saved Messages + Cloud Firestore
   const uploadFiles = async (fileList: FileList | File[]) => {
     const items = Array.from(fileList);
     if (items.length === 0) return;
 
     if (!sessionToken) {
-      alert('Telegram is not connected. Please connect your Telegram account first to upload files.');
+      const failedTasks: UploadTask[] = items.map((file) => ({
+        id: 'task_' + Math.random().toString(36).substring(2, 9),
+        file,
+        name: file.name,
+        size: file.size,
+        progress: 0,
+        status: 'failed',
+        error: 'Telegram is not connected. Please connect your Telegram account first.',
+      }));
+      setUploadTasks((prev) => [...prev, ...failedTasks]);
       return;
     }
 
+    const folderSnapshot = currentFolderId;
     const newTasks: UploadTask[] = items.map((file) => ({
       id: 'task_' + Math.random().toString(36).substring(2, 9),
       file,
@@ -506,66 +741,33 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     setUploadTasks((prev) => [...prev, ...newTasks]);
 
     for (const task of newTasks) {
-      setUploadTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, status: 'uploading', progress: 15 } : t))
-      );
-
-      try {
-        const formData = new FormData();
-        formData.append('file', task.file);
-        formData.append('sessionToken', sessionToken);
-        if (currentFolderId) {
-          formData.append('parentFolderId', currentFolderId);
-        }
-
-        setUploadTasks((prev) =>
-          prev.map((t) => (t.id === task.id ? { ...t, progress: 45 } : t))
-        );
-
-        const res = await fetch('/api/telegram/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data = await res.json();
-
-        if (data.success && data.file) {
-          const uploadedFileItem: FileItem = data.file;
-
-          if (user) {
-            try {
-              await setDoc(
-                doc(db, 'users', user.uid, 'files', uploadedFileItem.id),
-                uploadedFileItem
-              );
-            } catch (err) {
-              handleFirestoreError(
-                err,
-                OperationType.CREATE,
-                `users/${user.uid}/files/${uploadedFileItem.id}`
-              );
-            }
-          } else {
-            setFiles((prev) => [uploadedFileItem, ...prev]);
-          }
-
-          setUploadTasks((prev) =>
-            prev.map((t) => (t.id === task.id ? { ...t, status: 'completed', progress: 100 } : t))
-          );
-        } else {
-          setUploadTasks((prev) =>
-            prev.map((t) =>
-              t.id === task.id ? { ...t, status: 'failed', error: data.error || 'Upload failed' } : t
-            )
-          );
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Network error during upload';
-        setUploadTasks((prev) =>
-          prev.map((t) => (t.id === task.id ? { ...t, status: 'failed', error: msg } : t))
-        );
-      }
+      await executeTaskUpload(task, folderSnapshot);
     }
+  };
+
+  const retryUpload = async (taskId: string) => {
+    const task = uploadTasks.find((t) => t.id === taskId);
+    if (!task) return;
+    if (!sessionToken) {
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                status: 'failed',
+                error: 'Telegram is not connected. Please connect your Telegram account first.',
+              }
+            : t
+        )
+      );
+      return;
+    }
+    await executeTaskUpload(task, currentFolderId);
+  };
+
+  const dismissUpload = (taskId: string) => {
+    cancelledTasksRef.current.add(taskId);
+    setUploadTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
   const clearCompletedUploads = () => {
@@ -573,8 +775,11 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   };
 
   const cancelUpload = (taskId: string) => {
+    cancelledTasksRef.current.add(taskId);
     setUploadTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: 'cancelled' } : t))
+      prev.map((t) =>
+        t.id === taskId ? { ...t, status: 'cancelled', error: 'Upload cancelled' } : t
+      )
     );
   };
 
@@ -588,7 +793,6 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     setSavedSessions((prev) => ({ ...prev, [uid]: data }));
     if (typeof window !== 'undefined') {
       localStorage.setItem(`onecloud_tg_${uid}`, JSON.stringify(data));
-      // Also update user profile in Firestore if user is logged in
       if (user) {
         setDoc(
           doc(db, 'users', user.uid),
@@ -660,6 +864,8 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         uploadTasks,
         clearCompletedUploads,
         cancelUpload,
+        retryUpload,
+        dismissUpload,
         navigateToFolder,
         createFolder,
         renameFolder,

@@ -27,6 +27,8 @@ import { useDrive } from '@/lib/drive/drive-context';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import { RenameModal } from '@/components/modals/RenameModal';
 import { MoveFileModal } from '@/components/modals/MoveFileModal';
+import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
+import { AlertTriangle } from 'lucide-react';
 
 interface FileListProps {
   files: FileItem[];
@@ -69,6 +71,7 @@ export function FileList({
     name: string;
     isFolder?: boolean;
   } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTargetItem | null>(null);
 
   // Active 3-dot dropdown ID
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -225,13 +228,33 @@ export function FileList({
                           <div className="my-1 border-t border-border" />
                           <button
                             onClick={() => {
-                              trashFolder(folder.id);
+                              setDeleteTarget({
+                                id: folder.id,
+                                name: folder.name,
+                                isFolder: true,
+                                defaultAction: 'trash',
+                              });
+                              setActiveMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Move to Trash</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({
+                                id: folder.id,
+                                name: folder.name,
+                                isFolder: true,
+                                defaultAction: 'permanent',
+                              });
                               setActiveMenuId(null);
                             }}
                             className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            <span>Move to Trash</span>
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                            <span>Delete</span>
                           </button>
                         </div>
                       )}
@@ -456,13 +479,33 @@ export function FileList({
                               <div className="my-1 border-t border-border" />
                               <button
                                 onClick={() => {
-                                  trashFile(file.id);
+                                  setDeleteTarget({
+                                    id: file.id,
+                                    name: file.name,
+                                    isFolder: false,
+                                    defaultAction: 'trash',
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span>Move to Trash</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: file.id,
+                                    name: file.name,
+                                    isFolder: false,
+                                    defaultAction: 'permanent',
+                                  });
                                   setActiveMenuId(null);
                                 }}
                                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                <span>Move to Trash</span>
+                                <AlertTriangle className="h-3.5 w-3.5" />
+                                <span>Delete</span>
                               </button>
                             </div>
                           )}
@@ -668,13 +711,33 @@ export function FileList({
                                   <div className="my-1 border-t border-border" />
                                   <button
                                     onClick={() => {
-                                      trashFile(file.id);
+                                      setDeleteTarget({
+                                        id: file.id,
+                                        name: file.name,
+                                        isFolder: false,
+                                        defaultAction: 'trash',
+                                      });
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <span>Move to Trash</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setDeleteTarget({
+                                        id: file.id,
+                                        name: file.name,
+                                        isFolder: false,
+                                        defaultAction: 'permanent',
+                                      });
                                       setActiveMenuId(null);
                                     }}
                                     className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    <span>Move to Trash</span>
+                                    <AlertTriangle className="h-3.5 w-3.5" />
+                                    <span>Delete</span>
                                   </button>
                                 </div>
                               )}
@@ -714,6 +777,12 @@ export function FileList({
           itemName={moveTarget.name}
           isFolder={moveTarget.isFolder}
           onClose={() => setMoveTarget(null)}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          item={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
         />
       )}
     </>

@@ -11,12 +11,19 @@ import {
   Loader2,
   FileText,
   Clock,
+  RotateCcw,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 import { formatBytes } from '@/lib/drive/storage-calc';
 
 export function UploadQueueDrawer() {
-  const { uploadTasks, clearCompletedUploads, cancelUpload } = useDrive();
+  const {
+    uploadTasks,
+    clearCompletedUploads,
+    cancelUpload,
+    retryUpload,
+    dismissUpload,
+  } = useDrive();
   const [collapsed, setCollapsed] = useState(false);
 
   if (uploadTasks.length === 0) return null;
@@ -25,6 +32,9 @@ export function UploadQueueDrawer() {
     (t) => t.status === 'uploading' || t.status === 'queued'
   ).length;
   const completedCount = uploadTasks.filter((t) => t.status === 'completed').length;
+  const failedCount = uploadTasks.filter(
+    (t) => t.status === 'failed' || t.status === 'cancelled'
+  ).length;
 
   return (
     <div
@@ -38,6 +48,8 @@ export function UploadQueueDrawer() {
             <div className="w-8 h-8 rounded-lg bg-brand-subtle flex items-center justify-center text-primary-container shrink-0">
               {inProgressCount > 0 ? (
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : failedCount > 0 && completedCount === 0 ? (
+                <AlertCircle className="h-4 w-4 text-danger" />
               ) : (
                 <Upload className="h-4 w-4 text-tertiary" />
               )}
@@ -46,10 +58,13 @@ export function UploadQueueDrawer() {
               <span className="text-xs font-semibold text-text-primary truncate">
                 {inProgressCount > 0
                   ? `Uploading ${inProgressCount} item${inProgressCount > 1 ? 's' : ''}...`
+                  : failedCount > 0
+                  ? `${failedCount} upload${failedCount > 1 ? 's' : ''} need attention`
                   : 'All uploads completed'}
               </span>
               <span className="text-[11px] text-text-muted truncate">
                 {completedCount} completed • {inProgressCount} active
+                {failedCount > 0 ? ` • ${failedCount} failed` : ''}
               </span>
             </div>
           </div>
@@ -59,6 +74,7 @@ export function UploadQueueDrawer() {
               <button
                 onClick={clearCompletedUploads}
                 className="px-2 py-1 rounded text-text-muted hover:text-text-primary hover:bg-surface-hover text-[11px] transition-colors cursor-pointer"
+                type="button"
               >
                 Clear
               </button>
@@ -66,6 +82,7 @@ export function UploadQueueDrawer() {
             <button
               onClick={() => setCollapsed(!collapsed)}
               className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+              type="button"
             >
               {collapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
@@ -77,23 +94,32 @@ export function UploadQueueDrawer() {
       {!collapsed && (
         <div className="max-h-72 overflow-y-auto divide-y divide-border/40 bg-surface">
           {uploadTasks.map((task) => (
-            <div key={task.id} className="px-3.5 py-2.5 flex flex-col gap-1.5 hover:bg-surface-hover/40 transition-colors">
+            <div
+              key={task.id}
+              className="px-3.5 py-2.5 flex flex-col gap-1.5 hover:bg-surface-hover/40 transition-colors"
+            >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded bg-brand-subtle flex items-center justify-center text-primary shrink-0">
                     <FileText className="h-3.5 w-3.5" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-xs text-text-primary font-medium truncate" title={task.name}>
+                    <span
+                      className="text-xs text-text-primary font-medium truncate"
+                      title={task.name}
+                    >
                       {task.name}
                     </span>
                     <span className="text-[10px] font-mono text-text-muted">
                       {formatBytes(task.size)}
+                      {task.size > 2 * 1024 * 1024 && task.status === 'uploading'
+                        ? ' • Chunked MTProto'
+                        : ''}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {task.status === 'uploading' && (
                     <span className="text-xs font-mono font-semibold text-primary">
                       {task.progress}%
@@ -104,10 +130,33 @@ export function UploadQueueDrawer() {
                       <CheckCircle2 className="h-3.5 w-3.5" /> Done
                     </span>
                   )}
-                  {task.status === 'failed' && (
-                    <span className="text-danger flex items-center gap-1 text-[11px]" title={task.error}>
-                      <AlertCircle className="h-3.5 w-3.5" /> Error
-                    </span>
+                  {(task.status === 'failed' || task.status === 'cancelled') && (
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="text-danger flex items-center gap-1 text-[11px] font-medium"
+                        title={task.error || 'Upload failed'}
+                      >
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        <span>{task.status === 'cancelled' ? 'Cancelled' : 'Error'}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => retryUpload(task.id)}
+                        className="px-2 py-0.5 rounded-md bg-brand-subtle hover:bg-primary-container text-primary hover:text-text-primary border border-primary/30 text-[11px] font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Retry upload"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        <span>Retry</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => dismissUpload(task.id)}
+                        className="w-5 h-5 rounded flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                        title="Dismiss"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   )}
                   {task.status === 'queued' && (
                     <span className="text-text-muted flex items-center gap-1 text-[11px]">
@@ -117,6 +166,7 @@ export function UploadQueueDrawer() {
 
                   {task.status === 'uploading' && (
                     <button
+                      type="button"
                       onClick={() => cancelUpload(task.id)}
                       className="w-5 h-5 rounded flex items-center justify-center text-text-muted hover:text-danger hover:bg-surface-raised transition-colors cursor-pointer"
                       title="Cancel"
@@ -127,13 +177,20 @@ export function UploadQueueDrawer() {
                 </div>
               </div>
 
+              {/* Error reason display */}
+              {task.status === 'failed' && task.error && (
+                <p className="text-[11px] text-danger/90 leading-snug truncate" title={task.error}>
+                  {task.error}
+                </p>
+              )}
+
               {/* Row Progress bar */}
               <div className="w-full h-1 bg-surface-raised rounded-full overflow-hidden">
                 <div
                   className={`h-full transition-all duration-300 ${
                     task.status === 'completed'
                       ? 'bg-tertiary'
-                      : task.status === 'failed'
+                      : task.status === 'failed' || task.status === 'cancelled'
                       ? 'bg-danger'
                       : 'bg-primary-container'
                   }`}
