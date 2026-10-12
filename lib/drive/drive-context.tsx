@@ -113,8 +113,8 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   });
 
   const currentSession = useMemo(() => {
-    if (!user) return { connected: false, username: '', token: '' };
-    return savedSessions[user.uid] || { connected: false, username: '', token: '' };
+    const uid = user ? user.uid : 'default_workspace';
+    return savedSessions[uid] || { connected: false, username: '', token: '' };
   }, [user, savedSessions]);
 
   const telegramConnected = currentSession.connected;
@@ -579,47 +579,51 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   };
 
   const connectTelegramSuccess = (token: string, username: string) => {
-    if (!user) return;
+    const uid = user ? user.uid : 'default_workspace';
     const data = {
       connected: true,
       username: username || 'TelegramUser',
       token,
     };
-    setSavedSessions((prev) => ({ ...prev, [user.uid]: data }));
+    setSavedSessions((prev) => ({ ...prev, [uid]: data }));
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`onecloud_tg_${user.uid}`, JSON.stringify(data));
-      // Also update user profile in Firestore
-      setDoc(
-        doc(db, 'users', user.uid),
-        {
-          telegramConnected: true,
-          telegramUsername: username,
-          telegramConnectedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      ).catch(() => {});
+      localStorage.setItem(`onecloud_tg_${uid}`, JSON.stringify(data));
+      // Also update user profile in Firestore if user is logged in
+      if (user) {
+        setDoc(
+          doc(db, 'users', user.uid),
+          {
+            telegramConnected: true,
+            telegramUsername: username,
+            telegramConnectedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        ).catch(() => {});
+      }
     }
   };
 
   const disconnectTelegram = () => {
-    if (!user) return;
+    const uid = user ? user.uid : 'default_workspace';
     const empty = {
       connected: false,
       username: '',
       token: '',
     };
-    setSavedSessions((prev) => ({ ...prev, [user.uid]: empty }));
+    setSavedSessions((prev) => ({ ...prev, [uid]: empty }));
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(`onecloud_tg_${user.uid}`);
-      setDoc(
-        doc(db, 'users', user.uid),
-        {
-          telegramConnected: false,
-          telegramUsername: '',
-          telegramDisconnectedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      ).catch(() => {});
+      localStorage.removeItem(`onecloud_tg_${uid}`);
+      if (user) {
+        setDoc(
+          doc(db, 'users', user.uid),
+          {
+            telegramConnected: false,
+            telegramUsername: '',
+            telegramDisconnectedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        ).catch(() => {});
+      }
     }
   };
 
