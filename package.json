@@ -4,6 +4,7 @@
   "description": "One Cloud — Ultra-Fast Encrypted Telegram Cloud Storage",
   "homepage": "https://github.com/orgo-talukder/One-Cloud",
   "author": "Argo Talukder <argotalukder10@gmail.com>",
+  "desktopName": "one-cloud",
   "private": true,
   "main": "electron/main.js",
   "scripts": {

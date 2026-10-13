@@ -93,6 +93,101 @@ function createWindow() {
   const startUrl = process.env.ELECTRON_START_URL || embeddedConfig.appUrl || 'http://localhost:3000';
   mainWindow.loadURL(startUrl);
 
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    if (errorCode === -3) return; // ignore ABORTED
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>One Cloud — Connection</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: #0B0E13;
+              color: #F3F6FB;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              text-align: center;
+            }
+            .card {
+              background: #141A24;
+              border: 1px solid #293241;
+              border-radius: 16px;
+              padding: 40px;
+              max-width: 520px;
+              box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            }
+            h1 { font-size: 22px; margin-bottom: 12px; color: #afc6ff; }
+            p { font-size: 13px; color: #A4AFBF; line-height: 1.6; margin-bottom: 20px; }
+            .url-box {
+              background: #0B0E13;
+              border: 1px solid #293241;
+              border-radius: 8px;
+              padding: 10px 14px;
+              color: #758195;
+              font-family: monospace;
+              font-size: 12px;
+              margin-bottom: 20px;
+              word-break: break-all;
+            }
+            .input-group {
+              display: flex;
+              gap: 8px;
+              margin-bottom: 16px;
+            }
+            input {
+              flex: 1;
+              background: #0B0E13;
+              border: 1px solid #293241;
+              border-radius: 8px;
+              padding: 10px 14px;
+              color: #F3F6FB;
+              font-size: 13px;
+              outline: none;
+            }
+            input:focus { border-color: #4F8CFF; }
+            button {
+              background: #4F8CFF;
+              color: #ffffff;
+              border: none;
+              border-radius: 8px;
+              padding: 10px 20px;
+              font-size: 13px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background 0.2s;
+            }
+            button:hover { background: #3D79EF; }
+            .links { font-size: 12px; color: #758195; margin-top: 16px; }
+            .links a { color: #afc6ff; text-decoration: none; cursor: pointer; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1>☁️ One Cloud Desktop</h1>
+            <p>Could not connect to the cloud server at:</p>
+            <div class="url-box">${validatedURL}</div>
+            <p>Enter your hosted One Cloud Web URL or connect to local server:</p>
+            <div class="input-group">
+              <input type="text" id="targetUrl" value="${validatedURL.includes('your-one-cloud') ? 'http://localhost:3000' : validatedURL}" placeholder="https://your-app.vercel.app or http://localhost:3000" />
+              <button onclick="window.location.href = document.getElementById('targetUrl').value">Connect</button>
+            </div>
+            <div class="links">
+              <a onclick="window.location.href = 'http://localhost:3000'">Try Localhost:3000</a> &bull;
+              <a onclick="window.location.reload()">Retry Current URL</a>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    mainWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+  });
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };

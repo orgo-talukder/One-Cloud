@@ -2,7 +2,6 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.onecloud.app",
   "productName": "One Cloud",
-  "homepage": "https://github.com/orgo-talukder/One-Cloud",
   "directories": {
     "output": "dist"
   },
@@ -10,7 +9,6 @@
     "electron/**/*",
     "package.json"
   ],
-  "icon": "electron/icon.png",
   "linux": {
     "target": [
       "deb",
@@ -21,9 +19,10 @@
     "description": "High-speed encrypted cloud drive with 16x parallel MTProto file transfers.",
     "maintainer": "Argo Talukder <argotalukder10@gmail.com>",
     "executableName": "one-cloud",
-    "icon": "electron/icon.png",
-    "desktopName": "one-cloud.desktop",
-    "syncDesktopName": false
+    "executableArgs": [
+      "--no-sandbox"
+    ],
+    "icon": "electron/icon.png"
   },
   "deb": {
     "packageName": "one-cloud",
