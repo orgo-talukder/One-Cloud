@@ -65,10 +65,26 @@ export async function GET(
       });
     }
 
-    // Mode 2: Zero-Wait Direct HTTP ReadableStream (for media preview or direct browser stream)
+    // Mode 2: Zero-Wait Direct HTTP ReadableStream (for IDM, browser download, and video streaming)
+    const rangeHeader = req.headers.get('range');
+    let startByte: number | undefined = undefined;
+    let endByte: number | undefined = undefined;
+
+    if (rangeHeader) {
+      const match = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
+      if (match) {
+        startByte = parseInt(match[1], 10);
+        if (match[2]) {
+          endByte = parseInt(match[2], 10);
+        }
+      }
+    }
+
     const streamResult = await TelegramService.streamFromSavedMessages({
       sessionToken,
       messageId,
+      startByte,
+      endByte,
     });
 
     if (!streamResult) {
@@ -82,14 +98,24 @@ export async function GET(
     const headers: Record<string, string> = {
       'Content-Type': streamResult.mimeType || 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${safeFilename}"; filename*=UTF-8''${safeFilename}`,
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'private, no-transform, max-age=3600',
     };
 
-    if (streamResult.fileSizeBytes > 0) {
+    if (streamResult.contentLength !== undefined) {
+      headers['Content-Length'] = streamResult.contentLength.toString();
+    } else if (streamResult.fileSizeBytes > 0 && !streamResult.isPartial) {
       headers['Content-Length'] = streamResult.fileSizeBytes.toString();
     }
 
+    if (streamResult.contentRange) {
+      headers['Content-Range'] = streamResult.contentRange;
+    }
+
+    const status = streamResult.isPartial ? 206 : 200;
+
     return new NextResponse(streamResult.stream, {
-      status: 200,
+      status,
       headers,
     });
   } catch (err: unknown) {

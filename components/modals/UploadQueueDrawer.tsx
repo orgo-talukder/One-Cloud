@@ -47,8 +47,7 @@ export function UploadQueueDrawer() {
     dismissUpload,
   } = useDrive();
   const [collapsed, setCollapsed] = useState(false);
-
-  if (uploadTasks.length === 0) return null;
+  const [isDismissed, setIsDismissed] = useState(false);
 
   const activeTasks = uploadTasks.filter((t) => t.status === 'uploading');
   const inProgressCount = uploadTasks.filter(
@@ -58,6 +57,25 @@ export function UploadQueueDrawer() {
   const failedCount = uploadTasks.filter(
     (t) => t.status === 'failed' || t.status === 'cancelled'
   ).length;
+
+  // Re-open drawer when new active tasks are queued
+  React.useEffect(() => {
+    if (inProgressCount > 0) {
+      setIsDismissed(false);
+    }
+  }, [inProgressCount]);
+
+  // Google Drive auto-dismiss behavior: after all tasks complete cleanly, dismiss after 5s
+  React.useEffect(() => {
+    if (uploadTasks.length > 0 && inProgressCount === 0 && completedCount > 0 && failedCount === 0) {
+      const timer = setTimeout(() => {
+        setIsDismissed(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [uploadTasks.length, inProgressCount, completedCount, failedCount]);
+
+  if (uploadTasks.length === 0 || (isDismissed && inProgressCount === 0)) return null;
 
   const totalLiveSpeed = activeTasks.reduce(
     (sum, t) => sum + (t.speedBytesPerSec || 0),
@@ -72,6 +90,13 @@ export function UploadQueueDrawer() {
       : hasDownloads
       ? 'Downloading'
       : 'Uploading';
+
+  const handleClose = () => {
+    setIsDismissed(true);
+    if (inProgressCount === 0) {
+      clearCompletedUploads();
+    }
+  };
 
   return (
     <div
@@ -122,6 +147,7 @@ export function UploadQueueDrawer() {
                 onClick={clearCompletedUploads}
                 className="px-2 py-1 rounded text-text-muted hover:text-text-primary hover:bg-surface-hover text-[11px] transition-colors cursor-pointer"
                 type="button"
+                title="Clear completed transfers"
               >
                 Clear
               </button>
@@ -130,8 +156,19 @@ export function UploadQueueDrawer() {
               onClick={() => setCollapsed(!collapsed)}
               className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
               type="button"
+              title={collapsed ? 'Expand details' : 'Collapse details'}
+              aria-label={collapsed ? 'Expand' : 'Collapse'}
             >
               {collapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={handleClose}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+              type="button"
+              title="Close drawer"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>

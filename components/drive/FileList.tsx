@@ -20,6 +20,7 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   File,
+  Zap,
 } from 'lucide-react';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
@@ -427,6 +428,21 @@ export function FileList({
                                 <Download className="h-3.5 w-3.5 text-text-muted" />
                                 <span>Download</span>
                               </button>
+                              <a
+                                href={`/api/telegram/download/${encodeURIComponent(
+                                  file.id
+                                )}?messageId=${encodeURIComponent(
+                                  String(file.telegramMessageId)
+                                )}&sessionToken=${encodeURIComponent(sessionToken)}`}
+                                download={file.name}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => setActiveMenuId(null)}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Zap className="h-3.5 w-3.5 text-warning" />
+                                <span>Direct IDM / Stream</span>
+                              </a>
                               <button
                                 onClick={() => {
                                   toggleStarFile(file.id);
@@ -661,6 +677,21 @@ export function FileList({
                                     <Download className="h-3.5 w-3.5 text-text-muted" />
                                     <span>Download</span>
                                   </button>
+                                  <a
+                                    href={`/api/telegram/download/${encodeURIComponent(
+                                      file.id
+                                    )}?messageId=${encodeURIComponent(
+                                      String(file.telegramMessageId)
+                                    )}&sessionToken=${encodeURIComponent(sessionToken)}`}
+                                    download={file.name}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => setActiveMenuId(null)}
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Zap className="h-3.5 w-3.5 text-warning" />
+                                    <span>Direct IDM / Stream</span>
+                                  </a>
                                   <button
                                     onClick={() => {
                                       toggleStarFile(file.id);

@@ -1335,8 +1335,44 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
       )
     );
 
-    const DOWNLOAD_CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB (8 × 512KB MTProto parts, safe under Vercel 4.5MB limit)
-    const PARALLEL_DOWNLOAD_WORKERS = 3; // 3 parallel 4MB chunk workers (IDM-style)
+    const DOWNLOAD_CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB (8 × 512KB MTProto parts)
+    const PARALLEL_DOWNLOAD_WORKERS = 4; // 4 parallel 4MB chunk workers (IDM-style)
+
+    const isVeryLarge = totalSize > 60 * 1024 * 1024; // > 60 MB
+    if (isVeryLarge) {
+      // Direct stream download via browser native download manager / IDM
+      // Native stream supports multi-threading, pause/resume, and zero memory overhead
+      const streamUrl = `/api/telegram/download/${encodeURIComponent(
+        fileItem.id
+      )}?messageId=${encodeURIComponent(
+        String(fileItem.telegramMessageId)
+      )}&sessionToken=${encodeURIComponent(sessionToken)}`;
+
+      const a = document.createElement('a');
+      a.href = streamUrl;
+      a.download = fileItem.name;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: 'completed',
+                progress: 100,
+                uploadedBytes: totalSize,
+                etaSeconds: 0,
+                phase: 'uploading',
+              }
+            : t
+        )
+      );
+      return;
+    }
 
     const fetchDownloadChunkXhr = (
       chunkIndex: number,

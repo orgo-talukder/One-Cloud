@@ -931,10 +931,14 @@ export class TelegramService {
     let resolvedMime = 'application/octet-stream';
     let resolvedSize = 0;
 
+    let location: Api.TypeInputFileLocation | null = null;
+    let dcId: number | undefined = undefined;
+
     if ('document' in media && media.document && media.document instanceof Api.Document) {
       const doc = media.document;
       resolvedMime = doc.mimeType || resolvedMime;
       resolvedSize = Number(doc.size?.toString() || 0);
+      dcId = doc.dcId;
       if (doc.attributes) {
         for (const attr of doc.attributes) {
           if (attr instanceof Api.DocumentAttributeFilename) {
@@ -943,20 +947,52 @@ export class TelegramService {
           }
         }
       }
+      location = new Api.InputDocumentFileLocation({
+        id: doc.id,
+        accessHash: doc.accessHash,
+        fileReference: doc.fileReference,
+        thumbSize: '',
+      });
+    } else if ('photo' in media && media.photo && media.photo instanceof Api.Photo) {
+      const photo = media.photo;
+      dcId = photo.dcId;
+      resolvedMime = 'image/jpeg';
+      const sizes = photo.sizes || [];
+      const largestSize = sizes[sizes.length - 1];
+      const thumbType = largestSize && 'type' in largestSize ? (largestSize as any).type || '' : '';
+      location = new Api.InputPhotoFileLocation({
+        id: photo.id,
+        accessHash: photo.accessHash,
+        fileReference: photo.fileReference,
+        thumbSize: thumbType,
+      });
+      if (largestSize && 'size' in largestSize && largestSize.size) {
+        resolvedSize = Number(largestSize.size.toString());
+      }
+    } else {
+      try {
+        const info = getFileInfo(media as any);
+        location = info.location;
+        dcId = info.dcId;
+        if (!resolvedSize && info.size) {
+          resolvedSize = Number(info.size.toString());
+        }
+      } catch (e) {
+        console.warn('Fallback getFileInfo on media notice:', e);
+      }
     }
 
-    if (message.message && resolvedName === 'telegram_download') {
+    if (message.message && (resolvedName === 'telegram_download' || !resolvedName)) {
       resolvedName = message.message.split('\n')[0].trim();
     }
 
-    const info = getFileInfo(message);
-    if (!resolvedSize && info.size) {
-      resolvedSize = Number(info.size.toString());
+    if (!location) {
+      return null;
     }
 
     const entry: CachedFileLocation = {
-      location: info.location,
-      dcId: info.dcId,
+      location,
+      dcId,
       fileName: resolvedName,
       mimeType: resolvedMime,
       fileSizeBytes: resolvedSize,
@@ -1070,13 +1106,18 @@ export class TelegramService {
   static async streamFromSavedMessages(params: {
     sessionToken: string;
     messageId: number;
+    startByte?: number;
+    endByte?: number;
   }): Promise<{
     stream: ReadableStream<Uint8Array>;
     fileName: string;
     mimeType: string;
     fileSizeBytes: number;
+    contentRange?: string;
+    contentLength?: number;
+    isPartial?: boolean;
   } | null> {
-    const { sessionToken, messageId } = params;
+    const { sessionToken, messageId, startByte, endByte } = params;
     const { client, session } = await this.getConnectedClient(sessionToken);
 
     const fileMeta = await this.resolveFileLocation(client, session, messageId, false);
@@ -1084,21 +1125,55 @@ export class TelegramService {
       return null;
     }
 
+    const totalSize = fileMeta.fileSizeBytes;
+    const isRange = startByte !== undefined && startByte !== null;
+    const start = Math.max(0, startByte || 0);
+    const end =
+      endByte !== undefined && endByte !== null
+        ? Math.min(totalSize > 0 ? totalSize - 1 : endByte, endByte)
+        : totalSize > 0
+        ? totalSize - 1
+        : undefined;
+
+    const contentLength =
+      end !== undefined && end >= start
+        ? end - start + 1
+        : totalSize > 0
+        ? totalSize
+        : undefined;
+
     const iter = client.iterDownload({
-      file: fileMeta.media,
+      file: fileMeta.location,
+      dcId: fileMeta.dcId,
+      fileSize: returnBigInt(totalSize || 0),
+      offset: returnBigInt(start),
       requestSize: 512 * 1024,
     })[Symbol.asyncIterator]();
+
+    let bytesStreamed = 0;
+    const maxToStream = contentLength !== undefined ? contentLength : Infinity;
 
     const stream = new ReadableStream<Uint8Array>({
       async pull(controller) {
         try {
+          if (bytesStreamed >= maxToStream) {
+            controller.close();
+            return;
+          }
           const { value, done } = await iter.next();
           if (done || !value) {
             controller.close();
             return;
           }
-          const chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
+          let chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
+          if (bytesStreamed + chunk.byteLength > maxToStream) {
+            chunk = chunk.subarray(0, maxToStream - bytesStreamed);
+          }
+          bytesStreamed += chunk.byteLength;
           controller.enqueue(chunk);
+          if (bytesStreamed >= maxToStream) {
+            controller.close();
+          }
         } catch (err) {
           controller.error(err);
         }
@@ -1109,7 +1184,13 @@ export class TelegramService {
       stream,
       fileName: fileMeta.fileName,
       mimeType: fileMeta.mimeType,
-      fileSizeBytes: fileMeta.fileSizeBytes,
+      fileSizeBytes: totalSize,
+      contentLength,
+      contentRange:
+        isRange && totalSize > 0 && end !== undefined
+          ? `bytes ${start}-${end}/${totalSize}`
+          : undefined,
+      isPartial: isRange,
     };
   }
 
