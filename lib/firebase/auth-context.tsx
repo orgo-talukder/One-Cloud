@@ -12,7 +12,8 @@ import {
   signOut as fbSignOut,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { auth } from './client';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from './client';
 
 export interface AppUser {
   uid: string;
@@ -20,6 +21,10 @@ export interface AppUser {
   displayName: string | null;
   photoURL?: string | null;
   isAnonymous?: boolean;
+  providerId?: string;
+  emailVerified?: boolean;
+  creationTime?: string;
+  lastSignInTime?: string;
 }
 
 interface AuthContextType {
@@ -29,6 +34,7 @@ interface AuthContextType {
   signInWithEmail: (email: string, pass: string) => Promise<void>;
   signUpWithEmail: (email: string, pass: string, name: string) => Promise<void>;
   signInAsGuest: () => Promise<void>;
+  updateUserDisplayName: (name: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -39,6 +45,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
   signInAsGuest: async () => {},
+  updateUserDisplayName: async () => {},
   signOut: async () => {},
 });
 
@@ -51,7 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       auth,
       (fbUser: FirebaseUser | null) => {
         if (fbUser) {
-          setUser({
+          const primaryProvider =
+            fbUser.providerData?.[0]?.providerId ||
+            (fbUser.isAnonymous ? 'anonymous' : 'password');
+
+          const appUser: AppUser = {
             uid: fbUser.uid,
             email: fbUser.email,
             displayName:
@@ -59,7 +70,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               (fbUser.isAnonymous ? 'Guest User' : fbUser.email?.split('@')[0] || 'User'),
             photoURL: fbUser.photoURL,
             isAnonymous: fbUser.isAnonymous,
-          });
+            providerId: primaryProvider,
+            emailVerified: fbUser.emailVerified,
+            creationTime: fbUser.metadata?.creationTime,
+            lastSignInTime: fbUser.metadata?.lastSignInTime,
+          };
+          setUser(appUser);
+
+          // Persist user profile to Firestore
+          try {
+            setDoc(
+              doc(db, 'users', fbUser.uid),
+              {
+                uid: fbUser.uid,
+                email: fbUser.email,
+                displayName: appUser.displayName,
+                photoURL: fbUser.photoURL || null,
+                providerId: primaryProvider,
+                emailVerified: fbUser.emailVerified || false,
+                lastSeenAt: new Date().toISOString(),
+              },
+              { merge: true }
+            ).catch((err) => {
+              console.warn('Silent user profile sync notice:', err);
+            });
+          } catch {}
         } else {
           setUser(null);
         }
@@ -76,28 +111,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    const result = await signInWithPopup(auth, provider);
-    if (result.user) {
-      setUser({
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName,
-        photoURL: result.user.photoURL,
-        isAnonymous: false,
-      });
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        const primaryProvider = result.user.providerData?.[0]?.providerId || 'google.com';
+        const appUser: AppUser = {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+          isAnonymous: false,
+          providerId: primaryProvider,
+          emailVerified: result.user.emailVerified,
+          creationTime: result.user.metadata?.creationTime,
+          lastSignInTime: result.user.metadata?.lastSignInTime,
+        };
+        setUser(appUser);
+
+        try {
+          await setDoc(
+            doc(db, 'users', result.user.uid),
+            {
+              uid: result.user.uid,
+              email: result.user.email,
+              displayName: result.user.displayName,
+              photoURL: result.user.photoURL || null,
+              providerId: primaryProvider,
+              emailVerified: result.user.emailVerified || false,
+              lastLoginAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        } catch (dbErr) {
+          console.warn('Could not persist Google user to Firestore:', dbErr);
+        }
+      }
+    } catch (err: unknown) {
+      console.error('Google Sign-In failed:', err);
+      throw err;
     }
   };
 
   const signInWithEmail = async (email: string, pass: string) => {
     const result = await signInWithEmailAndPassword(auth, email, pass);
     if (result.user) {
-      setUser({
+      const appUser: AppUser = {
         uid: result.user.uid,
         email: result.user.email,
         displayName: result.user.displayName || email.split('@')[0],
         photoURL: result.user.photoURL,
         isAnonymous: false,
-      });
+        providerId: 'password',
+        emailVerified: result.user.emailVerified,
+        creationTime: result.user.metadata?.creationTime,
+        lastSignInTime: result.user.metadata?.lastSignInTime,
+      };
+      setUser(appUser);
+
+      try {
+        await setDoc(
+          doc(db, 'users', result.user.uid),
+          {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: appUser.displayName,
+            providerId: 'password',
+            lastLoginAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      } catch {}
     }
   };
 
@@ -105,13 +189,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const result = await createUserWithEmailAndPassword(auth, email, pass);
     if (result.user) {
       await updateProfile(result.user, { displayName: name });
-      setUser({
+      const appUser: AppUser = {
         uid: result.user.uid,
         email: result.user.email,
         displayName: name,
         photoURL: null,
         isAnonymous: false,
-      });
+        providerId: 'password',
+        emailVerified: result.user.emailVerified,
+        creationTime: result.user.metadata?.creationTime,
+        lastSignInTime: result.user.metadata?.lastSignInTime,
+      };
+      setUser(appUser);
+
+      try {
+        await setDoc(
+          doc(db, 'users', result.user.uid),
+          {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: name,
+            photoURL: null,
+            providerId: 'password',
+            createdAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      } catch {}
     }
   };
 
@@ -124,7 +229,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         displayName: 'Guest User',
         photoURL: null,
         isAnonymous: true,
+        providerId: 'anonymous',
       });
+    }
+  };
+
+  const updateUserDisplayName = async (name: string) => {
+    if (auth.currentUser) {
+      await updateProfile(auth.currentUser, { displayName: name });
+      setUser((prev) => (prev ? { ...prev, displayName: name } : null));
+      try {
+        await setDoc(
+          doc(db, 'users', auth.currentUser.uid),
+          { displayName: name, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+      } catch {}
     }
   };
 
@@ -142,6 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithEmail,
         signUpWithEmail,
         signInAsGuest,
+        updateUserDisplayName,
         signOut,
       }}
     >

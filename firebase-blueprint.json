@@ -8,6 +8,12 @@
         "uid": { "type": "string" },
         "email": { "type": "string" },
         "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "providerId": { "type": "string" },
+        "emailVerified": { "type": "boolean" },
+        "telegramConnected": { "type": "boolean" },
+        "telegramUsername": { "type": "string" },
+        "telegramSessionToken": { "type": "string" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },

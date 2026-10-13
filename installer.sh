@@ -241,11 +241,7 @@ if [ -d "dist" ]; then
     echo -e "  ${NC}  (or: sudo dpkg -i dist/one-cloud_1.0.0_amd64.deb)${NC}"
     echo ""
     echo -e "  ${YELLOW}Option B — Run the Portable AppImage directly (No installation needed):${NC}"
-    # Automatically configure desktop double-click launcher
-    if [ -f "./setup-desktop.sh" ]; then
-        echo -e "\n${CYAN}Configuring Desktop wallpaper & App Launcher shortcuts...${NC}"
-        bash ./setup-desktop.sh 2>/dev/null || true
-    fi
+    echo -e "  ${BOLD}cd dist && ./One\\ Cloud-1.0.0.AppImage --no-sandbox${NC}"
 fi
 
 echo -e "\n${GREEN}All done! Enjoy using One Cloud on Linux! ☁️🚀${NC}\n"

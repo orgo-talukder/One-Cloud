@@ -23,9 +23,7 @@ service cloud.firestore {
 
     // User document and private subcollections
     match /users/{userId} {
-      allow get, update: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow read, write: if isOwner(userId);
 
       // Files subcollection
       match /files/{fileId} {

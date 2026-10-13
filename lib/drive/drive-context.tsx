@@ -155,6 +155,57 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     const filesPath = `users/${user.uid}/files`;
     const foldersPath = `users/${user.uid}/folders`;
 
+    // Subscribe to root user document for cross-device Telegram session sync
+    const unsubscribeUserDoc = onSnapshot(
+      userDocRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const uData = docSnap.data();
+          const isConnected = Boolean(
+            uData.telegramConnected || uData.telegramSession?.connected
+          );
+          const remoteToken =
+            uData.telegramSessionToken ||
+            uData.telegramSession?.sessionToken ||
+            uData.telegramSession?.token;
+          const remoteUsername =
+            uData.telegramUsername ||
+            uData.telegramSession?.username ||
+            'TelegramUser';
+
+          if (isConnected && remoteToken) {
+            const remoteSession = {
+              connected: true,
+              username: remoteUsername,
+              token: remoteToken,
+            };
+            setSavedSessions((prev) => ({
+              ...prev,
+              [user.uid]: remoteSession,
+            }));
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem(`onecloud_tg_${user.uid}`, JSON.stringify(remoteSession));
+              } catch {}
+            }
+          } else if (uData.telegramConnected === false || uData.telegramSession?.connected === false) {
+            setSavedSessions((prev) => ({
+              ...prev,
+              [user.uid]: { connected: false, username: '', token: '' },
+            }));
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.removeItem(`onecloud_tg_${user.uid}`);
+              } catch {}
+            }
+          }
+        }
+      },
+      (err) => {
+        console.warn('User document listener warning:', err);
+      }
+    );
+
     // Subscribe to Firestore Files subcollection
     const unsubscribeFiles = onSnapshot(
       collection(db, 'users', user.uid, 'files'),
@@ -186,6 +237,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => {
+      unsubscribeUserDoc();
       unsubscribeFiles();
       unsubscribeFolders();
     };
@@ -1546,18 +1598,30 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     };
     setSavedSessions((prev) => ({ ...prev, [uid]: data }));
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`onecloud_tg_${uid}`, JSON.stringify(data));
-      if (user) {
-        setDoc(
-          doc(db, 'users', user.uid),
-          {
-            telegramConnected: true,
-            telegramUsername: username,
-            telegramConnectedAt: new Date().toISOString(),
+      try {
+        localStorage.setItem(`onecloud_tg_${uid}`, JSON.stringify(data));
+      } catch {}
+    }
+    if (user) {
+      setDoc(
+        doc(db, 'users', user.uid),
+        {
+          telegramConnected: true,
+          telegramUsername: username || 'TelegramUser',
+          telegramSessionToken: token,
+          telegramSession: {
+            connected: true,
+            username: username || 'TelegramUser',
+            sessionToken: token,
+            updatedAt: new Date().toISOString(),
           },
-          { merge: true }
-        ).catch(() => {});
-      }
+          telegramConnectedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch((err) => {
+        console.warn('Failed to save telegram session to Firestore:', err);
+      });
     }
   };
 
@@ -1570,18 +1634,28 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     };
     setSavedSessions((prev) => ({ ...prev, [uid]: empty }));
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(`onecloud_tg_${uid}`);
-      if (user) {
-        setDoc(
-          doc(db, 'users', user.uid),
-          {
-            telegramConnected: false,
-            telegramUsername: '',
-            telegramDisconnectedAt: new Date().toISOString(),
+      try {
+        localStorage.removeItem(`onecloud_tg_${uid}`);
+      } catch {}
+    }
+    if (user) {
+      setDoc(
+        doc(db, 'users', user.uid),
+        {
+          telegramConnected: false,
+          telegramUsername: '',
+          telegramSessionToken: '',
+          telegramSession: {
+            connected: false,
+            username: '',
+            sessionToken: '',
+            updatedAt: new Date().toISOString(),
           },
-          { merge: true }
-        ).catch(() => {});
-      }
+          telegramDisconnectedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
     }
   };
 

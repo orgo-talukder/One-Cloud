@@ -64,18 +64,24 @@ export default function SignUpPage() {
     }
   };
 
-  const handleTelegramAuth = async () => {
+  const handleGoogleAuth = async () => {
     setLoading(true);
     setError(null);
     try {
       await signInWithGoogle();
       router.push('/app');
-    } catch {
-      try {
-        await signInAsGuest();
-        router.push('/app');
-      } catch (err: unknown) {
-        setError('Telegram session gateway temporarily unavailable.');
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code;
+      if (code === 'auth/popup-blocked') {
+        setError('Popup was blocked by your browser. Please allow popups for this site or use email sign-up.');
+      } else if (code === 'auth/popup-closed-by-user') {
+        setError('Google sign-in popup was closed before completion.');
+      } else {
+        const msg =
+          err instanceof Error
+            ? err.message.replace('Firebase: ', '')
+            : 'Google sign-up was unable to complete. Please try email.';
+        setError(msg);
       }
     } finally {
       setLoading(false);
@@ -163,20 +169,32 @@ export default function SignUpPage() {
               </div>
             )}
 
-            {/* Telegram One-click */}
+            {/* Google One-click */}
             <button
               type="button"
-              onClick={handleTelegramAuth}
+              onClick={handleGoogleAuth}
               disabled={loading}
-              className="w-full h-11 px-4 rounded-[10px] bg-surface-raised hover:bg-surface-hover text-text-primary font-label-md text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-colors duration-150 group mb-6 border border-border cursor-pointer disabled:opacity-60"
+              className="w-full h-11 px-4 rounded-[10px] bg-surface-raised hover:bg-surface-hover text-text-primary font-label-md text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-colors duration-150 group mb-6 border border-border cursor-pointer disabled:opacity-60 shadow-xs"
             >
-              <svg
-                className="w-4 h-4 text-[#36AEEA] group-hover:scale-105 transition-transform duration-150 fill-current"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.95-1.28 4.91-2.13 5.89-2.54 2.81-1.16 3.39-1.36 3.77-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.23 0 .37z" />
+              <svg className="w-4 h-4 shrink-0 transition-transform duration-150 group-hover:scale-105" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
               </svg>
-              <span>Continue with Telegram</span>
+              <span>Continue with Google</span>
             </button>
 
             <div className="relative flex items-center justify-center mb-6">
