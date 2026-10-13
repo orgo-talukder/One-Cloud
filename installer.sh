@@ -184,9 +184,15 @@ fi
 
 if [ ! -f "electron/app-config.json" ] && [ -f "electron/app-config.example.json" ]; then
     cp electron/app-config.example.json electron/app-config.json
-    echo -e "${GREEN}✓ Created electron/app-config.json from template.${NC}"
+    echo -e "${GREEN}✓ Created electron/app-config.json with live One Cloud app URL.${NC}"
 elif [ -f "electron/app-config.json" ]; then
-    echo -e "${GREEN}✓ Custom electron/app-config.json detected — keeping your desktop config safe.${NC}"
+    # If it contains placeholder or needs sync to the official Vercel live URL
+    if grep -q "your-one-cloud.vercel.app" electron/app-config.json; then
+        sed -i 's|https://your-one-cloud.vercel.app|https://one-cloud-zeta.vercel.app|g' electron/app-config.json
+        echo -e "${GREEN}✓ Updated electron/app-config.json to your live URL: https://one-cloud-zeta.vercel.app${NC}"
+    else
+        echo -e "${GREEN}✓ Custom electron/app-config.json detected — keeping your desktop config safe.${NC}"
+    fi
 fi
 
 # ------------------------------------------------------------------------------
