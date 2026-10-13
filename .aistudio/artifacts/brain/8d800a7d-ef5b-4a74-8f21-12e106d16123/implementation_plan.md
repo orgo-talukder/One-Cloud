@@ -1,124 +1,77 @@
-# One Cloud — ডাউনলোড এরর ফিক্স, গুগল ড্রাইভ স্টাইল ক্লোজ বাটন ও IDM-এর মতো সুপারফাস্ট ডাউনলোড পরিকল্পনা
+# Implementation Plan: GitHub & Google SEO Enhancement (README.md & sitemap.ts)
 
-এই পরিকল্পনার মূল উদ্দেশ্য হলো ব্যবহারকারীর উত্থাপিত ৩টি প্রধান সমস্যার পূর্ণাঙ্গ সমাধান করা:
-1. **ডাউনলোড এরর ফিক্স**: "Cannot cast Message to any kind of InputFileLocation" এরর সমাধান করে ১.১ জিবি বা যেকোনো সাইজের ফাইল নির্বিঘ্নে ডাউনলোড উপযোগী করা।
-2. **গুগল ড্রাইভ স্টাইল ক্লোজ বাটন ও অটো-ডিসমিস**: আপলোড বা ডাউনলোড শেষ হওয়ার পর স্ক্রিনের নিচের ড্রয়ারে সুস্পষ্ট Close (`X`) আইকন যুক্ত করা এবং স্বয়ংক্রিয় ডিসমিসের ব্যবস্থা করা।
-3. **IDM-এর মতো সুপারফাস্ট প্যারালাল চাঙ্ক ও ডাইরেক্ট স্ট্রিম ডাউনলোড**: মাল্টি-থ্রেডেড প্যারালাল চাঙ্ক ওয়ার্কার এবং HTTP 206 Range হেডারযুক্ত ডাইরেক্ট আইডিএম স্ট্রিম সংযোগ করা।
+One Cloud রিপোজিটরিকে GitHub এবং Google সার্চ ইঞ্জিনের র‍্যাঙ্কিংয়ে শীর্ষে আনার জন্য একটি প্রফেশনাল, কম্প্রিহেনসিভ `README.md` এবং Next.js App Router ভিত্তিক ডাইনামিক `sitemap.ts` (ও `robots.ts`) তৈরির বিস্তারিত পরিকল্পনা।
 
 ---
 
-## ১. সমস্যাসমূহের পেছনের মূল কারণ (Root Cause Analysis)
-
-### ১.১ কেন "Cannot cast Message to any kind of InputFileLocation" এরর আসছিল?
-- **কারণ**: টেলিগ্রামের অফিসিয়াল নোড ক্লায়েন্ট লাইব্রেরিতে (`telegram` / gramjs) `Utils.getFileInfo(message)` মেথডের ভেতরে একটি অভ্যন্তরীণ বাগ রয়েছে। 
-- যখন কোনো মেসেজ পাস করা হয়, কোডটি `location = message.media` সেট করে। কিন্তু এর ঠিক পরের লাইনে `if (location instanceof MessageMediaDocument)` চেক করার পরিবর্তে ভুলবশত `if (fileLocation instanceof MessageMediaDocument)` চেক করে (যেখানে `fileLocation` ছিল মূল `Message` অবজেক্ট)। 
-- এর ফলে লাইব্রেরি ডকুমেন্ট বা ফটো টাইপ ঠিকমতো কাস্ট করতে না পেরে সরাসরি রানটাইমে এক্সেপশন ছুঁড়ে দেয়:
-  `Error: Cannot cast Message to any kind of InputFileLocation`
-- **সমাধান**: থার্ড-পার্টি বাগি মেথড কল না করে আমাদের সার্ভিসের `resolveFileLocation`-এ সরাসরি `message.media.document` থেকে টেলিগ্রামের আসল `Api.InputDocumentFileLocation({ id, accessHash, fileReference, thumbSize: '' })` তৈরি করা হবে। ফলে ১.১ জিবি বা তার চেয়েও বড় যেকোনো মুভি, ভিডিও বা ফাইলের লোকেশন ১০০% নির্ভুলভাবে এবং তাৎক্ষণিকভাবে রিজলভ হবে।
-
-### ১.২ কেন আপলোডের পর নিচের মেসেজটি ক্লোজ করা যাচ্ছিল না?
-- **কারণ**: `components/modals/UploadQueueDrawer.tsx`-এর হেডারে কোনো Close (`X`) আইকন রাখা ছিল না। শুধুমাত্র `Clear` (যা কেবল সম্পন্ন হওয়া টাস্কগুলো লিস্ট থেকে সরাত) এবং একটি `ChevronUp/Down` মিনিমাইজ অ্যারো ছিল। 
-- বিশেষ করে মোবাইল ডিভাইসে এই ড্রয়ারটি স্ক্রিনের নিচে বটম ন্যাভিগেশন বারের ওপরে স্থায়ীভাবে আটকে থাকত এবং ইউজার চাইলে তা এক ক্লিকে সরিয়ে ফেলতে পারতেন না।
-- **সমাধান**: গুগল ড্রাইভের মতো হেডারের ডানপাশে সুস্পষ্ট **'X' (Close)** বাটন যুক্ত করা হবে। এর পাশাপাশি কাজ শেষ হলে ব্যবহারকারী চাইলে সাথে সাথে ক্লোজ করতে পারবেন অথবা ৪ সেকেন্ড পর স্বয়ংক্রিয়ভাবে ফেড-আউট হয়ে ড্রয়ারটি বন্ধ হয়ে যাবে।
-
-### ১.৩ আইডিএম (IDM) এর মতো সুপারফাস্ট ডাউনলোড কীভাবে কাজ করবে?
-- **পদ্ধতি ১: ইন-অ্যাপ মাল্টি-কানেকশন প্যারালাল চাঙ্ক ডাউনলোডার (In-App IDM Workers)**:
-  - ফাইলটিকে ৪MB ব্লকে ভাগ করে ৪ থেকে ৬টি কনকারেন্ট ওয়ার্কারের মাধ্যমে একসাথে সমান্তরালে (parallel) ডাউনলোড করা হবে।
-  - লাইভ স্পিড মিটার (যেমন: `12.5 MB/s`), ডাউনলোড প্রোগ্রেস ও আনুমানিক সময় (ETA) রিয়েল-টাইমে প্রদর্শিত হবে।
-- **পদ্ধতি ২: ডাইরেক্ট আইডিএম / ব্রাউজার হাই-স্পিড স্ট্রিম (HTTP 206 Range Stream)**:
-  - মোবাইলের র‍্যাম ক্র্যাশ এড়াতে এবং পিসিতে যাদের IDM (Internet Download Manager) বা মোবাইলে ADM/Chrome ডাউনলোডার রয়েছে, তাদের জন্য ডাউনলোড রুটে `Accept-Ranges: bytes` এবং `Content-Range` সমর্থন যোগ করা হবে।
-  - ফলে আইডিএম সরাসরি লিঙ্কটি ধরে ৮-১৬টি থ্রেডে সুপারফাস্ট গতিতে ফাইল নামাতে পারবে এবং ডাউনলোড পজ ও রিজ্যুম করা যাবে।
+## ১. ব্যবহারকারীর প্রয়োজনীয়তা ও উদ্দেশ্য (Requirements Analysis)
+- **উদ্দেশ্য**: GitHub ও Google সার্চে One Cloud রিপোজিটরি ও লাইভ সাইটকে সহজে খুঁজে পাওয়ার উপযোগী করে তোলা।
+- **নির্দিষ্ট কী-ওয়ার্ডস**:
+  - `Telegram-based cloud storage`
+  - `Personal file manager`
+  - `Open-source drive`
+  - `Unlimited cloud storage`
+  - `IDM high-speed chunk downloader`
+  - `Google Drive alternative`
+- **ব্যবহারকারীর পছন্দ**:
+  1. `README.md`: প্রজেক্ট সেটআপ গাইড, আর্কিটেকচার ডায়াগ্রাম, টেক স্ট্যাক এবং ব্যাজ (Badges) সহ কম্প্রিহেনসিভ বিবরণ।
+  2. `sitemap.xml`: Next.js 15 App Router স্ট্যান্ডার্ড ডাইনামিক `app/sitemap.ts` এবং সাথে `app/robots.ts`।
 
 ---
 
-## ২. ইউজার এক্সপেরিয়েন্স ও ইন্টারফেস উন্নয়ন (UI/UX Design)
+## ২. প্রস্তাবিত আর্কিটেকচার ও ফাইল পরিবর্তন (Architecture & Files)
 
-### ২.১ গুগল ড্রাইভ স্টাইল ট্রান্সফার ড্রয়ার (`UploadQueueDrawer.tsx`)
-1. **হেডার একশন বার**:
-   - বামে: স্ট্যাটাস আইকন (স্পিনার, আপলোড/ডাউনলোড আইকন, অথবা সবুজ টিক মার্ক) + "All transfers completed" বা "Downloading..." টেক্সট।
-   - ডানে:
-     - **Clear** বাটন (সম্পন্ন টাস্ক তালিকা খালি করার জন্য)।
-     - **Chevron** বাটন (মিনিমাইজ/ম্যাক্সিমাইজ করার জন্য)।
-     - **Close ('X') বাটন** (গুগল ড্রাইভের মতো ড্রয়ারটি সম্পূর্ণ বন্ধ/ডিসমিস করার জন্য)।
-2. **অটো-ডিসমিস লজিক**:
-   - যখন সকল ট্রান্সফার ১০০% সম্পন্ন হবে, তখন একটি ৪-৫ সেকেন্ডের টাইমার চালু হবে যা ড্রয়ারটিকে ধীরে ধীরে ডিসমিস করবে। ইউজার ড্রয়ারে কার্সার রাখলে বা টাচ করলে টাইমার পজ থাকবে।
-3. **মোবাইল বটম মার্জিন ফিক্স**:
-   - মোবাইলেও ড্রয়ারটি যাতে বটম ন্যাভিগেশন বারের আইকন ঢেকে না ফেলে, তার জন্য সুন্দর স্পেসিং ও সোয়াইপ-টু-ক্লোজ সুবিধা থাকবে।
+### A. রুট ডিরেক্টরিতে `README.md`
+একটি ইন্ডাস্ট্রি-স্ট্যান্ডার্ড ওপেন-সোর্স প্রজেক্টের স্টাইলে নিচের সেকশনগুলো থাকবে:
+1. **Header & Shields/Badges**: Next.js 15, React 19, TypeScript, Tailwind CSS, Firebase, GramJS, License, Stars, PRs welcome ব্যাজ।
+2. **Hero Statement & Highlights**: কি-ওয়ার্ড ফোকাসড সংক্ষিপ্ত ও জোরালো বিবরণী (`Telegram-based cloud storage`, `Personal file manager`, `Open-source drive`)।
+3. **Key Features**:
+   - ⚡ Superfast IDM-Style Parallel Chunk Downloads & Uploads
+   - 🔒 End-to-End Privacy & MTProto Direct Storage (No third-party file retention)
+   - 📁 Google Drive Style Modern UI (Folder hierarchy, search, preview, transfer drawer)
+   - 🔑 Firebase Authentication (Google 1-click & Email login)
+   - 📱 Cross-device Cloud Sync (One Telegram connection works everywhere)
+   - 💻 Multi-platform (PWA & Desktop Electron App)
+4. **Architecture Diagram (ASCII / Mermaid)**:
+   - Client (Next.js / Electron) <-> Next.js API Streaming Engine <-> Telegram MTProto DC (Cloud Blob) + Firebase Firestore (Metadata).
+5. **Prerequisites & Environment Configuration (`.env.example`)**:
+   - `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, Firebase Config Keys।
+6. **Local Development & Setup Guide**:
+   - Clone, install, run dev, Electron build steps।
+7. **SEO Keywords & Topics Table**: GitHub Topics যোগ করার জন্য রেডিমেড ট্যাগ লিস্ট।
+8. **Contributing, Security, and License**: MIT License ও কমিউনিটি গাইডলাইন।
 
-### ২.২ ডাউনলোড অপশন ও ডায়লগ (`FileList.tsx` & `Toolbar.tsx`)
-- ফাইলের ডাউনলোড আইকনে ক্লিক করলে:
-  - স্ট্যান্ডার্ড ডাউনলোড ক্লিক করলে স্বয়ংক্রিয়ভাবে সবচেয়ে দ্রুত ও নিরাপদ পদ্ধতি ব্যবহার হবে।
-  - ড্রপডাউন মেনুতে **"Direct IDM / Browser Download"** এবং **"In-App Fast Multi-Thread Download"** স্পষ্ট অপশন হিসেবে থাকবে।
+### B. `app/sitemap.ts` (Next.js 15 App Router Dynamic Sitemap)
+Next.js এর নেটিভ `MetadataRoute.Sitemap` API ব্যবহার করে স্বয়ংক্রিয়ভাবে XML সাইটম্যাপ পরিবেশন করা হবে:
+- রুট পেজ: `/` (Landing page) - `priority: 1.0`, `changeFrequency: 'daily'`
+- অথেনটিকেশন পেজ: `/login`, `/signup`, `/forgot-password` - `priority: 0.8`
+- ইনফরমেশন ও এসইও পেজ:
+  - `/how-it-works` - `priority: 0.9`
+  - `/about` - `priority: 0.8`
+  - `/security` - `priority: 0.8`
+  - `/help` - `priority: 0.7`
+  - `/privacy`, `/terms`, `/acceptable-use` - `priority: 0.5`
+- পরিবেশ অনুযায়ী হোস্ট URL নির্ধারণ (যেমন: লাইভ ডোমেইন বা fallback Dev URL)।
 
----
-
-## ৩. টেকনিক্যাল আর্কিটেকচার ও ডেটা ফ্লো (Technical Architecture)
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        SUPERFAST PARALLEL & IDM DOWNLOAD PIPELINE                      │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-
- [User clicks Download]
-         │
-         ├──► Option A: In-App Multi-Thread Downloader
-         │         │
-         │         ├── Worker 1: GET /api/telegram/download?offset=0&limit=4MB ────────┐
-         │         ├── Worker 2: GET /api/telegram/download?offset=4MB&limit=4MB ───────┼──► Reassembled into
-         │         ├── Worker 3: GET /api/telegram/download?offset=8MB&limit=4MB ───────┤    Blob and auto-saved
-         │         └── Worker 4: GET /api/telegram/download?offset=12MB&limit=4MB ──────┘
-         │
-         └──► Option B: Direct HTTP Range Stream (IDM / Mobile Browser Stream)
-                   │
-                   └── GET /api/telegram/download/[fileId]?messageId=...&sessionToken=...
-                             │
-                             ├── Status: 200 / 206 Partial Content
-                             ├── Accept-Ranges: bytes
-                             ├── Content-Disposition: attachment; filename="movie.mp4"
-                             └── Streamed chunk-by-chunk from Telegram MTProto directly
-                                 (IDM intercepts & opens 8-16 parallel TCP connections!)
-```
+### C. `app/robots.ts` (Next.js 15 Search Engine Crawl Directives)
+- Googlebot ও অন্যান্য সার্চ ইঞ্জিনের ক্রলারের জন্য সঠিক ইনডেক্সিং রুলস।
+- ইউজার প্রাইভেট পেজ (`/app/*`, `/api/*`) ব্লক করা থাকবে যাতে ব্যবহারকারীর ব্যক্তিগত ফাইল বা ড্রাইভ ক্রল না হয়।
+- পাবলিক ল্যান্ডিং ও ইনফো পেজ এলাউ থাকবে এবং সাইটম্যাপের সঠিক লিঙ্ক নির্দেশ করবে।
 
 ---
 
-## ৪. কোড পরিবর্তনের সুনির্দিষ্ট পদক্ষেপ (Step-by-Step Implementation)
+## ৩. বাস্তবায়ন ধাপসমূহ (Action Plan)
 
-### পদক্ষেপ ১: TelegramService-এ `resolveFileLocation` বাগ ফিক্স
-- **ফাইল**: `lib/telegram/service.ts`
-- **কাজ**: 
-  - `Utils.getFileInfo(message)`-এর ত্রুটিপূর্ণ কল অপসারণ করা।
-  - `message.media` থেকে সরাসরি `document` বা `photo` বের করে `Api.InputDocumentFileLocation` কনস্ট্রাক্ট করা।
-  - `doc.size`, `doc.mimeType`, এবং `DocumentAttributeFilename`-এর নাম নিখুঁতভাবে সংগ্রহ করা।
-  - ফলে "Cannot cast Message to any kind of InputFileLocation" এরর চিরতরে দূর হবে।
-
-### পদক্ষেপ ২: ডাউনলোড এপিআই রুটে HTTP Range ও IDM সাপোর্ট
-- **ফাইল**: `app/api/telegram/download/[fileId]/route.ts`
-- **কাজ**:
-  - `Range` হেডার পার্সিং যোগ করা (`Range: bytes=start-end`)।
-  - `206 Partial Content`, `Content-Range`, `Accept-Ranges: bytes` হেডার প্রদান করা।
-  - এর ফলে IDM, ADM এবং ক্রোম ডাউনলোডার স্বয়ংক্রিয়ভাবে মাল্টি-কানেকশন ও রেজ্যুমেবল ডাউনলোডের সুবিধা পাবে।
-
-### পদক্ষেপ ৩: গুগল ড্রাইভ স্টাইল ড্রয়ার ক্লোজ বাটন (`UploadQueueDrawer.tsx`)
-- **ফাইল**: `components/modals/UploadQueueDrawer.tsx`
-- **কাজ**:
-  - ড্রয়ার হেডারে গুগল ড্রাইভের মতো স্পষ্ট **Close (`X`) বাটন** যুক্ত করা।
-  - `dismissAllTransfers` বা ড্রয়ার ক্লোজ স্টেট হ্যান্ডলার যোগ করা।
-  - ট্রান্সফার ১০০% সফল হলে ৪-৫ সেকেন্ড পর অটো-ডিসমিস টাইমার যোগ করা।
-  - মোবাইল ভিউতে মার্জিন অপ্টিমাইজ করা যাতে নিচের মেনু ঢেকে না যায়।
-
-### পদক্ষেপ ৪: ড্রাইভ কনটেক্সট ডাউনলোড ইঞ্জিন অপ্টিমাইজেশন (`drive-context.tsx`)
-- **ফাইল**: `lib/drive/drive-context.tsx`
-- **কাজ**:
-  - `executeTaskDownload`-এ বড় ফাইলের ক্ষেত্রে মেমোরি-সেফ হ্যান্ডলিং যোগ করা।
-  - মোবাইল ও ডেস্কটপ উভয়ের জন্য ডাইরেক্ট স্ট্রিম এবং প্যারালাল চাঙ্ক ডাউনলোডের মসৃণ সমন্বয়।
-  - লাইভ ডাউনলোড স্পিড মিটার ও প্রোগ্রেস পার্সেন্টেজ আপডেট নির্ভুল রাখা।
-
-### পদক্ষেপ ৫: কম্পাইলেশন, লিন্ট ও টেস্ট ভেরিফিকেশন
-- **কাজ**:
-  - `npm run lint` এবং `compile_applet` চালিয়ে কোনো টাইপ এরর বা বিল্ড সমস্যা নেই তা নিশ্চিত করা।
-  - সার্ভার রিস্টার্ট করে ডাউনলোড ও ড্রয়ার ক্লোজ টেস্ট করা।
+1. **Step 1: Create `app/sitemap.ts`**
+   - Next.js 15 এর `MetadataRoute.Sitemap` এক্সপোর্ট করে সকল পাবলিক রুট ও কি-ওয়ার্ড সমৃদ্ধ পেজ ম্যাপ করা।
+2. **Step 2: Create `app/robots.ts`**
+   - সার্চ ইঞ্জিন ক্রলিং কনফিগার করা (পাবলিক পেজ allow, সিকিউরড ড্যাশবোর্ড ও API deny, এবং sitemap URL নির্দেশ করা)।
+3. **Step 3: Create Comprehensive `README.md`**
+   - রুট ডিরেক্টরিতে প্রফেশনাল ব্যাজ, স্ক্রিনশট রেফারেন্স, আর্কিটেকচার, সেটাপ গাইড ও টার্গেটেড কি-ওয়ার্ড সমৃদ্ধ রিডমি তৈরি করা।
+4. **Step 4: Linting & Build Verification**
+   - `npm run lint` এবং `compile_applet` রান করে নিশ্চিত করা যে কোনো টাইপ বা বিল্ড এরর নেই।
 
 ---
 
-## ৫. আপনার চূড়ান্ত অনুমোদনের জন্য অনুরোধ
-পরিকল্পনাটি সম্পূর্ণ প্রস্তুত। আপনি অনুমোদন দিলে আমি সরাসরি কোড বাস্তবায়নে অগ্রসর হব।
+## ৪. ব্যবহারকারীর পর্যালোচনা ও অনুমোদন (User Confirmation)
+উপরের প্ল্যানটি পর্যালোচনা করুন। আপনি অনুমোদন করলে এবং নিচের **Proceed** বাটনে চাপ দিলে আমি সরাসরি কোড ফাইলগুলো তৈরি ও ভেরিফাই সম্পন্ন করব।
