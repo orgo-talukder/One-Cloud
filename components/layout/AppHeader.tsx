@@ -29,6 +29,7 @@ import { useTheme } from '@/lib/theme-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
+import { ItemIcon } from '@/components/drive/ItemIcon';
 import Link from 'next/link';
 
 interface AppHeaderProps {
@@ -193,7 +194,7 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <Folder className="h-4 w-4 text-primary shrink-0" />
+                          <ItemIcon type="folder" folder={folder} className="h-4 w-4" size={16} />
                           <span className="truncate">{folder.name}</span>
                         </div>
                         <span className="text-[10px] text-text-muted flex items-center gap-1 shrink-0 ml-2">
@@ -227,7 +228,9 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="shrink-0">{getItemIcon(file)}</div>
+                          <div className="shrink-0">
+                            <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="h-4 w-4" size={16} />
+                          </div>
                           <div className="min-w-0">
                             <p className="truncate font-medium">{file.name}</p>
                             <p className="text-[10px] text-text-muted font-mono">

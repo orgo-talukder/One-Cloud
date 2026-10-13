@@ -5,6 +5,7 @@ import { Folder, FolderInput, X, HardDrive } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 
 import type { FileItem, FolderItem } from '@/lib/drive/types';
+import { ItemIcon } from '@/components/drive/ItemIcon';
 
 interface MoveFileModalProps {
   itemId?: string;
@@ -77,7 +78,7 @@ export function MoveFileModal({ itemId, itemName, file, isFolder, onClose }: Mov
                   : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
               }`}
             >
-              <Folder className="h-4 w-4 text-text-muted shrink-0" />
+              <ItemIcon type="folder" folder={f} className="h-4 w-4 shrink-0" size={16} />
               <span className="truncate">{f.name}</span>
             </button>
           ))}

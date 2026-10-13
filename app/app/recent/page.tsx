@@ -31,6 +31,7 @@ import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import { RenameModal } from '@/components/modals/RenameModal';
 import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
 import type { FileItem } from '@/lib/drive/types';
+import { ItemIcon } from '@/components/drive/ItemIcon';
 
 export default function RecentPage() {
   const { files, folders, searchQuery, toggleStarFile, downloadFile } = useDrive();
@@ -241,8 +242,8 @@ export default function RecentPage() {
             >
               <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning' : ''}`} />
             </button>
-            <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0">
-              {meta.icon}
+            <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+              <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-6 h-6" size={24} />
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-xs sm:text-sm font-medium text-text-primary truncate">
@@ -357,8 +358,8 @@ export default function RecentPage() {
           className="file-row hidden md:grid grid-cols-12 items-center h-14 px-4 bg-surface hover:bg-surface-hover transition-colors group cursor-pointer border-b border-border/40 last:border-b-0"
         >
           <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
-            <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center flex-shrink-0">
-              {meta.icon}
+            <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center flex-shrink-0 p-1">
+              <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-5 h-5" size={20} />
             </div>
             <div className="flex flex-col min-w-0">
               <span className="font-label-md text-label-md text-text-primary truncate group-hover:text-primary transition-colors font-medium">

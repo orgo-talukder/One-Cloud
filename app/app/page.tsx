@@ -41,6 +41,7 @@ import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import { RenameModal } from '@/components/modals/RenameModal';
 import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
 import type { FileItem } from '@/lib/drive/types';
+import { ItemIcon } from '@/components/drive/ItemIcon';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -870,8 +871,8 @@ export default function DashboardPage() {
                           >
                             <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning text-warning' : ''}`} />
                           </button>
-                          <div className={`w-8 h-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0 border border-border/30`}>
-                            {meta.icon}
+                          <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                            <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-6 h-6" size={24} />
                           </div>
                           <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-xs sm:text-sm font-medium text-text-primary truncate">
@@ -941,9 +942,9 @@ export default function DashboardPage() {
                           </button>
 
                           <div
-                            className={`w-8 h-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0 border border-border/30`}
+                            className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1"
                           >
-                            {meta.icon}
+                            <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-6 h-6" size={24} />
                           </div>
 
                           <span className="text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">

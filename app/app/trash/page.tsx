@@ -24,6 +24,7 @@ import {
 import { useDrive } from '@/lib/drive/drive-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
+import { ItemIcon } from '@/components/drive/ItemIcon';
 
 export default function TrashPage() {
   const {
@@ -341,8 +342,8 @@ export default function TrashPage() {
                       onChange={() => toggleSelect(folder.id)}
                       className="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 cursor-pointer"
                     />
-                    <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border flex items-center justify-center shrink-0">
-                      <Folder className="w-4 h-4 text-text-muted" />
+                    <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                      <ItemIcon type="folder" folder={folder} className="w-6 h-6" size={24} />
                     </div>
                     <span className="text-xs sm:text-sm text-text-primary truncate font-medium group-hover:text-primary transition-colors">
                       {folder.name}
@@ -407,8 +408,8 @@ export default function TrashPage() {
                       onChange={() => toggleSelect(file.id)}
                       className="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 cursor-pointer"
                     />
-                    <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border flex items-center justify-center shrink-0">
-                      {getFileCategoryIcon(file.mimeType, file.extension)}
+                    <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                      <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-5 h-5" size={20} />
                     </div>
                     <span className="text-xs sm:text-sm text-text-primary truncate font-medium group-hover:text-primary transition-colors">
                       {file.name}

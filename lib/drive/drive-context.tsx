@@ -19,6 +19,7 @@ import type {
   FileTypeFilter,
 } from './types';
 import { calculateDriveStorage } from './storage-calc';
+import { DEFAULT_SYSTEM_FOLDERS } from './icon-resolver';
 import { useAuth } from '@/lib/firebase/auth-context';
 import { db } from '@/lib/firebase/client';
 import { handleFirestoreError, OperationType } from '@/lib/firebase/firestore-errors';
@@ -85,7 +86,19 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
 
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [folders, setFolders] = useState<FolderItem[]>(() => {
+    return DEFAULT_SYSTEM_FOLDERS.map((def) => ({
+      id: `sys_default_${def.key}`,
+      name: def.name,
+      parentFolderId: null,
+      isStarred: false,
+      status: 'active',
+      isSystem: true,
+      systemType: def.key,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+  });
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortOption, setSortOption] = useState<SortOption>('date_desc');
@@ -222,6 +235,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     );
 
     // Subscribe to Firestore Folders subcollection
+    let checkedDefaults = false;
     const unsubscribeFolders = onSnapshot(
       collection(db, 'users', user.uid, 'folders'),
       (snapshot) => {
@@ -229,7 +243,41 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         snapshot.forEach((docSnap) => {
           liveFolders.push(docSnap.data() as FolderItem);
         });
-        setFolders(liveFolders);
+
+        // Ensure 7 default system folders in "My Drive" (parentFolderId: null)
+        const missingDefaults: FolderItem[] = [];
+        for (const def of DEFAULT_SYSTEM_FOLDERS) {
+          const exists = liveFolders.some(
+            (f) =>
+              f.parentFolderId === null &&
+              (f.systemType === def.key || f.name.trim().toLowerCase() === def.name.toLowerCase())
+          );
+          if (!exists) {
+            const sysFolderId = `sys_${user.uid}_${def.key}`;
+            const sysFolder: FolderItem = {
+              id: sysFolderId,
+              name: def.name,
+              parentFolderId: null,
+              isStarred: false,
+              status: 'active',
+              isSystem: true,
+              systemType: def.key,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            missingDefaults.push(sysFolder);
+          }
+        }
+
+        const completeFolders = [...liveFolders, ...missingDefaults];
+        setFolders(completeFolders);
+
+        if (!checkedDefaults && missingDefaults.length > 0) {
+          checkedDefaults = true;
+          missingDefaults.forEach((folder) => {
+            setDoc(doc(db, 'users', user.uid, 'folders', folder.id), folder, { merge: true }).catch(() => {});
+          });
+        }
       },
       (error) => {
         handleFirestoreError(error, OperationType.GET, foldersPath);
@@ -281,6 +329,19 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     clearSelection();
   };
 
+  const isProtectedSystemFolder = (folderId: string): boolean => {
+    const target = folders.find((f) => f.id === folderId);
+    if (!target) return false;
+    if (target.isSystem) return true;
+    if (
+      target.parentFolderId === null &&
+      DEFAULT_SYSTEM_FOLDERS.some((d) => d.name.toLowerCase() === target.name.trim().toLowerCase())
+    ) {
+      return true;
+    }
+    return false;
+  };
+
   // Real Folder Operations
   const createFolder = async (name: string): Promise<FolderItem> => {
     const safeName = name.trim() || 'New Folder';
@@ -291,6 +352,8 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
       parentFolderId: currentFolderId,
       isStarred: false,
       status: 'active',
+      isSystem: false,
+      systemType: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -309,6 +372,9 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   };
 
   const renameFolder = async (folderId: string, newName: string) => {
+    if (isProtectedSystemFolder(folderId)) {
+      return;
+    }
     const cleanName = newName.trim();
     if (!cleanName) return;
     if (user) {
@@ -435,6 +501,9 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   };
 
   const trashFolder = async (folderId: string) => {
+    if (isProtectedSystemFolder(folderId)) {
+      return;
+    }
     // Also move active files inside this folder to Trash so everything stays consistent
     const nestedFiles = activeFiles.filter(
       (f) => f.parentFolderId === folderId && f.status === 'active'
@@ -536,6 +605,9 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   };
 
   const permanentlyDeleteFolder = async (folderId: string) => {
+    if (isProtectedSystemFolder(folderId)) {
+      return;
+    }
     // Also remove files inside this folder
     const filesInFolder = activeFiles.filter((f) => f.parentFolderId === folderId);
     for (const f of filesInFolder) {

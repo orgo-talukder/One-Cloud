@@ -37,6 +37,7 @@ import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import { RenameModal } from '@/components/modals/RenameModal';
 import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
+import { ItemIcon } from '@/components/drive/ItemIcon';
 
 export default function MyDrivePage() {
   const {
@@ -630,8 +631,8 @@ export default function MyDrivePage() {
                     className="group relative bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer shadow-xs"
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div className="w-10 h-10 rounded-lg bg-brand-subtle flex items-center justify-center flex-shrink-0 text-primary-container">
-                        <Folder className="w-5 h-5 text-primary-container" />
+                      <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center flex-shrink-0 p-1">
+                        <ItemIcon type="folder" folder={folder} className="w-8 h-8" size={32} />
                       </div>
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
@@ -642,10 +643,17 @@ export default function MyDrivePage() {
                             <Star className="w-3.5 h-3.5 fill-warning text-warning shrink-0" />
                           )}
                         </div>
-                        <span className="text-xs text-text-muted truncate">
-                          {folderFiles.length} {folderFiles.length === 1 ? 'file' : 'files'} •{' '}
-                          {formatBytes(folderSize)}
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-xs text-text-muted truncate">
+                            {folderFiles.length} {folderFiles.length === 1 ? 'file' : 'files'} •{' '}
+                            {formatBytes(folderSize)}
+                          </span>
+                          {folder.isSystem && (
+                            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium shrink-0">
+                              Protected
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -687,22 +695,6 @@ export default function MyDrivePage() {
                           <button
                             type="button"
                             onClick={() => {
-                              setRenameTarget({
-                                id: folder.id,
-                                name: folder.name,
-                                isFolder: true,
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 text-text-muted" />
-                            <span>Rename</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
                               toggleStarFolder(folder.id);
                               setActiveMenuId(null);
                             }}
@@ -716,41 +708,62 @@ export default function MyDrivePage() {
                             <span>{folder.isStarred ? 'Remove Star' : 'Star'}</span>
                           </button>
 
-                          <div className="my-1 border-t border-border" />
+                          {/* Only allow Rename, Trash, and Delete for custom user-created folders */}
+                          {!folder.isSystem && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRenameTarget({
+                                    id: folder.id,
+                                    name: folder.name,
+                                    isFolder: true,
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                                <span>Rename</span>
+                              </button>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget({
-                                id: folder.id,
-                                name: folder.name,
-                                isFolder: true,
-                                defaultAction: 'trash',
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Move to Trash</span>
-                          </button>
+                              <div className="my-1 border-t border-border" />
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget({
-                                id: folder.id,
-                                name: folder.name,
-                                isFolder: true,
-                                defaultAction: 'permanent',
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>Delete</span>
-                          </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: folder.id,
+                                    name: folder.name,
+                                    isFolder: true,
+                                    defaultAction: 'trash',
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Move to Trash</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: folder.id,
+                                    name: folder.name,
+                                    isFolder: true,
+                                    defaultAction: 'permanent',
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                <span>Delete</span>
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -807,8 +820,8 @@ export default function MyDrivePage() {
                     }`}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-brand-subtle flex items-center justify-center">
-                        {getFileCategoryIcon(file.mimeType, file.extension)}
+                      <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1.5 shrink-0">
+                        <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-7 h-7" size={28} />
                       </div>
                       <div
                         className="drive-menu-container relative flex items-center gap-1"
@@ -895,9 +908,9 @@ export default function MyDrivePage() {
                             e.stopPropagation();
                             setPreviewFile(file);
                           }}
-                          className="shrink-0 cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1 shrink-0 cursor-pointer"
                         >
-                          {getFileCategoryIcon(file.mimeType, file.extension)}
+                          <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-6 h-6" size={24} />
                         </div>
                         <div
                           className="flex flex-col min-w-0 flex-1"
@@ -1005,7 +1018,7 @@ export default function MyDrivePage() {
                             }}
                             className="w-4 h-4 rounded bg-surface border-border text-primary-container focus:ring-0 cursor-pointer accent-[#528dff] flex-shrink-0"
                           />
-                          {getFileCategoryIcon(file.mimeType, file.extension)}
+                          <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-5 h-5" size={20} />
                           <span
                             className="text-text-primary font-medium truncate flex-1 group-hover:text-primary transition-colors text-xs sm:text-sm"
                             title={file.name}

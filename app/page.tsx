@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Cloud,
   ArrowRight,
@@ -31,7 +32,31 @@ import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/lib/firebase/auth-context';
 
 export default function LandingPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/app');
+    }
+  }, [user, loading, router]);
+
+  // If authenticated or checking auth state, redirect seamlessly to dashboard without flash
+  if (loading || user) {
+    return (
+      <div className="min-h-screen bg-canvas flex flex-col items-center justify-center text-text-primary">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-brand-subtle flex items-center justify-center border border-primary/20 animate-pulse">
+            <Cloud className="w-6 h-6 text-primary" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-text-primary">Entering One Cloud...</p>
+            <p className="text-xs text-text-muted mt-0.5">Redirecting to your Drive dashboard</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-canvas text-on-surface font-body-md antialiased selection:bg-brand-subtle selection:text-primary-fixed flex flex-col transition-colors">

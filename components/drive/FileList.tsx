@@ -30,6 +30,7 @@ import { RenameModal } from '@/components/modals/RenameModal';
 import { MoveFileModal } from '@/components/modals/MoveFileModal';
 import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
 import { AlertTriangle } from 'lucide-react';
+import { ItemIcon } from './ItemIcon';
 
 interface FileListProps {
   files: FileItem[];
@@ -160,8 +161,8 @@ export function FileList({
                       onClick={() => navigateToFolder(folder.id)}
                       className="flex items-center gap-3 min-w-0 flex-1"
                     >
-                      <div className="w-9 h-9 rounded-lg bg-brand-subtle flex items-center justify-center shrink-0 text-primary">
-                        <Folder className="h-5 w-5" />
+                      <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                        <ItemIcon type="folder" folder={folder} className="w-8 h-8" size={32} />
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span
@@ -170,7 +171,14 @@ export function FileList({
                         >
                           {folder.name}
                         </span>
-                        <span className="text-[11px] text-text-muted">Folder</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[11px] text-text-muted">Folder</span>
+                          {folder.isSystem && (
+                            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium">
+                              Protected
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -217,47 +225,53 @@ export function FileList({
                             />
                             <span>{folder.isStarred ? 'Remove Star' : 'Add to Starred'}</span>
                           </button>
-                          <button
-                            onClick={() => {
-                              setRenameTarget({ id: folder.id, name: folder.name, isFolder: true });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="h-3.5 w-3.5 text-text-muted" />
-                            <span>Rename</span>
-                          </button>
-                          <div className="my-1 border-t border-border" />
-                          <button
-                            onClick={() => {
-                              setDeleteTarget({
-                                id: folder.id,
-                                name: folder.name,
-                                isFolder: true,
-                                defaultAction: 'trash',
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            <span>Move to Trash</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteTarget({
-                                id: folder.id,
-                                name: folder.name,
-                                isFolder: true,
-                                defaultAction: 'permanent',
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <AlertTriangle className="h-3.5 w-3.5" />
-                            <span>Delete</span>
-                          </button>
+
+                          {/* Only allow Rename, Trash, and Delete for custom user-created folders */}
+                          {!folder.isSystem && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setRenameTarget({ id: folder.id, name: folder.name, isFolder: true });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Edit2 className="h-3.5 w-3.5 text-text-muted" />
+                                <span>Rename</span>
+                              </button>
+                              <div className="my-1 border-t border-border" />
+                              <button
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: folder.id,
+                                    name: folder.name,
+                                    isFolder: true,
+                                    defaultAction: 'trash',
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span>Move to Trash</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: folder.id,
+                                    name: folder.name,
+                                    isFolder: true,
+                                    defaultAction: 'permanent',
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <AlertTriangle className="h-3.5 w-3.5" />
+                                <span>Delete</span>
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -357,13 +371,13 @@ export function FileList({
                                 if (fallback) fallback.style.display = 'flex';
                               }}
                             />
-                            <div className="img-fallback-icon hidden h-11 w-11 rounded-xl bg-brand-subtle border border-border items-center justify-center shadow-xs">
-                              {getIcon(file.mimeType, file.extension)}
+                            <div className="img-fallback-icon hidden h-11 w-11 rounded-xl bg-surface-raised border border-border items-center justify-center p-1.5 shadow-xs">
+                              <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-8 h-8" size={32} />
                             </div>
                           </>
                         ) : (
-                          <div className="h-11 w-11 rounded-xl bg-brand-subtle border border-border flex items-center justify-center shadow-xs">
-                            {getIcon(file.mimeType, file.extension)}
+                          <div className="h-11 w-11 rounded-xl bg-surface-raised border border-border flex items-center justify-center p-1.5 shadow-xs">
+                            <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-8 h-8" size={32} />
                           </div>
                         )}
                       </div>
@@ -609,11 +623,11 @@ export function FileList({
                                       }}
                                     />
                                     <div className="list-fallback-icon hidden items-center justify-center">
-                                      {getIcon(file.mimeType, file.extension)}
+                                      <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-5 h-5" size={20} />
                                     </div>
                                   </>
                                 ) : (
-                                  getIcon(file.mimeType, file.extension)
+                                  <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-5 h-5" size={20} />
                                 )}
                               </div>
                               <span

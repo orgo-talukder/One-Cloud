@@ -32,6 +32,7 @@ import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import { RenameModal } from '@/components/modals/RenameModal';
 import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
+import { ItemIcon } from '@/components/drive/ItemIcon';
 
 export default function StarredPage() {
   const router = useRouter();
@@ -285,16 +286,23 @@ export default function StarredPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-brand-subtle flex items-center justify-center shrink-0 text-primary-container">
-                        <Folder className="w-6 h-6 text-primary" />
+                      <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                        <ItemIcon type="folder" folder={folder} className="w-8 h-8" size={32} />
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="font-label-md text-sm text-text-primary truncate font-semibold group-hover:text-primary transition-colors">
                           {folder.name}
                         </span>
-                        <span className="text-xs text-text-muted">
-                          {folderFilesCount} {folderFilesCount === 1 ? 'file' : 'files'}
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-xs text-text-muted">
+                            {folderFilesCount} {folderFilesCount === 1 ? 'file' : 'files'}
+                          </span>
+                          {folder.isSystem && (
+                            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium">
+                              Protected
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -342,21 +350,6 @@ export default function StarredPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              setRenameTarget({
-                                id: folder.id,
-                                name: folder.name,
-                                isFolder: true,
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 text-text-muted" />
-                            <span>Rename</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
                               toggleStarFolder(folder.id);
                               setActiveMenuId(null);
                             }}
@@ -365,39 +358,58 @@ export default function StarredPage() {
                             <Star className="w-3.5 h-3.5 fill-warning text-warning" />
                             <span>Remove Star</span>
                           </button>
-                          <div className="my-1 border-t border-border" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget({
-                                id: folder.id,
-                                name: folder.name,
-                                isFolder: true,
-                                defaultAction: 'trash',
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Move to Trash</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget({
-                                id: folder.id,
-                                name: folder.name,
-                                isFolder: true,
-                                defaultAction: 'permanent',
-                              });
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>Delete</span>
-                          </button>
+                          {!folder.isSystem && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRenameTarget({
+                                    id: folder.id,
+                                    name: folder.name,
+                                    isFolder: true,
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                                <span>Rename</span>
+                              </button>
+                              <div className="my-1 border-t border-border" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: folder.id,
+                                    name: folder.name,
+                                    isFolder: true,
+                                    defaultAction: 'trash',
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Move to Trash</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: folder.id,
+                                    name: folder.name,
+                                    isFolder: true,
+                                    defaultAction: 'permanent',
+                                  });
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                <span>Delete</span>
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -475,8 +487,8 @@ export default function StarredPage() {
                         >
                           <Star className="w-4 h-4 fill-warning" />
                         </button>
-                        <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0">
-                          {getFileCategoryIcon(file.mimeType, file.extension)}
+                        <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                          <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-6 h-6" size={24} />
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
                           <span className="text-xs sm:text-sm text-text-primary font-medium truncate">
@@ -603,8 +615,8 @@ export default function StarredPage() {
                           <Star className="w-4 h-4 fill-warning" />
                         </button>
 
-                        <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0">
-                          {getFileCategoryIcon(file.mimeType, file.extension)}
+                        <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                          <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-5 h-5" size={20} />
                         </div>
 
                         <span className="text-sm text-text-primary font-medium truncate group-hover:text-primary transition-colors">

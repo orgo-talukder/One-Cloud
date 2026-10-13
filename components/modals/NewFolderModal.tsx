@@ -31,8 +31,9 @@ export function NewFolderModal({ onClose }: NewFolderModalProps) {
         </button>
 
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-subtle text-primary border border-border">
-            <FolderPlus className="h-5 w-5" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-raised border border-border/50 p-1 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/folders/normal_folder_icon2.png" alt="New Folder" className="w-8 h-8 object-contain" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text-primary">New Folder</h3>

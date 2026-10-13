@@ -25,6 +25,8 @@ export interface FolderItem {
   createdAt: string;
   updatedAt: string;
   itemCount?: number;
+  isSystem?: boolean;
+  systemType?: string | null;
 }
 
 export interface UploadTask {

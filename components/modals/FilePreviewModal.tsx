@@ -18,6 +18,7 @@ import {
 import type { FileItem } from '@/lib/drive/types';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { useDrive } from '@/lib/drive/drive-context';
+import { ItemIcon } from '@/components/drive/ItemIcon';
 
 interface FilePreviewModalProps {
   file: FileItem;
@@ -38,15 +39,8 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface">
           <div className="flex items-center gap-3 overflow-hidden min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-subtle border border-border">
-              {category === 'image' && <ImageIcon className="h-5 w-5 text-file-image" />}
-              {category === 'video' && <VideoIcon className="h-5 w-5 text-file-video" />}
-              {category === 'audio' && <Headphones className="h-5 w-5 text-file-audio" />}
-              {category === 'archive' && <Archive className="h-5 w-5 text-file-archive" />}
-              {(category === 'pdf' || category === 'document') && (
-                <FileText className="h-5 w-5 text-file-document" />
-              )}
-              {category === 'other' && <File className="h-5 w-5 text-text-secondary" />}
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-raised border border-border/50 p-1">
+              <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="h-7 w-7" size={28} />
             </div>
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-text-primary truncate">{file.name}</h3>
