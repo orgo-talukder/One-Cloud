@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
+    "@tensorflow-models/mobilenet": "^2.1.1",
+    "@tensorflow/tfjs": "^4.22.0",
     "@types/qrcode": "^1.5.5",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",

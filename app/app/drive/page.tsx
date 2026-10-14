@@ -120,9 +120,13 @@ export default function MyDrivePage() {
   const currentFiles = useMemo(() => {
     let result = files
       .filter((f) => f.status === 'active' && f.parentFolderId === currentFolderId)
-      .filter((f) =>
-        searchQuery ? f.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
-      );
+      .filter((f) => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase().trim();
+        const matchesName = f.name.toLowerCase().includes(q) || (f.extension && f.extension.toLowerCase().includes(q));
+        const matchesAi = (f.aiTags && f.aiTags.some((t) => t.toLowerCase().includes(q) || q.includes(t.toLowerCase()))) || (f.aiPrimaryTag && f.aiPrimaryTag.toLowerCase().includes(q));
+        return matchesName || matchesAi;
+      });
 
     if (fileTypeFilter !== 'all') {
       result = result.filter(

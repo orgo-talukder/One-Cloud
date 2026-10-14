@@ -14,6 +14,9 @@ export interface FileItem {
   trashedAt?: string | null;
   downloadUrl?: string;
   thumbnailUrl?: string;
+  aiTags?: string[];
+  aiPrimaryTag?: string;
+  aiConfidence?: number;
 }
 
 export interface FolderItem {

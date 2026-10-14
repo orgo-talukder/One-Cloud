@@ -22,12 +22,21 @@ import {
   ArrowRight,
   ArrowLeft,
   X,
+  Sparkles,
+  Clock,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 import { useAuth } from '@/lib/firebase/auth-context';
 import { useTheme } from '@/lib/theme-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
+import { SpotlightSearchModal } from '@/components/search/SpotlightSearchModal';
+import {
+  executeDriveSearch,
+  getRecentSearches,
+  saveRecentSearch,
+  SearchMatchResult,
+} from '@/lib/drive/search-engine';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
 import { ItemIcon } from '@/components/drive/ItemIcon';
 import Link from 'next/link';
@@ -54,6 +63,8 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
 
@@ -62,35 +73,52 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter matching files and folders in real time
+  // Load recent searches when search is focused
+  useEffect(() => {
+    if (isSearchFocused) {
+      setRecentSearches(getRecentSearches());
+    }
+  }, [isSearchFocused]);
+
+  // Global Ctrl+K / Cmd+K listener to trigger Spotlight Palette
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSpotlightOpen((prev) => !prev);
+        setIsSearchFocused(false);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
+  // Filter matching files and folders using multi-layer AI search engine
   const trimmedQuery = searchQuery.trim().toLowerCase();
   const searchResults = React.useMemo(() => {
-    if (!trimmedQuery) return { matchingFiles: [], matchingFolders: [] };
-
-    const matchingFolders = folders
-      .filter((f) => f.status === 'active' && f.name.toLowerCase().includes(trimmedQuery))
-      .slice(0, 4);
-
-    const matchingFiles = files
-      .filter(
-        (f) =>
-          f.status === 'active' &&
-          (f.name.toLowerCase().includes(trimmedQuery) ||
-            f.extension.toLowerCase().includes(trimmedQuery))
-      )
-      .slice(0, 6);
-
-    return { matchingFiles, matchingFolders };
+    if (!trimmedQuery) return { matchingFiles: [], matchingFolders: [], totalCount: 0, aiMatchCount: 0 };
+    return executeDriveSearch(trimmedQuery, files, folders);
   }, [trimmedQuery, files, folders]);
 
-  const totalResultsCount =
-    searchResults.matchingFolders.length + searchResults.matchingFiles.length;
+  const totalResultsCount = searchResults.totalCount;
 
   // Flattened results for keyboard navigation
   const allResults = React.useMemo(() => {
-    const list: Array<{ type: 'folder' | 'file'; item: FolderItem | FileItem }> = [];
-    searchResults.matchingFolders.forEach((f) => list.push({ type: 'folder', item: f }));
-    searchResults.matchingFiles.forEach((f) => list.push({ type: 'file', item: f }));
+    const list: Array<{
+      type: 'folder' | 'file';
+      item: FolderItem | FileItem;
+      isAiMatch?: boolean;
+      matchedTag?: string;
+    }> = [];
+    searchResults.matchingFolders.slice(0, 4).forEach((f) => list.push({ type: 'folder', item: f }));
+    searchResults.matchingFiles.slice(0, 8).forEach((f) =>
+      list.push({
+        type: 'file',
+        item: f.item,
+        isAiMatch: f.isAiMatch,
+        matchedTag: f.matchedTag,
+      })
+    );
     return list;
   }, [searchResults]);
 
@@ -123,7 +151,8 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
       e.preventDefault();
       if (selectedIndex >= 0 && selectedIndex < allResults.length) {
         handleSelectItem(allResults[selectedIndex]);
-      } else {
+      } else if (trimmedQuery) {
+        saveRecentSearch(trimmedQuery);
         setIsSearchFocused(false);
         setIsMobileSearchOpen(false);
       }
@@ -135,7 +164,16 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
     }
   };
 
-  const handleSelectItem = (selected: { type: 'folder' | 'file'; item: FolderItem | FileItem }) => {
+  const handleSelectItem = (selected: {
+    type: 'folder' | 'file';
+    item: FolderItem | FileItem;
+    isAiMatch?: boolean;
+    matchedTag?: string;
+  }) => {
+    if (trimmedQuery) {
+      saveRecentSearch(trimmedQuery);
+      setRecentSearches(getRecentSearches());
+    }
     if (selected.type === 'file') {
       setPreviewFile(selected.item as FileItem);
       setIsSearchFocused(false);
@@ -158,13 +196,73 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
 
   // Render the search suggestions list
   const renderSearchSuggestions = () => {
-    if (!isSearchFocused || trimmedQuery.length === 0) return null;
+    if (!isSearchFocused) return null;
+
+    // When query is empty: show recent searches and shortcut hint
+    if (trimmedQuery.length === 0) {
+      return (
+        <div className="absolute top-12 left-0 right-0 bg-surface-raised border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-text-primary p-2">
+          {recentSearches.length > 0 && (
+            <div className="mb-2 p-1.5">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-text-muted mb-2">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" />
+                  <span>Recent Searches</span>
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {recentSearches.slice(0, 5).map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setSearchQuery(term);
+                    }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-surface border border-border hover:border-focus-ring text-text-primary transition-all cursor-pointer"
+                  >
+                    <Clock className="h-2.5 w-2.5 text-text-muted" />
+                    <span>{term}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setIsSpotlightOpen(true);
+              setIsSearchFocused(false);
+            }}
+            className="w-full p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 text-xs flex items-center justify-between hover:bg-purple-500/15 transition-colors cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+              <span className="font-semibold">Open Spotlight Command Palette</span>
+            </span>
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-border text-[10px] font-mono text-text-muted">
+              Ctrl+K
+            </kbd>
+          </button>
+        </div>
+      );
+    }
 
     return (
       <div className="absolute top-12 left-0 right-0 bg-surface-raised border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-text-primary">
         <div className="p-2.5 border-b border-border bg-surface flex items-center justify-between text-[11px] text-text-muted px-3.5">
-          <span>Search suggestions for &quot;{trimmedQuery}&quot;</span>
-          <span>{totalResultsCount} found</span>
+          <span>Search results for &quot;{trimmedQuery}&quot;</span>
+          <div className="flex items-center gap-2">
+            {searchResults.aiMatchCount > 0 && (
+              <span className="text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1">
+                <Sparkles className="h-3 w-3" />
+                {searchResults.aiMatchCount} AI Match{searchResults.aiMatchCount > 1 ? 'es' : ''}
+              </span>
+            )}
+            <span>{totalResultsCount} found</span>
+          </div>
         </div>
 
         <div className="max-h-[380px] overflow-y-auto p-1.5 space-y-1 divide-y divide-border/40">
@@ -180,7 +278,7 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                   <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
                     Folders
                   </div>
-                  {searchResults.matchingFolders.map((folder, idx) => {
+                  {searchResults.matchingFolders.slice(0, 4).map((folder, idx) => {
                     const isCurrent = selectedIndex === idx;
                     return (
                       <div
@@ -213,13 +311,21 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                   <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
                     Files
                   </div>
-                  {searchResults.matchingFiles.map((file, idx) => {
+                  {searchResults.matchingFiles.slice(0, 8).map((fileMatch, idx) => {
+                    const file = fileMatch.item;
                     const actualIdx = searchResults.matchingFolders.length + idx;
                     const isCurrent = selectedIndex === actualIdx;
                     return (
                       <div
                         key={file.id}
-                        onClick={() => handleSelectItem({ type: 'file', item: file })}
+                        onClick={() =>
+                          handleSelectItem({
+                            type: 'file',
+                            item: file,
+                            isAiMatch: fileMatch.isAiMatch,
+                            matchedTag: fileMatch.matchedTag,
+                          })
+                        }
                         onMouseEnter={() => setSelectedIndex(actualIdx)}
                         className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
                           isCurrent
@@ -227,18 +333,33 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                             : 'hover:bg-surface-hover text-text-primary'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
                           <div className="shrink-0">
-                            <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="h-4 w-4" size={16} />
+                            <ItemIcon
+                              type="file"
+                              fileName={file.name}
+                              mimeType={file.mimeType}
+                              extension={file.extension}
+                              className="h-4 w-4"
+                              size={16}
+                            />
                           </div>
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">{file.name}</p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="truncate font-medium">{file.name}</p>
+                              {fileMatch.isAiMatch && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-purple-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-[10px] font-semibold shrink-0">
+                                  <Sparkles className="h-2.5 w-2.5" />
+                                  <span>AI: {fileMatch.matchedTag}</span>
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[10px] text-text-muted font-mono">
                               {formatBytes(file.fileSizeBytes)} · {file.extension.toUpperCase()}
                             </p>
                           </div>
                         </div>
-                        <span className="text-[10px] font-medium text-primary bg-brand-subtle border border-primary-container/30 px-2 py-0.5 rounded-lg shrink-0 ml-2">
+                        <span className="text-[10px] font-medium text-primary bg-brand-subtle border border-primary-container/30 px-2 py-0.5 rounded-lg shrink-0">
                           Preview
                         </span>
                       </div>
@@ -249,6 +370,20 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
             </>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setIsSpotlightOpen(true);
+            setIsSearchFocused(false);
+          }}
+          className="w-full py-2 px-3.5 border-t border-border bg-surface hover:bg-surface-hover flex items-center justify-between text-xs text-primary font-medium cursor-pointer transition-colors"
+        >
+          <span>Open Spotlight Palette for advanced filters</span>
+          <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-surface-raised border border-border rounded text-text-muted">
+            Ctrl+K
+          </kbd>
+        </button>
       </div>
     );
   };
@@ -332,22 +467,36 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                   }}
                   onFocus={() => setIsSearchFocused(true)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Search files and folders"
-                  className="w-full h-10 pl-9 pr-14 bg-surface hover:bg-surface/90 focus:bg-surface text-xs sm:text-sm text-text-primary placeholder:text-text-muted rounded-[10px] border border-border focus:border-focus-ring focus:outline-none transition-colors"
+                  placeholder="Search files, folders, or image objects (e.g. 'dog')..."
+                  className="w-full h-10 pl-9 pr-24 bg-surface hover:bg-surface/90 focus:bg-surface text-xs sm:text-sm text-text-primary placeholder:text-text-muted rounded-[10px] border border-border focus:border-focus-ring focus:outline-none transition-colors"
                 />
-                {searchQuery && (
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedIndex(-1);
+                        inputRef.current?.focus();
+                      }}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   <button
+                    type="button"
                     onClick={() => {
-                      setSearchQuery('');
-                      setSelectedIndex(-1);
-                      inputRef.current?.focus();
+                      setIsSpotlightOpen(true);
+                      setIsSearchFocused(false);
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md"
-                    title="Clear search"
+                    className="flex items-center gap-0.5 text-[10px] font-mono font-medium text-text-muted bg-surface-raised border border-border px-1.5 py-0.5 rounded-md hover:border-focus-ring hover:text-text-primary transition-colors cursor-pointer"
+                    title="Open Spotlight Command Palette (Ctrl+K)"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <span>Ctrl</span>
+                    <span>K</span>
                   </button>
-                )}
+                </div>
 
                 {renderSearchSuggestions()}
               </div>
@@ -620,6 +769,12 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
       {previewFile && (
         <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
       )}
+
+      {/* Global Spotlight Omnibar Command Palette */}
+      <SpotlightSearchModal
+        isOpen={isSpotlightOpen}
+        onClose={() => setIsSpotlightOpen(false)}
+      />
     </>
   );
 }

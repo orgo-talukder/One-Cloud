@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   File,
   Zap,
+  Sparkles,
 } from 'lucide-react';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
@@ -60,6 +61,8 @@ export function FileList({
     toggleSelectFile,
     sessionToken,
     downloadFile,
+    scanFileWithAI,
+    isAiScanning,
   } = useDrive();
 
   // Modal states
@@ -565,6 +568,17 @@ export function FileList({
                               {file.extension || 'FILE'}
                             </span>
                           </div>
+                          {file.aiPrimaryTag && (
+                            <div className="mt-1 flex items-center">
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/25 text-purple-700 dark:text-purple-300 text-[10px] font-semibold truncate max-w-full"
+                                title={`AI Vision: ${file.aiTags?.join(', ') || file.aiPrimaryTag} (${file.aiConfidence || 90}%)`}
+                              >
+                                <Sparkles className="h-2.5 w-2.5 shrink-0 text-purple-600 dark:text-purple-400" />
+                                <span className="truncate">{file.aiPrimaryTag}</span>
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* 3-Dot Options Button */}
@@ -598,6 +612,19 @@ export function FileList({
                                 <Eye className="h-3.5 w-3.5 text-primary" />
                                 <span>Preview</span>
                               </button>
+                              {isImage && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    scanFileWithAI(file.id);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                  <span>{file.aiPrimaryTag ? 'Re-scan with AI' : 'Scan Image with AI'}</span>
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => {
@@ -803,6 +830,15 @@ export function FileList({
                               >
                                 {file.name}
                               </span>
+                              {file.aiPrimaryTag && (
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/25 text-purple-700 dark:text-purple-300 text-[10px] font-semibold shrink-0"
+                                  title={`AI Vision: ${file.aiTags?.join(', ') || file.aiPrimaryTag} (${file.aiConfidence || 90}%)`}
+                                >
+                                  <Sparkles className="h-2.5 w-2.5 text-purple-600 dark:text-purple-400" />
+                                  <span>{file.aiPrimaryTag}</span>
+                                </span>
+                              )}
                               {file.isStarred && (
                                 <Star className="h-3.5 w-3.5 fill-warning text-warning shrink-0" />
                               )}
@@ -847,6 +883,19 @@ export function FileList({
                                     <Eye className="h-3.5 w-3.5 text-primary" />
                                     <span>Preview</span>
                                   </button>
+                                  {isImage && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        scanFileWithAI(file.id);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+                                    >
+                                      <Sparkles className="h-3.5 w-3.5" />
+                                      <span>{file.aiPrimaryTag ? 'Re-scan with AI' : 'Scan Image with AI'}</span>
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => {

@@ -102,7 +102,11 @@ export default function RecentPage() {
     const q = (localSearch || searchQuery).trim().toLowerCase();
     if (q) {
       list = list.filter(
-        (f) => f.name.toLowerCase().includes(q) || f.extension.toLowerCase().includes(q)
+        (f) =>
+          f.name.toLowerCase().includes(q) ||
+          f.extension.toLowerCase().includes(q) ||
+          (f.aiTags && f.aiTags.some((t) => t.toLowerCase().includes(q) || q.includes(t.toLowerCase()))) ||
+          (f.aiPrimaryTag && f.aiPrimaryTag.toLowerCase().includes(q))
       );
     }
 

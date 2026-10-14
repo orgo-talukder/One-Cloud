@@ -23,6 +23,7 @@ import { DEFAULT_SYSTEM_FOLDERS } from './icon-resolver';
 import { useAuth } from '@/lib/firebase/auth-context';
 import { db } from '@/lib/firebase/client';
 import { handleFirestoreError, OperationType } from '@/lib/firebase/firestore-errors';
+import { scanImageFile, scanImageUrl } from '@/lib/ai/vision-scanner';
 
 interface DriveContextType {
   files: FileItem[];
@@ -78,6 +79,8 @@ interface DriveContextType {
   connectTelegramSuccess: (token: string, username: string) => void;
   disconnectTelegram: () => void;
   syncTelegram: () => Promise<void>;
+  scanFileWithAI: (fileId: string) => Promise<string[]>;
+  isAiScanning: boolean;
 }
 
 const DriveContext = createContext<DriveContextType | null>(null);
@@ -123,6 +126,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const [telegramSyncing, setTelegramSyncing] = useState(false);
+  const [isAiScanning, setIsAiScanning] = useState(false);
 
   // Track cancelled task IDs and active XHR requests so in-flight parallel workers abort immediately
   const cancelledTasksRef = useRef<Set<string>>(new Set());
@@ -658,23 +662,100 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Helper to persist an uploaded FileItem to Firestore or local state
-  const saveUploadedFileMetadata = async (uploadedFileItem: FileItem) => {
+  // Helper to persist an uploaded FileItem to Firestore or local state (with automatic On-Device AI Vision tagging)
+  const saveUploadedFileMetadata = async (
+    uploadedFileItem: FileItem,
+    originalFile?: File | Blob
+  ) => {
+    let finalItem: FileItem = { ...uploadedFileItem };
+
+    // Auto-scan image with 100% On-Device Open-Source AI Vision model (MobileNet v2/v3 via TensorFlow.js)
+    const isImage =
+      (originalFile?.type?.startsWith('image/') ||
+        uploadedFileItem.mimeType?.startsWith('image/') ||
+        /\.(jpe?g|png|webp|gif|bmp|svg)$/i.test(uploadedFileItem.name));
+
+    if (isImage && originalFile) {
+      try {
+        const scanResult = await scanImageFile(originalFile);
+        if (scanResult && scanResult.tags.length > 0) {
+          finalItem = {
+            ...finalItem,
+            aiTags: scanResult.tags,
+            aiPrimaryTag: scanResult.primaryTag,
+            aiConfidence: scanResult.confidence,
+          };
+        }
+      } catch (e) {
+        console.warn('[OneCloud] On-device image scan error:', e);
+      }
+    }
+
     if (user) {
       try {
         await setDoc(
-          doc(db, 'users', user.uid, 'files', uploadedFileItem.id),
-          uploadedFileItem
+          doc(db, 'users', user.uid, 'files', finalItem.id),
+          finalItem
         );
       } catch (err) {
         handleFirestoreError(
           err,
           OperationType.CREATE,
-          `users/${user.uid}/files/${uploadedFileItem.id}`
+          `users/${user.uid}/files/${finalItem.id}`
         );
       }
     } else {
-      setFiles((prev) => [uploadedFileItem, ...prev]);
+      setFiles((prev) => [finalItem, ...prev]);
+    }
+  };
+
+  // On-demand AI scanner for existing files in Drive
+  const scanFileWithAI = async (fileId: string): Promise<string[]> => {
+    const targetFile = files.find((f) => f.id === fileId);
+    if (!targetFile) return [];
+
+    const isImage =
+      targetFile.mimeType?.startsWith('image/') ||
+      /\.(jpe?g|png|webp|gif|bmp)$/i.test(targetFile.name);
+    if (!isImage) return [];
+
+    setIsAiScanning(true);
+    try {
+      const downloadUrl = `/api/telegram/download/${targetFile.id}?messageId=${targetFile.telegramMessageId}&sessionToken=${encodeURIComponent(
+        sessionToken
+      )}`;
+      const urlToScan = targetFile.downloadUrl || downloadUrl;
+      const scanResult = await scanImageUrl(urlToScan);
+      if (scanResult && scanResult.tags.length > 0) {
+        if (user) {
+          await updateDoc(doc(db, 'users', user.uid, 'files', targetFile.id), {
+            aiTags: scanResult.tags,
+            aiPrimaryTag: scanResult.primaryTag,
+            aiConfidence: scanResult.confidence,
+            updatedAt: new Date().toISOString(),
+          });
+        } else {
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === targetFile.id
+                ? {
+                    ...f,
+                    aiTags: scanResult.tags,
+                    aiPrimaryTag: scanResult.primaryTag,
+                    aiConfidence: scanResult.confidence,
+                  }
+                : f
+            )
+          );
+        }
+        return scanResult.tags;
+      }
+      return [];
+    } catch (err) {
+      console.warn('[OneCloud] Failed to scan file on-device:', err);
+      return [];
+    } finally {
+      setIsAiScanning(false);
     }
   };
 
@@ -755,7 +836,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         unsubscribe();
 
         if (res.success && res.file) {
-          await saveUploadedFileMetadata(res.file);
+          await saveUploadedFileMetadata(res.file, file);
           setUploadTasks((prev) =>
             prev.map((t) =>
               t.id === task.id
@@ -1038,7 +1119,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (singleResult.success && singleResult.file) {
-          await saveUploadedFileMetadata(singleResult.file);
+          await saveUploadedFileMetadata(singleResult.file, file);
           setUploadTasks((prev) =>
             prev.map((t) =>
               t.id === task.id
@@ -1190,7 +1271,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         throw new Error(commitData.error || 'Failed to finalize uploaded file in Telegram.');
       }
 
-      await saveUploadedFileMetadata(commitData.file);
+      await saveUploadedFileMetadata(commitData.file, file);
       setUploadTasks((prev) =>
         prev.map((t) =>
           t.id === task.id
@@ -1838,6 +1919,8 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         connectTelegramSuccess,
         disconnectTelegram,
         syncTelegram,
+        scanFileWithAI,
+        isAiScanning,
       }}
     >
       {children}
