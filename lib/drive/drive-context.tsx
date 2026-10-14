@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   collection,
   doc,
@@ -100,7 +100,24 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     }));
   });
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('onecloud_view_mode');
+        if (saved === 'list' || saved === 'grid') return saved as ViewMode;
+      } catch {}
+    }
+    return 'grid';
+  });
+
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeState(mode);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('onecloud_view_mode', mode);
+      } catch {}
+    }
+  }, []);
   const [sortOption, setSortOption] = useState<SortOption>('date_desc');
   const [fileTypeFilter, setFileTypeFilter] = useState<FileTypeFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');

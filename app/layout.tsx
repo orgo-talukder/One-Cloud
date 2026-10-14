@@ -11,7 +11,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'One Cloud — Telegram-Powered Cloud Drive',
+  title: 'One Cloud',
   description:
     'A personal cloud drive powered by your Telegram account. Store, organize, and access your files from the web.',
   manifest: '/manifest.webmanifest',
@@ -33,14 +33,14 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'One Cloud — Telegram-Powered Cloud Drive',
+    title: 'One Cloud',
     description:
       'A personal cloud drive powered by your Telegram account. Store, organize, and access your files from the web.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'One Cloud — Telegram-Powered Cloud Drive',
+    title: 'One Cloud',
     description:
       'A personal cloud drive powered by your Telegram account. Store, organize, and access your files from the web.',
   },

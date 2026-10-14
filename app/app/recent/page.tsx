@@ -34,12 +34,11 @@ import type { FileItem } from '@/lib/drive/types';
 import { ItemIcon } from '@/components/drive/ItemIcon';
 
 export default function RecentPage() {
-  const { files, folders, searchQuery, toggleStarFile, downloadFile } = useDrive();
+  const { files, folders, searchQuery, toggleStarFile, downloadFile, viewMode, setViewMode } = useDrive();
 
   const [localSearch, setLocalSearch] = useState('');
   const [selectedTimeFilter, setSelectedTimeFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [isClearing, setIsClearing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -504,40 +503,40 @@ export default function RecentPage() {
   };
 
   const renderFileGrid = (file: FileItem) => {
-    const meta = getFileCategoryMeta(file.mimeType, file.extension);
     const folderName = file.parentFolderId ? folderMap.get(file.parentFolderId) || 'Projects' : 'My Drive';
 
     return (
       <div
         key={file.id}
         onClick={() => setPreviewFile(file)}
-        className="group bg-surface hover:bg-surface-hover border border-border rounded-xl p-4 flex flex-col justify-between transition-all cursor-pointer shadow-xs h-36"
+        className="group bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between transition-all cursor-pointer shadow-xs min-h-[130px] sm:min-h-[140px]"
       >
-        <div className="flex items-start justify-between">
-          <div className="w-10 h-10 rounded-lg bg-surface-raised flex items-center justify-center">
-            {meta.icon}
+        <div className="flex items-start justify-between mb-2">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1.5 shrink-0">
+            <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-6 h-6 sm:w-7 sm:h-7" size={26} />
           </div>
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleStarFile(file.id);
             }}
-            className={`p-1 rounded-lg transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               file.isStarred ? 'text-warning' : 'text-text-muted hover:text-warning'
             }`}
             type="button"
+            title={file.isStarred ? 'Remove star' : 'Add to starred'}
           >
             <Star className={`w-4 h-4 ${file.isStarred ? 'fill-warning' : ''}`} />
           </button>
         </div>
 
-        <div className="flex flex-col min-w-0 mt-2">
-          <span className="font-label-md text-label-md text-text-primary font-medium truncate group-hover:text-primary transition-colors">
+        <div className="flex flex-col min-w-0">
+          <span className="text-xs sm:text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors" title={file.name}>
             {file.name}
           </span>
-          <div className="flex items-center justify-between text-xs text-text-muted mt-1">
+          <div className="flex items-center justify-between text-[11px] text-text-muted mt-1">
             <span className="truncate">{folderName}</span>
-            <span className="font-mono text-[11px]">{formatBytes(file.fileSizeBytes)}</span>
+            <span className="font-mono tabular-nums">{formatBytes(file.fileSizeBytes)}</span>
           </div>
         </div>
       </div>
@@ -598,23 +597,30 @@ export default function RecentPage() {
               setSelectedTimeFilter('all');
               setSelectedTypeFilter('all');
             }}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+            className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
               selectedTimeFilter === 'all' && selectedTypeFilter === 'all'
-                ? 'bg-brand-subtle text-primary border border-primary/20'
-                : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border border-border'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
             }`}
           >
-            <span>All Recent</span>
-            <span className="text-[10px] px-1 rounded-full bg-surface-raised font-mono">
+            <History className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="whitespace-nowrap">All Recent</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono tabular-nums leading-none border ${
+                selectedTimeFilter === 'all' && selectedTypeFilter === 'all'
+                  ? 'bg-primary-container/20 text-primary border-primary-container/30'
+                  : 'bg-surface-raised text-text-muted border-border/60'
+              }`}
+            >
               {filteredFiles.length}
             </span>
           </button>
           <button
             type="button"
             onClick={() => setSelectedTimeFilter(selectedTimeFilter === 'today' ? 'all' : 'today')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
+            className={`h-8 px-3 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
               selectedTimeFilter === 'today'
-                ? 'bg-brand-subtle text-primary border-primary/20'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
                 : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
             }`}
           >
@@ -623,9 +629,9 @@ export default function RecentPage() {
           <button
             type="button"
             onClick={() => setSelectedTimeFilter(selectedTimeFilter === 'week' ? 'all' : 'week')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
+            className={`h-8 px-3 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
               selectedTimeFilter === 'week'
-                ? 'bg-brand-subtle text-primary border-primary/20'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
                 : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
             }`}
           >
@@ -634,51 +640,51 @@ export default function RecentPage() {
           <button
             type="button"
             onClick={() => setSelectedTimeFilter(selectedTimeFilter === 'month' ? 'all' : 'month')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
+            className={`h-8 px-3 rounded-full text-xs font-medium transition-colors cursor-pointer border ${
               selectedTimeFilter === 'month'
-                ? 'bg-brand-subtle text-primary border-primary/20'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
                 : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
             }`}
           >
             This Month
           </button>
 
-          <div className="w-px h-4 bg-surface-raised mx-1" />
+          <div className="w-px h-4 bg-border mx-1" />
 
           <button
             type="button"
             onClick={() => setSelectedTypeFilter(selectedTypeFilter === 'document' ? 'all' : 'document')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 border ${
+            className={`h-8 px-3 rounded-full text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 border ${
               selectedTypeFilter === 'document'
-                ? 'bg-brand-subtle text-primary border-primary/20'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
                 : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
             }`}
           >
-            <FileText className="w-3.5 h-3.5 text-file-document" />
+            <FileText className="w-3.5 h-3.5 text-file-document shrink-0" />
             <span>Documents</span>
           </button>
           <button
             type="button"
             onClick={() => setSelectedTypeFilter(selectedTypeFilter === 'image' ? 'all' : 'image')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 border ${
+            className={`h-8 px-3 rounded-full text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 border ${
               selectedTypeFilter === 'image'
-                ? 'bg-brand-subtle text-primary border-primary/20'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
                 : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
             }`}
           >
-            <ImageIcon className="w-3.5 h-3.5 text-file-image" />
+            <ImageIcon className="w-3.5 h-3.5 text-file-image shrink-0" />
             <span>Images</span>
           </button>
           <button
             type="button"
             onClick={() => setSelectedTypeFilter(selectedTypeFilter === 'video' ? 'all' : 'video')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 border ${
+            className={`h-8 px-3 rounded-full text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 border ${
               selectedTypeFilter === 'video'
-                ? 'bg-brand-subtle text-primary border-primary/20'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
                 : 'bg-surface hover:bg-surface-hover text-text-secondary hover:text-text-primary border-border'
             }`}
           >
-            <VideoIcon className="w-3.5 h-3.5 text-file-video" />
+            <VideoIcon className="w-3.5 h-3.5 text-file-video shrink-0" />
             <span>Videos</span>
           </button>
         </div>
@@ -686,11 +692,11 @@ export default function RecentPage() {
         {/* View Mode Switch */}
         <div className="flex items-center gap-1 p-0.5 bg-surface border border-border rounded-lg">
           <button
-            onClick={() => setViewMode('table')}
+            onClick={() => setViewMode('list')}
             className={`w-7 h-7 flex items-center justify-center rounded transition-colors cursor-pointer ${
-              viewMode === 'table' ? 'bg-surface-raised text-primary' : 'text-text-muted hover:text-text-primary'
+              viewMode === 'list' ? 'bg-surface-raised text-primary' : 'text-text-muted hover:text-text-primary'
             }`}
-            title="Table View"
+            title="List View"
             type="button"
           >
             <List className="w-4 h-4" />
@@ -723,7 +729,7 @@ export default function RecentPage() {
             </span>
           </div>
 
-          {viewMode === 'table' ? (
+          {viewMode === 'list' ? (
             <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
               {/* Table Header */}
               <div className="hidden md:grid bg-sidebar px-4 grid-cols-12 items-center h-10 select-none border-b border-border/40">
@@ -748,7 +754,7 @@ export default function RecentPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
               {todayFiles.map(renderFileGrid)}
             </div>
           )}
@@ -770,7 +776,7 @@ export default function RecentPage() {
             </span>
           </div>
 
-          {viewMode === 'table' ? (
+          {viewMode === 'list' ? (
             <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
               {/* Table Header */}
               <div className="hidden md:grid bg-sidebar px-4 grid-cols-12 items-center h-10 select-none border-b border-border/40">
@@ -795,7 +801,7 @@ export default function RecentPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
               {earlierFiles.map(renderFileGrid)}
             </div>
           )}

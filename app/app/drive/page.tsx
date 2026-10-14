@@ -12,6 +12,7 @@ import {
   ArrowUpDown,
   List,
   LayoutGrid,
+  Layers,
   FolderPlus,
   Upload,
   Folder,
@@ -365,6 +366,100 @@ export default function MyDrivePage() {
     );
   };
 
+  const renderFolderDropdownMenu = (folder: FolderItem) => {
+    return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+        className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left"
+      >
+        <button
+          type="button"
+          onClick={() => {
+            navigateToFolder(folder.id);
+            setActiveMenuId(null);
+          }}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+        >
+          <FolderOpen className="w-3.5 h-3.5 text-primary" />
+          <span>Open folder</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            toggleStarFolder(folder.id);
+            setActiveMenuId(null);
+          }}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+        >
+          <Star
+            className={`w-3.5 h-3.5 ${
+              folder.isStarred ? 'fill-warning text-warning' : 'text-text-muted'
+            }`}
+          />
+          <span>{folder.isStarred ? 'Remove Star' : 'Star'}</span>
+        </button>
+
+        {!folder.isSystem && (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setRenameTarget({
+                  id: folder.id,
+                  name: folder.name,
+                  isFolder: true,
+                });
+                setActiveMenuId(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+            >
+              <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+              <span>Rename</span>
+            </button>
+
+            <div className="my-1 border-t border-border" />
+
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteTarget({
+                  id: folder.id,
+                  name: folder.name,
+                  isFolder: true,
+                  defaultAction: 'trash',
+                });
+                setActiveMenuId(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Move to Trash</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteTarget({
+                  id: folder.id,
+                  name: folder.name,
+                  isFolder: true,
+                  defaultAction: 'permanent',
+                });
+                setActiveMenuId(null);
+              }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Delete</span>
+            </button>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full bg-canvas text-text-primary font-body-md transition-colors overflow-y-auto">
       {/* Hidden file input */}
@@ -443,63 +538,73 @@ export default function MyDrivePage() {
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto min-w-0">
             <button
               onClick={() => setFileTypeFilter('all')}
-              className={`h-8 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
                 fileTypeFilter === 'all'
-                  ? 'bg-brand-subtle text-primary border border-primary-container/30'
-                  : 'bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary'
+                  ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                  : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
               }`}
               type="button"
+              aria-label="Filter by all files"
             >
-              <span>All files</span>
-              <span className="text-[11px] opacity-75">{currentFiles.length}</span>
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span className="whitespace-nowrap">All Files</span>
+              <span
+                className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono tabular-nums leading-none border ${
+                  fileTypeFilter === 'all'
+                    ? 'bg-primary-container/20 text-primary border-primary-container/30'
+                    : 'bg-surface-raised text-text-muted border-border/60'
+                }`}
+              >
+                {currentFiles.length}
+              </span>
             </button>
             <button
               onClick={() => setFileTypeFilter('document')}
-              className={`h-8 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
                 fileTypeFilter === 'document'
-                  ? 'bg-brand-subtle text-primary border border-primary-container/30'
-                  : 'bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary'
+                  ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                  : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
               }`}
               type="button"
             >
-              <FileText className="w-3.5 h-3.5 text-file-document" />
-              <span>Documents</span>
+              <FileText className="w-3.5 h-3.5 text-file-document shrink-0" />
+              <span className="whitespace-nowrap">Documents</span>
             </button>
             <button
               onClick={() => setFileTypeFilter('image')}
-              className={`h-8 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
                 fileTypeFilter === 'image'
-                  ? 'bg-brand-subtle text-primary border border-primary-container/30'
-                  : 'bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary'
+                  ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                  : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
               }`}
               type="button"
             >
-              <ImageIcon className="w-3.5 h-3.5 text-file-image" />
-              <span>Images</span>
+              <ImageIcon className="w-3.5 h-3.5 text-file-image shrink-0" />
+              <span className="whitespace-nowrap">Images</span>
             </button>
             <button
               onClick={() => setFileTypeFilter('video')}
-              className={`h-8 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
                 fileTypeFilter === 'video'
-                  ? 'bg-brand-subtle text-primary border border-primary-container/30'
-                  : 'bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary'
+                  ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                  : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
               }`}
               type="button"
             >
-              <VideoIcon className="w-3.5 h-3.5 text-file-video" />
-              <span>Videos</span>
+              <VideoIcon className="w-3.5 h-3.5 text-file-video shrink-0" />
+              <span className="whitespace-nowrap">Videos</span>
             </button>
             <button
               onClick={() => setFileTypeFilter('archive')}
-              className={`h-8 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
                 fileTypeFilter === 'archive'
-                  ? 'bg-brand-subtle text-primary border border-primary-container/30'
-                  : 'bg-surface text-text-secondary border border-border hover:bg-surface-hover hover:text-text-primary'
+                  ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                  : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
               }`}
               type="button"
             >
-              <Archive className="w-3.5 h-3.5 text-file-archive" />
-              <span>Archives</span>
+              <Archive className="w-3.5 h-3.5 text-file-archive shrink-0" />
+              <span className="whitespace-nowrap">Archives</span>
             </button>
           </div>
 
@@ -616,161 +721,154 @@ export default function MyDrivePage() {
                 {currentFolders.length} {currentFolders.length === 1 ? 'directory' : 'directories'}
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {currentFolders.map((folder) => {
-                const folderFiles = files.filter(
-                  (f) => f.status === 'active' && f.parentFolderId === folder.id
-                );
-                const folderSize = folderFiles.reduce((acc, f) => acc + (f.fileSizeBytes || 0), 0);
-                const isMenuOpen = activeMenuId === `folder-${folder.id}`;
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
+                {currentFolders.map((folder) => {
+                  const folderFiles = files.filter(
+                    (f) => f.status === 'active' && f.parentFolderId === folder.id
+                  );
+                  const isMenuOpen = activeMenuId === `folder-${folder.id}`;
 
-                return (
-                  <div
-                    key={folder.id}
-                    onClick={() => navigateToFolder(folder.id)}
-                    className="group relative bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer shadow-xs"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center flex-shrink-0 p-1">
-                        <ItemIcon type="folder" folder={folder} className="w-8 h-8" size={32} />
+                  return (
+                    <div
+                      key={folder.id}
+                      onClick={() => navigateToFolder(folder.id)}
+                      className="group relative bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 p-3 sm:p-3.5 rounded-xl flex flex-col justify-between transition-all cursor-pointer shadow-xs min-h-[105px] sm:min-h-[115px]"
+                    >
+                      <div className="flex items-start justify-between gap-1 mb-2">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                          <ItemIcon type="folder" folder={folder} className="w-7 h-7 sm:w-8 sm:h-8" size={30} />
+                        </div>
+                        <div
+                          className="drive-menu-container relative flex items-center gap-0.5 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleStarFolder(folder.id)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-warning transition-colors cursor-pointer"
+                            aria-label="Star folder"
+                            title={folder.isStarred ? 'Remove Star' : 'Star'}
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${
+                                folder.isStarred ? 'fill-warning text-warning' : ''
+                              }`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`)}
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
+                              isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
+                            }`}
+                            aria-label="Folder options"
+                            title="Folder options"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                          {isMenuOpen && renderFolderDropdownMenu(folder)}
+                        </div>
                       </div>
+
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-xs sm:text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors">
+                          <span
+                            className="text-xs sm:text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors"
+                            title={folder.name}
+                          >
                             {folder.name}
                           </span>
-                          {folder.isStarred && (
-                            <Star className="w-3.5 h-3.5 fill-warning text-warning shrink-0" />
-                          )}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs text-text-muted truncate">
-                            {folderFiles.length} {folderFiles.length === 1 ? 'file' : 'files'} •{' '}
-                            {formatBytes(folderSize)}
+                        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-text-muted">
+                          <span className="truncate">
+                            {folderFiles.length} {folderFiles.length === 1 ? 'file' : 'files'}
                           </span>
                           {folder.isSystem && (
-                            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium shrink-0">
-                              Protected
+                            <span className="text-[10px] text-primary bg-primary/10 px-1 py-0.2 rounded font-medium shrink-0">
+                              System
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-surface border border-border rounded-xl shadow-xs overflow-hidden divide-y divide-border/60">
+                {currentFolders.map((folder) => {
+                  const folderFiles = files.filter(
+                    (f) => f.status === 'active' && f.parentFolderId === folder.id
+                  );
+                  const folderSize = folderFiles.reduce((acc, f) => acc + (f.fileSizeBytes || 0), 0);
+                  const isMenuOpen = activeMenuId === `folder-${folder.id}`;
 
-                    {/* Folder 3-Dot Menu Container */}
+                  return (
                     <div
-                      className="drive-menu-container relative shrink-0"
-                      onClick={(e) => e.stopPropagation()}
+                      key={folder.id}
+                      onClick={() => navigateToFolder(folder.id)}
+                      className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3 text-xs hover:bg-surface-hover transition-colors group cursor-pointer"
                     >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`);
-                        }}
-                        aria-label="Folder options"
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
-                          isMenuOpen
-                            ? 'bg-surface-hover text-text-primary opacity-100'
-                            : 'opacity-80 group-hover:opacity-100'
-                        }`}
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-
-                      {isMenuOpen && (
-                        <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigateToFolder(folder.id);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <FolderOpen className="w-3.5 h-3.5 text-primary" />
-                            <span>Open folder</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              toggleStarFolder(folder.id);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Star
-                              className={`w-3.5 h-3.5 ${
-                                folder.isStarred ? 'fill-warning text-warning' : 'text-text-muted'
-                              }`}
-                            />
-                            <span>{folder.isStarred ? 'Remove Star' : 'Star'}</span>
-                          </button>
-
-                          {/* Only allow Rename, Trash, and Delete for custom user-created folders */}
-                          {!folder.isSystem && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRenameTarget({
-                                    id: folder.id,
-                                    name: folder.name,
-                                    isFolder: true,
-                                  });
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 text-text-muted" />
-                                <span>Rename</span>
-                              </button>
-
-                              <div className="my-1 border-t border-border" />
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setDeleteTarget({
-                                    id: folder.id,
-                                    name: folder.name,
-                                    isFolder: true,
-                                    defaultAction: 'trash',
-                                  });
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Move to Trash</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setDeleteTarget({
-                                    id: folder.id,
-                                    name: folder.name,
-                                    isFolder: true,
-                                    defaultAction: 'permanent',
-                                  });
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                <span>Delete</span>
-                              </button>
-                            </>
-                          )}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1 shrink-0">
+                          <ItemIcon type="folder" folder={folder} className="w-6 h-6 sm:w-7 sm:h-7" size={26} />
                         </div>
-                      )}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-xs sm:text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors">
+                              {folder.name}
+                            </span>
+                            {folder.isStarred && (
+                              <Star className="w-3.5 h-3.5 fill-warning text-warning shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] sm:text-xs text-text-muted sm:ml-auto">
+                            <span>
+                              {folderFiles.length} {folderFiles.length === 1 ? 'file' : 'files'}
+                            </span>
+                            <span>•</span>
+                            <span className="font-mono tabular-nums">{formatBytes(folderSize)}</span>
+                            {folder.isSystem && (
+                              <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium shrink-0">
+                                Protected
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        className="drive-menu-container relative flex items-center gap-1 shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleStarFolder(folder.id)}
+                          title={folder.isStarred ? 'Remove Star' : 'Star'}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-warning transition-colors cursor-pointer"
+                        >
+                          <Star
+                            className={`w-4 h-4 ${folder.isStarred ? 'fill-warning text-warning' : ''}`}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`)}
+                          title="Folder options"
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
+                            isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
+                          }`}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {isMenuOpen && renderFolderDropdownMenu(folder)}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         )}
 
@@ -804,7 +902,7 @@ export default function MyDrivePage() {
               </button>
             </div>
           ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
               {currentFiles.map((file) => {
                 const isSelected = selectedFileIds.includes(file.id);
                 const isMenuOpen = activeMenuId === `file-grid-${file.id}`;
@@ -813,18 +911,18 @@ export default function MyDrivePage() {
                     key={file.id}
                     onClick={() => toggleSelectFile(file.id)}
                     onDoubleClick={() => setPreviewFile(file)}
-                    className={`relative p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between group shadow-xs ${
+                    className={`relative p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between group shadow-xs min-h-[130px] sm:min-h-[140px] ${
                       isSelected
                         ? 'bg-brand-subtle/50 border-primary-container ring-1 ring-primary-container'
                         : 'bg-surface hover:bg-surface-raised border-border'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1.5 shrink-0">
-                        <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-7 h-7" size={28} />
+                    <div className="flex items-start justify-between mb-2 sm:mb-2.5">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1.5 shrink-0">
+                        <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-6 h-6 sm:w-7 sm:h-7" size={26} />
                       </div>
                       <div
-                        className="drive-menu-container relative flex items-center gap-1"
+                        className="drive-menu-container relative flex items-center gap-0.5"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button

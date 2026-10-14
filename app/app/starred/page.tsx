@@ -44,10 +44,11 @@ export default function StarredPage() {
     toggleStarFolder,
     navigateToFolder,
     downloadFile,
+    viewMode,
+    setViewMode,
   } = useDrive();
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'folders' | 'files'>('all');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [sortOption, setSortOption] = useState<'Date starred' | 'Name' | 'Size'>('Date starred');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
@@ -204,49 +205,67 @@ export default function StarredPage() {
         </div>
 
         {/* Filter Pills Toolbar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 select-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none select-none">
           <button
             type="button"
             onClick={() => setActiveFilter('all')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border ${
+            className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
               activeFilter === 'all'
-                ? 'bg-brand-subtle text-primary border-primary/20'
-                : 'text-text-secondary hover:bg-surface hover:text-text-primary border-border bg-surface'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
             }`}
           >
             <Star className="w-3.5 h-3.5 fill-current" />
-            <span>All Starred</span>
-            <span className="ml-1 px-1.5 py-0.2 bg-primary/20 rounded-full text-[11px] leading-tight">
+            <span className="whitespace-nowrap">All Starred</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono tabular-nums leading-none border ${
+                activeFilter === 'all'
+                  ? 'bg-primary-container/20 text-primary border-primary-container/30'
+                  : 'bg-surface-raised text-text-muted border-border/60'
+              }`}
+            >
               {totalPinned}
             </span>
           </button>
           <button
             type="button"
             onClick={() => setActiveFilter('folders')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer border ${
+            className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
               activeFilter === 'folders'
-                ? 'bg-brand-subtle text-primary border-primary/20'
-                : 'text-text-secondary hover:bg-surface hover:text-text-primary border-border bg-surface'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
             }`}
           >
-            <Folder className="w-3.5 h-3.5 text-text-muted" />
-            <span>Starred Folders</span>
-            <span className="px-1.5 py-0.2 bg-surface-raised rounded-full text-[11px] text-text-muted">
+            <Folder className="w-3.5 h-3.5 text-text-muted shrink-0" />
+            <span className="whitespace-nowrap">Starred Folders</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono tabular-nums leading-none border ${
+                activeFilter === 'folders'
+                  ? 'bg-primary-container/20 text-primary border-primary-container/30'
+                  : 'bg-surface-raised text-text-muted border-border/60'
+              }`}
+            >
               {displayFolders.length}
             </span>
           </button>
           <button
             type="button"
             onClick={() => setActiveFilter('files')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer border ${
+            className={`h-8 px-3.5 rounded-full text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border shadow-xs ${
               activeFilter === 'files'
-                ? 'bg-brand-subtle text-primary border-primary/20'
-                : 'text-text-secondary hover:bg-surface hover:text-text-primary border-border bg-surface'
+                ? 'bg-brand-subtle text-primary border-primary/30 font-semibold'
+                : 'bg-surface text-text-secondary border-border hover:bg-surface-hover hover:text-text-primary'
             }`}
           >
-            <FileText className="w-3.5 h-3.5 text-text-muted" />
-            <span>Starred Files</span>
-            <span className="px-1.5 py-0.2 bg-surface-raised rounded-full text-[11px] text-text-muted">
+            <FileText className="w-3.5 h-3.5 text-text-muted shrink-0" />
+            <span className="whitespace-nowrap">Starred Files</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono tabular-nums leading-none border ${
+                activeFilter === 'files'
+                  ? 'bg-primary-container/20 text-primary border-primary-container/30'
+                  : 'bg-surface-raised text-text-muted border-border/60'
+              }`}
+            >
               {displayFiles.length}
             </span>
           </button>
@@ -268,37 +287,195 @@ export default function StarredPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {displayFolders.map((folder) => {
-              const isMenuOpen = activeMenuId === `folder-${folder.id}`;
-              const folderFilesCount = files.filter(
-                (f) => f.status === 'active' && f.parentFolderId === folder.id
-              ).length;
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
+              {displayFolders.map((folder) => {
+                const isMenuOpen = activeMenuId === `folder-${folder.id}`;
+                const folderFilesCount = files.filter(
+                  (f) => f.status === 'active' && f.parentFolderId === folder.id
+                ).length;
 
-              return (
-                <div
-                  key={folder.id}
-                  onClick={() => {
-                    navigateToFolder(folder.id);
-                    router.push(`/app/drive/${folder.id}`);
-                  }}
-                  className="group relative bg-surface hover:bg-surface-hover rounded-xl p-4 transition-all duration-150 flex flex-col justify-between h-[112px] cursor-pointer shadow-xs border border-border"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
-                        <ItemIcon type="folder" folder={folder} className="w-8 h-8" size={32} />
+                return (
+                  <div
+                    key={folder.id}
+                    onClick={() => {
+                      navigateToFolder(folder.id);
+                      router.push(`/app/drive/${folder.id}`);
+                    }}
+                    className="group relative bg-surface hover:bg-surface-raised border border-border hover:border-primary-container/40 p-3 sm:p-3.5 rounded-xl flex flex-col justify-between transition-all cursor-pointer shadow-xs min-h-[105px] sm:min-h-[115px]"
+                  >
+                    <div className="flex items-start justify-between gap-1 mb-2">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
+                        <ItemIcon type="folder" folder={folder} className="w-7 h-7 sm:w-8 sm:h-8" size={30} />
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-label-md text-sm text-text-primary truncate font-semibold group-hover:text-primary transition-colors">
-                          {folder.name}
+                      <div
+                        className="drive-menu-container relative flex items-center gap-0.5 shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleStarFolder(folder.id);
+                          }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-warning hover:bg-surface-raised transition-colors cursor-pointer"
+                          title="Remove star"
+                        >
+                          <Star className="w-3.5 h-3.5 fill-warning text-warning" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`);
+                          }}
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
+                            isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
+                          }`}
+                          title="Folder actions"
+                        >
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+
+                        {isMenuOpen && (
+                          <div className="absolute right-0 top-8 w-44 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1 z-50 animate-in fade-in duration-100 text-left">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateToFolder(folder.id);
+                                router.push(`/app/drive/${folder.id}`);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <FolderOpen className="w-3.5 h-3.5 text-primary" />
+                              <span>Open folder</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toggleStarFolder(folder.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Star className="w-3.5 h-3.5 fill-warning text-warning" />
+                              <span>Remove Star</span>
+                            </button>
+                            {!folder.isSystem && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRenameTarget({
+                                      id: folder.id,
+                                      name: folder.name,
+                                      isFolder: true,
+                                    });
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                                  <span>Rename</span>
+                                </button>
+                                <div className="my-1 border-t border-border" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteTarget({
+                                      id: folder.id,
+                                      name: folder.name,
+                                      isFolder: true,
+                                      defaultAction: 'trash',
+                                    });
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Move to Trash</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteTarget({
+                                      id: folder.id,
+                                      name: folder.name,
+                                      isFolder: true,
+                                      defaultAction: 'permanent',
+                                    });
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  <span>Delete</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col min-w-0">
+                      <span
+                        className="text-xs sm:text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors"
+                        title={folder.name}
+                      >
+                        {folder.name}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-text-muted">
+                        <span>
+                          {folderFilesCount} {folderFilesCount === 1 ? 'file' : 'files'}
                         </span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs text-text-muted">
+                        {folder.isSystem && (
+                          <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium">
+                            Protected
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Starred Folders List View */
+            <div className="bg-surface border border-border rounded-xl shadow-xs overflow-hidden divide-y divide-border/60">
+              {displayFolders.map((folder) => {
+                const isMenuOpen = activeMenuId === `folder-${folder.id}`;
+                const folderFilesCount = files.filter(
+                  (f) => f.status === 'active' && f.parentFolderId === folder.id
+                ).length;
+
+                return (
+                  <div
+                    key={folder.id}
+                    onClick={() => {
+                      navigateToFolder(folder.id);
+                      router.push(`/app/drive/${folder.id}`);
+                    }}
+                    className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3 text-xs hover:bg-surface-hover transition-colors group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1 shrink-0">
+                        <ItemIcon type="folder" folder={folder} className="w-6 h-6 sm:w-7 sm:h-7" size={26} />
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-xs sm:text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors">
+                            {folder.name}
+                          </span>
+                          <Star className="w-3.5 h-3.5 fill-warning text-warning shrink-0" />
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] sm:text-xs text-text-muted sm:ml-auto">
+                          <span>
                             {folderFilesCount} {folderFilesCount === 1 ? 'file' : 'files'}
                           </span>
                           {folder.isSystem && (
-                            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium">
+                            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium shrink-0">
                               Protected
                             </span>
                           )}
@@ -307,7 +484,7 @@ export default function StarredPage() {
                     </div>
 
                     <div
-                      className="drive-menu-container relative flex items-center gap-1 -mr-1"
+                      className="drive-menu-container relative flex items-center gap-1 shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
@@ -327,14 +504,16 @@ export default function StarredPage() {
                           e.stopPropagation();
                           setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`);
                         }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer ${
+                          isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
+                        }`}
                         title="Folder actions"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
 
                       {isMenuOpen && (
-                        <div className="absolute right-0 top-9 w-48 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in duration-100 text-left">
+                        <div className="absolute right-0 top-8 w-44 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1 z-50 animate-in fade-in duration-100 text-left">
                           <button
                             type="button"
                             onClick={() => {
@@ -342,7 +521,7 @@ export default function StarredPage() {
                               router.push(`/app/drive/${folder.id}`);
                               setActiveMenuId(null);
                             }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                           >
                             <FolderOpen className="w-3.5 h-3.5 text-primary" />
                             <span>Open folder</span>
@@ -353,7 +532,7 @@ export default function StarredPage() {
                               toggleStarFolder(folder.id);
                               setActiveMenuId(null);
                             }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                           >
                             <Star className="w-3.5 h-3.5 fill-warning text-warning" />
                             <span>Remove Star</span>
@@ -370,7 +549,7 @@ export default function StarredPage() {
                                   });
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                               >
                                 <Edit2 className="w-3.5 h-3.5 text-text-muted" />
                                 <span>Rename</span>
@@ -387,7 +566,7 @@ export default function StarredPage() {
                                   });
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 <span>Move to Trash</span>
@@ -403,7 +582,7 @@ export default function StarredPage() {
                                   });
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
                               >
                                 <AlertTriangle className="w-3.5 h-3.5" />
                                 <span>Delete</span>
@@ -414,20 +593,10 @@ export default function StarredPage() {
                       )}
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-[11px] text-text-muted flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-tertiary" />
-                      Synced to Telegram
-                    </span>
-                    <span className="text-[11px] text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-                      Open <ArrowRight className="w-3 h-3" />
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
 
@@ -446,8 +615,150 @@ export default function StarredPage() {
             </span>
           </div>
 
-          {/* Table Container */}
-          <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
+              {displayFiles.map((file) => {
+                const isMenuOpen = activeMenuId === `file-grid-${file.id}`;
+                const folderName = file.parentFolderId
+                  ? folderMap.get(file.parentFolderId) || 'Folder'
+                  : 'My Drive';
+
+                return (
+                  <div
+                    key={file.id}
+                    onClick={() => setPreviewFile(file)}
+                    className="group relative p-3 sm:p-3.5 rounded-xl border border-border bg-surface hover:bg-surface-raised hover:border-primary-container/40 transition-all cursor-pointer flex flex-col justify-between shadow-xs min-h-[130px] sm:min-h-[140px]"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1.5 shrink-0">
+                        <ItemIcon type="file" fileName={file.name} mimeType={file.mimeType} extension={file.extension} className="w-6 h-6 sm:w-7 sm:h-7" size={26} />
+                      </div>
+                      <div
+                        className="drive-menu-container relative flex items-center gap-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleStarFile(file.id);
+                          }}
+                          title="Remove star"
+                          className="p-1.5 rounded-lg text-warning hover:scale-110 transition-transform cursor-pointer"
+                        >
+                          <Star className="w-4 h-4 fill-warning" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(isMenuOpen ? null : `file-grid-${file.id}`);
+                          }}
+                          title="File options"
+                          className={`p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
+                            isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
+                          }`}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {isMenuOpen && (
+                          <div className="absolute right-0 top-8 w-44 bg-surface-raised border border-border-strong rounded-xl shadow-2xl p-1 z-50 animate-in fade-in duration-100 text-left">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreviewFile(file);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-primary" />
+                              <span>Preview</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDownload(e, file)}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5 text-text-muted" />
+                              <span>Download</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRenameTarget({ id: file.id, name: file.name, isFolder: false });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 text-text-muted" />
+                              <span>Rename</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toggleStarFile(file.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Star className="w-3.5 h-3.5 fill-warning text-warning" />
+                              <span>Remove Star</span>
+                            </button>
+                            <div className="my-1 border-t border-border" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteTarget({
+                                  id: file.id,
+                                  name: file.name,
+                                  isFolder: false,
+                                  defaultAction: 'trash',
+                                });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Move to Trash</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteTarget({
+                                  id: file.id,
+                                  name: file.name,
+                                  isFolder: false,
+                                  defaultAction: 'permanent',
+                                });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span
+                        className="text-xs sm:text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors"
+                        title={file.name}
+                      >
+                        {file.name}
+                      </span>
+                      <span className="text-[11px] text-text-muted mt-1 truncate">
+                        {formatBytes(file.fileSizeBytes)} • {folderName}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Table Container */
+            <div className="bg-surface rounded-xl overflow-hidden shadow-xs border border-border">
             {/* Table Header */}
             <div className="hidden md:grid bg-sidebar px-4 h-10 grid-cols-12 items-center text-text-muted font-label-sm text-xs select-none border-b border-border/40">
               <div className="col-span-5 flex items-center gap-3">
@@ -744,7 +1055,8 @@ export default function StarredPage() {
               })}
             </div>
           </div>
-        </section>
+        )}
+      </section>
       )}
 
       {/* Empty State */}

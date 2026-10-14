@@ -147,32 +147,148 @@ export function FileList({
               </h4>
               <span className="text-xs text-text-muted">{folders.length} directories</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {folders.map((folder) => {
-                const isMenuOpen = activeMenuId === `folder-${folder.id}`;
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
+                {folders.map((folder) => {
+                  const isMenuOpen = activeMenuId === `folder-${folder.id}`;
 
-                return (
-                  <div
-                    key={folder.id}
-                    onDoubleClick={() => navigateToFolder(folder.id)}
-                    className="group relative flex items-center justify-between p-3.5 rounded-xl border border-border bg-surface hover:bg-surface-raised hover:border-primary-container/40 transition-all cursor-pointer shadow-xs"
-                  >
+                  return (
                     <div
-                      onClick={() => navigateToFolder(folder.id)}
-                      className="flex items-center gap-3 min-w-0 flex-1"
+                      key={folder.id}
+                      onDoubleClick={() => navigateToFolder(folder.id)}
+                      className="group relative flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border border-border bg-surface hover:bg-surface-raised hover:border-primary-container/40 transition-all cursor-pointer shadow-xs min-h-[105px] sm:min-h-[115px]"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1">
-                        <ItemIcon type="folder" folder={folder} className="w-8 h-8" size={32} />
+                      <div className="flex items-start justify-between gap-1 mb-2">
+                        <div
+                          onClick={() => navigateToFolder(folder.id)}
+                          className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center shrink-0 p-1"
+                        >
+                          <ItemIcon type="folder" folder={folder} className="w-7 h-7 sm:w-8 sm:h-8" size={30} />
+                        </div>
+                        <div className="drive-menu-container relative flex items-center gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStarFolder(folder.id);
+                            }}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-warning transition-colors cursor-pointer"
+                            title={folder.isStarred ? 'Remove Star' : 'Add to Starred'}
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${
+                                folder.isStarred ? 'fill-warning text-warning' : ''
+                              }`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`);
+                            }}
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
+                              isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
+                            }`}
+                            title="Folder options"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+
+                          {isMenuOpen && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute right-0 top-8 w-44 bg-surface-raised border border-border rounded-xl shadow-xl p-1 z-30 animate-in fade-in duration-100 text-left"
+                            >
+                              <button
+                                onClick={() => {
+                                  navigateToFolder(folder.id);
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Folder className="h-3.5 w-3.5 text-primary" />
+                                <span>Open Folder</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  toggleStarFolder(folder.id);
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Star
+                                  className={`h-3.5 w-3.5 ${
+                                    folder.isStarred
+                                      ? 'fill-warning text-warning'
+                                      : 'text-text-muted'
+                                  }`}
+                                />
+                                <span>{folder.isStarred ? 'Remove Star' : 'Add to Starred'}</span>
+                              </button>
+
+                              {!folder.isSystem && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setRenameTarget({ id: folder.id, name: folder.name, isFolder: true });
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5 text-text-muted" />
+                                    <span>Rename</span>
+                                  </button>
+                                  <div className="my-1 border-t border-border" />
+                                  <button
+                                    onClick={() => {
+                                      setDeleteTarget({
+                                        id: folder.id,
+                                        name: folder.name,
+                                        isFolder: true,
+                                        defaultAction: 'trash',
+                                      });
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <span>Move to Trash</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setDeleteTarget({
+                                        id: folder.id,
+                                        name: folder.name,
+                                        isFolder: true,
+                                        defaultAction: 'permanent',
+                                      });
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <AlertTriangle className="h-3.5 w-3.5" />
+                                    <span>Delete</span>
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex flex-col min-w-0">
+
+                      <div
+                        onClick={() => navigateToFolder(folder.id)}
+                        className="flex flex-col min-w-0"
+                      >
                         <span
-                          className="text-xs font-medium text-text-primary group-hover:text-primary transition-colors truncate"
+                          className="text-xs sm:text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate"
                           title={folder.name}
                         >
                           {folder.name}
                         </span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[11px] text-text-muted">Folder</span>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-text-muted">
+                          <span>Folder</span>
                           {folder.isSystem && (
                             <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium">
                               Protected
@@ -181,104 +297,155 @@ export function FileList({
                         </div>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Folders List View */
+              <div className="bg-surface border border-border rounded-xl shadow-xs overflow-hidden divide-y divide-border/60">
+                {folders.map((folder) => {
+                  const isMenuOpen = activeMenuId === `folder-${folder.id}`;
 
-                    <div className="drive-menu-container relative flex items-center shrink-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`);
-                        }}
-                        className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-surface-hover opacity-70 group-hover:opacity-100 transition-opacity cursor-pointer"
-                        title="Folder options"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-
-                      {isMenuOpen && (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute right-0 top-8 w-44 bg-surface-raised border border-border rounded-xl shadow-xl p-1 z-30 animate-in fade-in duration-100 text-left"
-                        >
-                          <button
-                            onClick={() => {
-                              navigateToFolder(folder.id);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Folder className="h-3.5 w-3.5 text-primary" />
-                            <span>Open Folder</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              toggleStarFolder(folder.id);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Star
-                              className={`h-3.5 w-3.5 ${
-                                folder.isStarred
-                                  ? 'fill-warning text-warning'
-                                  : 'text-text-muted'
-                              }`}
-                            />
-                            <span>{folder.isStarred ? 'Remove Star' : 'Add to Starred'}</span>
-                          </button>
-
-                          {/* Only allow Rename, Trash, and Delete for custom user-created folders */}
-                          {!folder.isSystem && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setRenameTarget({ id: folder.id, name: folder.name, isFolder: true });
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Edit2 className="h-3.5 w-3.5 text-text-muted" />
-                                <span>Rename</span>
-                              </button>
-                              <div className="my-1 border-t border-border" />
-                              <button
-                                onClick={() => {
-                                  setDeleteTarget({
-                                    id: folder.id,
-                                    name: folder.name,
-                                    isFolder: true,
-                                    defaultAction: 'trash',
-                                  });
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                <span>Move to Trash</span>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setDeleteTarget({
-                                    id: folder.id,
-                                    name: folder.name,
-                                    isFolder: true,
-                                    defaultAction: 'permanent',
-                                  });
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <AlertTriangle className="h-3.5 w-3.5" />
-                                <span>Delete</span>
-                              </button>
-                            </>
-                          )}
+                  return (
+                    <div
+                      key={folder.id}
+                      onClick={() => navigateToFolder(folder.id)}
+                      className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3 text-xs hover:bg-surface-hover transition-colors group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-surface-raised border border-border/50 flex items-center justify-center p-1 shrink-0">
+                          <ItemIcon type="folder" folder={folder} className="w-6 h-6 sm:w-7 sm:h-7" size={26} />
                         </div>
-                      )}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-xs sm:text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors">
+                              {folder.name}
+                            </span>
+                            {folder.isStarred && (
+                              <Star className="w-3.5 h-3.5 fill-warning text-warning shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] sm:text-xs text-text-muted sm:ml-auto">
+                            <span>Folder</span>
+                            {folder.isSystem && (
+                              <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium shrink-0">
+                                Protected
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        className="drive-menu-container relative flex items-center gap-1 shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleStarFolder(folder.id)}
+                          title={folder.isStarred ? 'Remove Star' : 'Add to Starred'}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-warning transition-colors cursor-pointer"
+                        >
+                          <Star
+                            className={`w-4 h-4 ${folder.isStarred ? 'fill-warning text-warning' : ''}`}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMenuId(isMenuOpen ? null : `folder-${folder.id}`)}
+                          title="Folder options"
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${
+                            isMenuOpen ? 'bg-surface-hover text-text-primary' : ''
+                          }`}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {isMenuOpen && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-8 w-44 bg-surface-raised border border-border rounded-xl shadow-xl p-1 z-30 animate-in fade-in duration-100 text-left"
+                          >
+                            <button
+                              onClick={() => {
+                                navigateToFolder(folder.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Folder className="h-3.5 w-3.5 text-primary" />
+                              <span>Open Folder</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                toggleStarFolder(folder.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Star
+                                className={`h-3.5 w-3.5 ${
+                                  folder.isStarred
+                                    ? 'fill-warning text-warning'
+                                    : 'text-text-muted'
+                                }`}
+                              />
+                              <span>{folder.isStarred ? 'Remove Star' : 'Add to Starred'}</span>
+                            </button>
+
+                            {!folder.isSystem && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setRenameTarget({ id: folder.id, name: folder.name, isFolder: true });
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5 text-text-muted" />
+                                  <span>Rename</span>
+                                </button>
+                                <div className="my-1 border-t border-border" />
+                                <button
+                                  onClick={() => {
+                                    setDeleteTarget({
+                                      id: folder.id,
+                                      name: folder.name,
+                                      isFolder: true,
+                                      defaultAction: 'trash',
+                                    });
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-warning hover:bg-warning/10 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Move to Trash</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDeleteTarget({
+                                      id: folder.id,
+                                      name: folder.name,
+                                      isFolder: true,
+                                      defaultAction: 'permanent',
+                                    });
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <AlertTriangle className="h-3.5 w-3.5" />
+                                  <span>Delete</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
