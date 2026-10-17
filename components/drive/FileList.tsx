@@ -867,7 +867,9 @@ export function FileList({
                                 <Star className="h-3.5 w-3.5 fill-warning text-warning shrink-0" />
                               )}
                               {file.isShared && (
-                                <Share2 className="h-3.5 w-3.5 text-blue-500 shrink-0" title="Publicly shared" />
+                                <span title="Publicly shared" className="shrink-0 inline-flex items-center">
+                                  <Share2 className="h-3.5 w-3.5 text-blue-500" />
+                                </span>
                               )}
                             </div>
                           </td>

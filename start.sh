@@ -16,6 +16,17 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+# Auto-load common environment paths (NVM, FNM, Bun, Cargo, Snap, Local)
+[ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh" 2>/dev/null || true
+[ -s "$HOME/.bun/_bun" ] && export BUN_INSTALL="$HOME/.bun" && export PATH="$BUN_INSTALL/bin:$PATH" 2>/dev/null || true
+if [ -d "$HOME/.nvm/versions/node" ]; then
+    LATEST_NVM_NODE=$(ls -1d "$HOME/.nvm/versions/node"/v* 2>/dev/null | tail -n 1 || true)
+    if [ -n "$LATEST_NVM_NODE" ] && [ -d "$LATEST_NVM_NODE/bin" ]; then
+        export PATH="$LATEST_NVM_NODE/bin:$PATH"
+    fi
+fi
+export PATH="$HOME/.bun/bin:$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/snap/bin:$PATH"
+
 echo -e "${CYAN}${BOLD}"
 echo "=================================================================="
 echo "    🚀 One Cloud — Automated Next.js Server Runner"
@@ -38,13 +49,48 @@ fi
 NODE_VER=$(node -v)
 echo -e "${GREEN}✓ Node.js detected:${NC} $NODE_VER"
 
-# 3. Detect Package Manager (Prefer Bun if available, else pnpm/npm)
-PKG_MANAGER="npm"
+# 3. Detect Package Manager (Bun, npm, pnpm, yarn, corepack)
+PKG_MANAGER=""
+
 if command -v bun >/dev/null 2>&1; then
     PKG_MANAGER="bun"
+elif command -v npm >/dev/null 2>&1; then
+    PKG_MANAGER="npm"
 elif command -v pnpm >/dev/null 2>&1; then
     PKG_MANAGER="pnpm"
+elif command -v yarn >/dev/null 2>&1; then
+    PKG_MANAGER="yarn"
+elif command -v corepack >/dev/null 2>&1; then
+    echo -e "${YELLOW}ℹ️  Activating corepack to enable package managers...${NC}"
+    corepack enable >/dev/null 2>&1 || true
+    if command -v npm >/dev/null 2>&1; then
+        PKG_MANAGER="npm"
+    elif command -v pnpm >/dev/null 2>&1; then
+        PKG_MANAGER="pnpm"
+    fi
 fi
+
+# Fallback: Check if npm exists in node's parent directory
+if [ -z "$PKG_MANAGER" ]; then
+    NODE_BIN_DIR=$(dirname "$(command -v node)")
+    if [ -x "$NODE_BIN_DIR/npm" ]; then
+        export PATH="$NODE_BIN_DIR:$PATH"
+        PKG_MANAGER="npm"
+    fi
+fi
+
+# If still missing, explain how to install npm or bun in 5 seconds
+if [ -z "$PKG_MANAGER" ]; then
+    echo -e "\n${RED}❌ Error: Neither npm nor bun was found in your PATH.${NC}"
+    echo -e "${YELLOW}In Linux distributions, npm is sometimes packaged separately from node.${NC}"
+    echo -e "You can fix this easily with ONE of the following commands:"
+    echo -e "  • ${BOLD}Ubuntu / Debian:${NC} sudo apt update && sudo apt install -y npm"
+    echo -e "  • ${BOLD}Arch Linux / Manjaro:${NC} sudo pacman -S npm"
+    echo -e "  • ${BOLD}Fedora / RHEL:${NC} sudo dnf install -y npm"
+    echo -e "  • ${BOLD}Or install Bun (ultra-fast):${NC} curl -fsSL https://bun.sh/install | bash"
+    exit 1
+fi
+
 echo -e "${GREEN}✓ Package Manager selected:${NC} $PKG_MANAGER"
 
 # 4. Check & Prepare .env
@@ -88,6 +134,8 @@ if [ ! -d "node_modules" ] || [ "package.json" -nt "node_modules" ]; then
         bun install
     elif [ "$PKG_MANAGER" = "pnpm" ]; then
         pnpm install
+    elif [ "$PKG_MANAGER" = "yarn" ]; then
+        yarn install
     else
         npm install --legacy-peer-deps || npm install
     fi
@@ -132,6 +180,8 @@ if [ "$PKG_MANAGER" = "bun" ]; then
     exec bun run dev
 elif [ "$PKG_MANAGER" = "pnpm" ]; then
     exec pnpm run dev
+elif [ "$PKG_MANAGER" = "yarn" ]; then
+    exec yarn dev
 else
     exec npm run dev
 fi
