@@ -47,16 +47,16 @@ elif command -v pnpm >/dev/null 2>&1; then
 fi
 echo -e "${GREEN}✓ Package Manager selected:${NC} $PKG_MANAGER"
 
-# 4. Check & Prepare .env.local
-echo -e "\n${YELLOW}⚙️  Verifying environment variables...${NC}"
-if [ ! -f ".env.local" ]; then
+# 4. Check & Prepare .env
+echo -e "\n${YELLOW}⚙️  Verifying environment variables in .env...${NC}"
+if [ ! -f ".env" ]; then
     if [ -f ".env.example" ]; then
-        echo -e "${YELLOW}ℹ️  .env.local not found. Initializing from .env.example...${NC}"
-        cp .env.example .env.local
+        echo -e "${YELLOW}ℹ️  .env not found. Initializing from .env.example...${NC}"
+        cp .env.example .env
         
         # Populate Firebase default config from firebase-applet-config.json if present
         if [ -f "firebase-applet-config.json" ]; then
-            echo -e "${GREEN}✓ Syncing default Firebase config from firebase-applet-config.json...${NC}"
+            echo -e "${GREEN}✓ Syncing default Firebase config from firebase-applet-config.json into .env...${NC}"
             API_KEY=$(grep -o '"apiKey": *"[^"]*"' firebase-applet-config.json | head -1 | cut -d '"' -f 4 || true)
             AUTH_DOMAIN=$(grep -o '"authDomain": *"[^"]*"' firebase-applet-config.json | head -1 | cut -d '"' -f 4 || true)
             PROJECT_ID=$(grep -o '"projectId": *"[^"]*"' firebase-applet-config.json | head -1 | cut -d '"' -f 4 || true)
@@ -65,7 +65,7 @@ if [ ! -f ".env.local" ]; then
             APP_ID=$(grep -o '"appId": *"[^"]*"' firebase-applet-config.json | head -1 | cut -d '"' -f 4 || true)
             DB_ID=$(grep -o '"firestoreDatabaseId": *"[^"]*"' firebase-applet-config.json | head -1 | cut -d '"' -f 4 || true)
 
-            cat <<EOF >> .env.local
+            cat <<EOF >> .env
 NEXT_PUBLIC_FIREBASE_API_KEY="$API_KEY"
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="$AUTH_DOMAIN"
 NEXT_PUBLIC_FIREBASE_PROJECT_ID="$PROJECT_ID"
@@ -75,10 +75,10 @@ NEXT_PUBLIC_FIREBASE_APP_ID="$APP_ID"
 NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID="$DB_ID"
 EOF
         fi
-        echo -e "${GREEN}✓ .env.local created successfully.${NC}"
+        echo -e "${GREEN}✓ .env created successfully.${NC}"
     fi
 else
-    echo -e "${GREEN}✓ .env.local is present.${NC}"
+    echo -e "${GREEN}✓ .env is present.${NC}"
 fi
 
 # 5. Check dependencies / node_modules
