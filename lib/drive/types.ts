@@ -17,6 +17,7 @@ export interface FileItem {
   aiTags?: string[];
   aiPrimaryTag?: string;
   aiConfidence?: number;
+  aiScannedAt?: string;
 }
 
 export interface FolderItem {

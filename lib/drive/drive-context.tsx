@@ -81,6 +81,8 @@ interface DriveContextType {
   syncTelegram: () => Promise<void>;
   scanFileWithAI: (fileId: string) => Promise<string[]>;
   isAiScanning: boolean;
+  unscannedImagesCount: number;
+  scanAllUnscannedImages: () => Promise<void>;
 }
 
 const DriveContext = createContext<DriveContextType | null>(null);
@@ -684,10 +686,11 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
             aiTags: scanResult.tags,
             aiPrimaryTag: scanResult.primaryTag,
             aiConfidence: scanResult.confidence,
+            aiScannedAt: new Date().toISOString(),
           };
         }
       } catch (e) {
-        console.warn('[OneCloud] On-device image scan error:', e);
+        console.warn('[OneCloud] On-device image scan error during upload:', e);
       }
     }
 
@@ -710,7 +713,7 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
   };
 
   // On-demand AI scanner for existing files in Drive
-  const scanFileWithAI = async (fileId: string): Promise<string[]> => {
+  const scanFileWithAI = useCallback(async (fileId: string): Promise<string[]> => {
     const targetFile = files.find((f) => f.id === fileId);
     if (!targetFile) return [];
 
@@ -721,33 +724,55 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
 
     setIsAiScanning(true);
     try {
-      const downloadUrl = `/api/telegram/download/${targetFile.id}?messageId=${targetFile.telegramMessageId}&sessionToken=${encodeURIComponent(
-        sessionToken
-      )}`;
-      const urlToScan = targetFile.downloadUrl || downloadUrl;
-      const scanResult = await scanImageUrl(urlToScan);
+      let scanResult = null;
+
+      // 1. Direct blob download with session token (100% immune to CORS and canvas taint)
+      if (sessionToken) {
+        const downloadUrl = `/api/telegram/download/${targetFile.id}?messageId=${targetFile.telegramMessageId}&sessionToken=${encodeURIComponent(
+          sessionToken
+        )}`;
+        try {
+          const res = await fetch(downloadUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            if (blob.size > 0) {
+              scanResult = await scanImageFile(blob);
+            }
+          }
+        } catch (fetchErr) {
+          console.warn('[OneCloud] Blob fetch scan attempt failed, trying URL scan:', fetchErr);
+        }
+      }
+
+      // 2. Fallback to image URL scan
+      if (!scanResult && targetFile.downloadUrl) {
+        scanResult = await scanImageUrl(targetFile.downloadUrl);
+      }
+
       if (scanResult && scanResult.tags.length > 0) {
+        const nowIso = new Date().toISOString();
         if (user) {
           await updateDoc(doc(db, 'users', user.uid, 'files', targetFile.id), {
             aiTags: scanResult.tags,
             aiPrimaryTag: scanResult.primaryTag,
             aiConfidence: scanResult.confidence,
-            updatedAt: new Date().toISOString(),
+            aiScannedAt: nowIso,
+            updatedAt: nowIso,
           });
-        } else {
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === targetFile.id
-                ? {
-                    ...f,
-                    aiTags: scanResult.tags,
-                    aiPrimaryTag: scanResult.primaryTag,
-                    aiConfidence: scanResult.confidence,
-                  }
-                : f
-            )
-          );
         }
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === targetFile.id
+              ? {
+                  ...f,
+                  aiTags: scanResult!.tags,
+                  aiPrimaryTag: scanResult!.primaryTag,
+                  aiConfidence: scanResult!.confidence,
+                  aiScannedAt: nowIso,
+                }
+              : f
+          )
+        );
         return scanResult.tags;
       }
       return [];
@@ -757,7 +782,64 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsAiScanning(false);
     }
-  };
+  }, [files, sessionToken, user]);
+
+  // Unscanned cloud images counter
+  const unscannedImagesCount = useMemo(() => {
+    return activeFiles.filter(
+      (f) =>
+        f.status === 'active' &&
+        (f.mimeType?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name)) &&
+        (!f.aiTags || f.aiTags.length === 0)
+    ).length;
+  }, [activeFiles]);
+
+  // Batch scanner for all unscanned images in the drive
+  const scanAllUnscannedImages = useCallback(async () => {
+    const unscanned = activeFiles.filter(
+      (f) =>
+        f.status === 'active' &&
+        (f.mimeType?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name)) &&
+        (!f.aiTags || f.aiTags.length === 0)
+    );
+    for (const item of unscanned) {
+      await scanFileWithAI(item.id);
+    }
+  }, [activeFiles, scanFileWithAI]);
+
+  // Gentle background auto-indexer queue for unscanned cloud photos
+  const backgroundScanQueueRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user || !sessionToken || activeFiles.length === 0) return;
+
+    const nextUnscanned = activeFiles.find(
+      (f) =>
+        f.status === 'active' &&
+        (f.mimeType?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name)) &&
+        (!f.aiTags || f.aiTags.length === 0) &&
+        !backgroundScanQueueRef.current.has(f.id)
+    );
+
+    if (!nextUnscanned) return;
+
+    let isCancelled = false;
+    backgroundScanQueueRef.current.add(nextUnscanned.id);
+
+    const timer = setTimeout(async () => {
+      if (isCancelled) return;
+      try {
+        await scanFileWithAI(nextUnscanned.id);
+      } catch (err) {
+        console.warn('[OneCloud] Auto-indexing skipped for file:', nextUnscanned.name, err);
+      }
+    }, 1200);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [user, sessionToken, activeFiles, scanFileWithAI]);
 
   // Helper to abort all active XHR requests for a given taskId
   const abortTaskXhrs = (taskId: string) => {
@@ -1921,6 +2003,8 @@ export function DriveProvider({ children }: { children: React.ReactNode }) {
         syncTelegram,
         scanFileWithAI,
         isAiScanning,
+        unscannedImagesCount,
+        scanAllUnscannedImages,
       }}
     >
       {children}

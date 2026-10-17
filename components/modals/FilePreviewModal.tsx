@@ -14,6 +14,7 @@ import {
   Star,
   Archive,
   File,
+  Sparkles,
 } from 'lucide-react';
 import type { FileItem } from '@/lib/drive/types';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
@@ -26,8 +27,9 @@ interface FilePreviewModalProps {
 }
 
 export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
-  const { sessionToken, toggleStarFile, downloadFile } = useDrive();
+  const { sessionToken, toggleStarFile, downloadFile, scanFileWithAI, isAiScanning } = useDrive();
   const category = getFileTypeCategory(file.mimeType, file.extension);
+  const isImage = category === 'image';
 
   const downloadUrl = file.downloadUrl || `/api/telegram/download/${file.id}?messageId=${file.telegramMessageId}&sessionToken=${encodeURIComponent(
     sessionToken
@@ -55,6 +57,18 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {isImage && (
+              <button
+                type="button"
+                onClick={() => scanFileWithAI(file.id)}
+                disabled={isAiScanning}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                title="Scan image on-device with AI Vision"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                <span className="hidden sm:inline">{isAiScanning ? 'Scanning...' : file.aiPrimaryTag ? 'Re-scan with AI' : 'Scan with AI'}</span>
+              </button>
+            )}
             <button
               onClick={() => toggleStarFile(file.id)}
               className="p-2 rounded-lg bg-surface-raised hover:bg-surface-hover text-text-muted hover:text-warning transition-colors cursor-pointer"
@@ -181,6 +195,21 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
               <span>Telegram Message #{file.telegramMessageId}</span>
             </span>
           </div>
+
+          {file.aiPrimaryTag && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-semibold">
+                <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                <span>AI: {file.aiPrimaryTag}</span>
+                {file.aiConfidence && <span className="opacity-75 font-mono">({file.aiConfidence}%)</span>}
+              </span>
+              {file.aiTags && file.aiTags.length > 0 && (
+                <span className="text-[11px] text-text-muted truncate max-w-sm hidden md:inline" title={file.aiTags.join(', ')}>
+                  Tags: {file.aiTags.slice(0, 5).join(', ')}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

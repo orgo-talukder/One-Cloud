@@ -29,9 +29,12 @@ import {
   Edit2,
   Eye,
   AlertTriangle,
+  Sparkles,
+  Search,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
+import { executeDriveSearch, buildFolderPath } from '@/lib/drive/search-engine';
 import { NewFolderModal } from '@/components/modals/NewFolderModal';
 import { MoveFileModal } from '@/components/modals/MoveFileModal';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
@@ -47,6 +50,7 @@ export default function MyDrivePage() {
     currentFolderId,
     navigateToFolder,
     searchQuery,
+    setSearchQuery,
     fileTypeFilter,
     setFileTypeFilter,
     sortOption,
@@ -65,6 +69,10 @@ export default function MyDrivePage() {
     storageSummary,
     sessionToken,
     downloadFile,
+    scanFileWithAI,
+    isAiScanning,
+    unscannedImagesCount,
+    scanAllUnscannedImages,
   } = useDrive();
 
   // Modals state
@@ -107,26 +115,43 @@ export default function MyDrivePage() {
     };
   }, []);
 
-  // Active items for current folder
+  // Search Scope state (global across all folders like Google Drive vs current folder)
+  const [searchScope, setSearchScope] = useState<'global' | 'current_folder'>('global');
+
+  const searchResults = useMemo(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return null;
+    return executeDriveSearch(trimmed, files, folders, {
+      categoryFilter: fileTypeFilter,
+      folderIdScope: currentFolderId,
+      scope: searchScope,
+    });
+  }, [searchQuery, files, folders, fileTypeFilter, currentFolderId, searchScope]);
+
+  // Active folders for current view or search results
   const currentFolders = useMemo(() => {
+    if (searchResults) {
+      return searchResults.matchingFolders;
+    }
     return folders
       .filter((f) => f.status === 'active' && f.parentFolderId === currentFolderId)
-      .filter((f) =>
-        searchQuery ? f.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
-      )
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [folders, currentFolderId, searchQuery]);
+  }, [folders, currentFolderId, searchResults]);
 
   const currentFiles = useMemo(() => {
-    let result = files
-      .filter((f) => f.status === 'active' && f.parentFolderId === currentFolderId)
-      .filter((f) => {
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase().trim();
-        const matchesName = f.name.toLowerCase().includes(q) || (f.extension && f.extension.toLowerCase().includes(q));
-        const matchesAi = (f.aiTags && f.aiTags.some((t) => t.toLowerCase().includes(q) || q.includes(t.toLowerCase()))) || (f.aiPrimaryTag && f.aiPrimaryTag.toLowerCase().includes(q));
-        return matchesName || matchesAi;
-      });
+    if (searchResults) {
+      let list = searchResults.matchingFiles.map((m) => m.item);
+      if (fileTypeFilter !== 'all') {
+        list = list.filter(
+          (f) => getFileTypeCategory(f.mimeType, f.extension) === fileTypeFilter
+        );
+      }
+      return list;
+    }
+
+    let result = files.filter(
+      (f) => f.status === 'active' && f.parentFolderId === currentFolderId
+    );
 
     if (fileTypeFilter !== 'all') {
       result = result.filter(
@@ -134,7 +159,7 @@ export default function MyDrivePage() {
       );
     }
 
-    // Apply sorting
+    // Apply sorting in standard view
     result.sort((a, b) => {
       switch (sortOption) {
         case 'name_asc':
@@ -150,7 +175,7 @@ export default function MyDrivePage() {
     });
 
     return result;
-  }, [files, currentFolderId, searchQuery, fileTypeFilter, sortOption]);
+  }, [files, currentFolderId, searchResults, fileTypeFilter, sortOption]);
 
   // Current folder entity
   const currentFolder = useMemo(() => {
@@ -290,6 +315,20 @@ export default function MyDrivePage() {
           <Download className="w-3.5 h-3.5 text-text-muted" />
           <span>Download</span>
         </button>
+
+        {(file.mimeType?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name)) && (
+          <button
+            type="button"
+            onClick={() => {
+              scanFileWithAI(file.id);
+              setActiveMenuId(null);
+            }}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{file.aiPrimaryTag ? 'Re-scan with AI' : 'Scan Image with AI'}</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -535,6 +574,93 @@ export default function MyDrivePage() {
             </div>
           </div>
         </div>
+
+        {/* Google Drive-Style Global Search Indicator Banner */}
+        {searchQuery.trim() && (
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary-container/10 via-surface to-brand-subtle border border-primary/20 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-primary-container/20 border border-primary/30 flex items-center justify-center shrink-0 text-primary">
+                <Search className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-semibold text-text-primary">
+                    Search results for &ldquo;{searchQuery.trim()}&rdquo;
+                  </h3>
+                  {searchResults && searchResults.aiMatchCount > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-semibold">
+                      <Sparkles className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <span>{searchResults.aiMatchCount} AI Vision {searchResults.aiMatchCount === 1 ? 'match' : 'matches'}</span>
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-text-muted mt-0.5">
+                  {searchScope === 'global' ? 'Searching across all folders in your Drive' : `Searching in ${currentFolder?.name || 'My Drive'} folder only`}
+                  {' • '}{currentFiles.length} {currentFiles.length === 1 ? 'file' : 'files'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <div className="flex items-center bg-surface border border-border rounded-lg p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSearchScope('global')}
+                  className={`px-2.5 py-1 rounded-md transition-colors font-medium cursor-pointer ${
+                    searchScope === 'global'
+                      ? 'bg-primary-container text-text-primary shadow-xs'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  All Drive
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchScope('current_folder')}
+                  className={`px-2.5 py-1 rounded-md transition-colors font-medium cursor-pointer ${
+                    searchScope === 'current_folder'
+                      ? 'bg-primary-container text-text-primary shadow-xs'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  Current folder
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="h-7 px-2.5 rounded-lg bg-surface border border-border text-text-secondary hover:text-text-primary hover:bg-surface-hover text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Clear</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Cloud AI Auto-Index Status Banner for unscanned photos */}
+        {unscannedImagesCount > 0 && !searchQuery.trim() && (
+          <div className="mb-4 px-3.5 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="w-4 h-4 shrink-0 text-purple-600 dark:text-purple-400 animate-pulse" />
+              <span className="truncate">
+                {isAiScanning
+                  ? `AI Vision is scanning your cloud photos in background... (${unscannedImagesCount} remaining)`
+                  : `${unscannedImagesCount} cloud ${unscannedImagesCount === 1 ? 'image is' : 'images are'} ready for On-Device AI indexing`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => scanAllUnscannedImages()}
+              disabled={isAiScanning}
+              className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium text-[11px] shrink-0 disabled:opacity-50 transition-colors cursor-pointer shadow-xs"
+            >
+              {isAiScanning ? 'Scanning...' : 'Index All with AI'}
+            </button>
+          </div>
+        )}
 
         {/* Action & Filter Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -973,6 +1099,24 @@ export default function MyDrivePage() {
                       <span className="text-xs text-text-muted mt-1">
                         {formatBytes(file.fileSizeBytes)} • {formatDateDisplay(file.uploadedAt)}
                       </span>
+                      {file.aiPrimaryTag && (
+                        <div className="mt-1.5 flex items-center">
+                          <span
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/25 text-purple-700 dark:text-purple-300 text-[10px] font-semibold truncate max-w-full"
+                            title={`AI Vision: ${file.aiTags?.join(', ') || file.aiPrimaryTag} (${file.aiConfidence || 90}%)`}
+                          >
+                            <Sparkles className="h-2.5 w-2.5 shrink-0 text-purple-600 dark:text-purple-400" />
+                            <span className="truncate">{file.aiPrimaryTag}</span>
+                            {file.aiConfidence && <span className="text-[9px] opacity-75 font-mono">({file.aiConfidence}%)</span>}
+                          </span>
+                        </div>
+                      )}
+                      {searchQuery.trim() && (
+                        <div className="mt-1 flex items-center gap-1 text-[10px] text-text-muted truncate" title={buildFolderPath(file.parentFolderId, folders)}>
+                          <Folder className="w-3 h-3 shrink-0 text-text-muted" />
+                          <span className="truncate">{buildFolderPath(file.parentFolderId, folders)}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -1024,9 +1168,17 @@ export default function MyDrivePage() {
                           <span className="text-text-primary font-medium text-xs sm:text-sm truncate">
                             {file.name}
                           </span>
-                          <span className="text-[11px] text-text-muted mt-0.5 truncate">
-                            {formatBytes(file.fileSizeBytes)} · {formatDateDisplay(file.uploadedAt)}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span className="text-[11px] text-text-muted truncate">
+                              {formatBytes(file.fileSizeBytes)} · {formatDateDisplay(file.uploadedAt)}
+                            </span>
+                            {file.aiPrimaryTag && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[10px] font-semibold">
+                                <Sparkles className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                                <span>{file.aiPrimaryTag}</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -1127,6 +1279,15 @@ export default function MyDrivePage() {
                           >
                             {file.name}
                           </span>
+                          {file.aiPrimaryTag && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/25 text-purple-700 dark:text-purple-300 text-[10px] font-semibold shrink-0"
+                              title={`AI Vision: ${file.aiTags?.join(', ') || file.aiPrimaryTag} (${file.aiConfidence || 90}%)`}
+                            >
+                              <Sparkles className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                              <span>{file.aiPrimaryTag}</span>
+                            </span>
+                          )}
                           <button
                             type="button"
                             aria-label="Toggle star"
@@ -1146,9 +1307,10 @@ export default function MyDrivePage() {
                           </button>
                         </div>
 
-                        <div className="col-span-2 flex items-center text-text-secondary truncate pr-2">
+                        <div className="col-span-2 flex items-center text-text-secondary truncate pr-2" title={buildFolderPath(file.parentFolderId, folders)}>
+                          <Folder className="w-3.5 h-3.5 mr-1.5 text-text-muted shrink-0" />
                           <span className="truncate">
-                            {currentFolder ? currentFolder.name : 'My Drive'}
+                            {buildFolderPath(file.parentFolderId, folders)}
                           </span>
                         </div>
 

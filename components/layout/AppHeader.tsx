@@ -354,9 +354,15 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
                                 </span>
                               )}
                             </div>
-                            <p className="text-[10px] text-text-muted font-mono">
-                              {formatBytes(file.fileSizeBytes)} · {file.extension.toUpperCase()}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-mono truncate">
+                              <span>{formatBytes(file.fileSizeBytes)} · {file.extension.toUpperCase()}</span>
+                              {fileMatch.folderPath && (
+                                <>
+                                  <span>•</span>
+                                  <span className="truncate">{fileMatch.folderPath}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <span className="text-[10px] font-medium text-primary bg-brand-subtle border border-primary-container/30 px-2 py-0.5 rounded-lg shrink-0">
