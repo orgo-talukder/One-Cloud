@@ -53,6 +53,33 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["id", "name", "fileSizeBytes", "status", "telegramMessageId"]
+    },
+    "ShareLink": {
+      "title": "ShareLink",
+      "description": "Public or password-protected share link with granular permissions",
+      "type": "object",
+      "properties": {
+        "shareToken": { "type": "string" },
+        "fileId": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileSizeBytes": { "type": "number" },
+        "mimeType": { "type": "string" },
+        "extension": { "type": "string" },
+        "accessLevel": { "type": "string", "enum": ["viewer", "editor"] },
+        "isPublic": { "type": "boolean" },
+        "hasPassword": { "type": "boolean" },
+        "passwordHash": { "type": "string" },
+        "expiresAt": { "type": "string" },
+        "allowDownload": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["active", "revoked", "expired"] },
+        "viewCount": { "type": "number" },
+        "downloadCount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["shareToken", "fileId", "ownerUid", "fileName", "accessLevel", "status"]
     }
   },
   "firestore": {
@@ -67,6 +94,10 @@
     "/users/{userId}/files/{fileId}": {
       "schema": "File",
       "description": "File metadata records pointing to Telegram Saved Messages"
+    },
+    "/shares/{shareToken}": {
+      "schema": "ShareLink",
+      "description": "Share link documents for public and restricted link sharing"
     }
   }
 }

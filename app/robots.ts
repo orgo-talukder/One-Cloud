@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
           '/privacy',
           '/terms',
           '/acceptable-use',
+          '/share/',
         ],
         disallow: [
           '/app/',

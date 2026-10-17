@@ -45,5 +45,18 @@ service cloud.firestore {
         allow read, create: if isOwner(userId) && isValidId(activityId);
       }
     }
+
+    // Public / Shared Links collection
+    match /shares/{shareToken} {
+      // Anyone can read if the share is active, or if the requester is the owner
+      allow read: if (resource.data.status == 'active') || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+      // Only signed-in user can create a share for themselves
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      // Owner can update everything, or public guests can increment viewCount / downloadCount
+      allow update: if (isSignedIn() && resource.data.ownerUid == request.auth.uid) ||
+                      (resource.data.status == 'active' &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount', 'downloadCount', 'lastViewedAt']));
+      allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+    }
   }
 }

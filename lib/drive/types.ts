@@ -18,6 +18,9 @@ export interface FileItem {
   aiPrimaryTag?: string;
   aiConfidence?: number;
   aiScannedAt?: string;
+  isShared?: boolean;
+  activeShareToken?: string | null;
+  shareAccessLevel?: 'viewer' | 'editor';
 }
 
 export interface FolderItem {

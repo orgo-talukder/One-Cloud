@@ -31,11 +31,14 @@ import {
   AlertTriangle,
   Sparkles,
   Search,
+  Share2,
 } from 'lucide-react';
 import { useDrive } from '@/lib/drive/drive-context';
+import { useAuth } from '@/lib/firebase/auth-context';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { executeDriveSearch, buildFolderPath } from '@/lib/drive/search-engine';
 import { NewFolderModal } from '@/components/modals/NewFolderModal';
+import { ShareModal } from '@/components/modals/ShareModal';
 import { MoveFileModal } from '@/components/modals/MoveFileModal';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import { RenameModal } from '@/components/modals/RenameModal';
@@ -74,10 +77,12 @@ export default function MyDrivePage() {
     unscannedImagesCount,
     scanAllUnscannedImages,
   } = useDrive();
+  const { user } = useAuth();
 
   // Modals state
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [shareFileTarget, setShareFileTarget] = useState<FileItem | null>(null);
   const [moveFileTarget, setMoveFileTarget] = useState<FileItem | null>(null);
   const [renameTarget, setRenameTarget] = useState<{
     id: string;
@@ -314,6 +319,18 @@ export default function MyDrivePage() {
         >
           <Download className="w-3.5 h-3.5 text-text-muted" />
           <span>Download</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShareFileTarget(file);
+            setActiveMenuId(null);
+          }}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors cursor-pointer font-medium"
+        >
+          <Share2 className="w-3.5 h-3.5 text-blue-500" />
+          <span>Share link</span>
         </button>
 
         {(file.mimeType?.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name)) && (
@@ -1517,6 +1534,17 @@ export default function MyDrivePage() {
               <button
                 type="button"
                 onClick={() => {
+                  setShareFileTarget(mobileActionFile);
+                  setMobileActionFile(null);
+                }}
+                className="w-full flex items-center gap-3 py-3 px-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Share2 className="w-4 h-4 text-blue-500" />
+                <span>Share link (Google Drive)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   toggleStarFile(mobileActionFile.id);
                   setMobileActionFile(null);
                 }}
@@ -1606,6 +1634,17 @@ export default function MyDrivePage() {
         <DeleteConfirmModal
           item={deleteTarget}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+      {shareFileTarget && (
+        <ShareModal
+          isOpen={Boolean(shareFileTarget)}
+          onClose={() => setShareFileTarget(null)}
+          file={shareFileTarget}
+          ownerUid={user?.uid || ''}
+          ownerEmail={user?.email || ''}
+          ownerDisplayName={user?.displayName || ''}
+          ownerSessionToken={sessionToken}
         />
       )}
     </div>

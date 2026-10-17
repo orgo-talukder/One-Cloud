@@ -22,11 +22,14 @@ import {
   File,
   Zap,
   Sparkles,
+  Share2,
 } from 'lucide-react';
 import type { FileItem, FolderItem } from '@/lib/drive/types';
 import { formatBytes, getFileTypeCategory } from '@/lib/drive/storage-calc';
 import { useDrive } from '@/lib/drive/drive-context';
+import { useAuth } from '@/lib/firebase/auth-context';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
+import { ShareModal } from '@/components/modals/ShareModal';
 import { RenameModal } from '@/components/modals/RenameModal';
 import { MoveFileModal } from '@/components/modals/MoveFileModal';
 import { DeleteConfirmModal, type DeleteTargetItem } from '@/components/modals/DeleteConfirmModal';
@@ -64,9 +67,11 @@ export function FileList({
     scanFileWithAI,
     isAiScanning,
   } = useDrive();
+  const { user } = useAuth();
 
   // Modal states
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [shareFile, setShareFile] = useState<FileItem | null>(null);
   const [renameTarget, setRenameTarget] = useState<{
     id: string;
     name: string;
@@ -568,8 +573,8 @@ export function FileList({
                               {file.extension || 'FILE'}
                             </span>
                           </div>
-                          {file.aiPrimaryTag && (
-                            <div className="mt-1 flex items-center">
+                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                            {file.aiPrimaryTag && (
                               <span
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/25 text-purple-700 dark:text-purple-300 text-[10px] font-semibold truncate max-w-full"
                                 title={`AI Vision: ${file.aiTags?.join(', ') || file.aiPrimaryTag} (${file.aiConfidence || 90}%)`}
@@ -577,8 +582,17 @@ export function FileList({
                                 <Sparkles className="h-2.5 w-2.5 shrink-0 text-purple-600 dark:text-purple-400" />
                                 <span className="truncate">{file.aiPrimaryTag}</span>
                               </span>
-                            </div>
-                          )}
+                            )}
+                            {file.isShared && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-[10px] font-semibold"
+                                title="Publicly shared"
+                              >
+                                <Share2 className="h-2.5 w-2.5 shrink-0 text-blue-500" />
+                                <span>Shared</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {/* 3-Dot Options Button */}
@@ -686,6 +700,16 @@ export function FileList({
                               >
                                 <FolderInput className="h-3.5 w-3.5 text-text-muted" />
                                 <span>Move</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShareFile(file);
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors cursor-pointer font-medium"
+                              >
+                                <Share2 className="h-3.5 w-3.5 text-blue-500" />
+                                <span>Share link</span>
                               </button>
                               <button
                                 onClick={() => handleCopyLink(file)}
@@ -842,6 +866,9 @@ export function FileList({
                               {file.isStarred && (
                                 <Star className="h-3.5 w-3.5 fill-warning text-warning shrink-0" />
                               )}
+                              {file.isShared && (
+                                <Share2 className="h-3.5 w-3.5 text-blue-500 shrink-0" title="Publicly shared" />
+                              )}
                             </div>
                           </td>
                           <td className="py-2.5 px-3 tabular-nums text-text-secondary">
@@ -959,6 +986,16 @@ export function FileList({
                                     <span>Move</span>
                                   </button>
                                   <button
+                                    onClick={() => {
+                                      setShareFile(file);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors cursor-pointer font-medium"
+                                  >
+                                    <Share2 className="h-3.5 w-3.5 text-blue-500" />
+                                    <span>Share link</span>
+                                  </button>
+                                  <button
                                     onClick={() => handleCopyLink(file)}
                                     className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
                                   >
@@ -1049,6 +1086,17 @@ export function FileList({
         <DeleteConfirmModal
           item={deleteTarget}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+      {shareFile && (
+        <ShareModal
+          isOpen={Boolean(shareFile)}
+          onClose={() => setShareFile(null)}
+          file={shareFile}
+          ownerUid={user?.uid || ''}
+          ownerEmail={user?.email || ''}
+          ownerDisplayName={user?.displayName || ''}
+          ownerSessionToken={sessionToken}
         />
       )}
     </>
